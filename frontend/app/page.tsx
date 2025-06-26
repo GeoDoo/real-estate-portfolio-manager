@@ -57,14 +57,15 @@ export default function Home() {
       return;
     }
     try {
-      const res = await fetch('/api/valuations', {
+      const res = await fetch('http://localhost:8000/api/valuations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include'
       });
       if (res.ok) {
         const json = await res.json();
-        if (json.success && json.id) {
+        if (json.id) {
           router.push(`/valuations/${json.id}`);
         } else {
           setSaveStatus('Error saving data');

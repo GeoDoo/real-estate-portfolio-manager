@@ -1,0 +1,186 @@
+from fractions import Fraction
+from flask import Flask, request, jsonify, abort
+from flask_cors import CORS
+import uuid
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+import os
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dcf_calculations.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# SQLAlchemy model for Valuation
+class Valuation(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    created_at = db.Column(db.String)
+    initial_investment = db.Column(db.Float)
+    annual_rental_income = db.Column(db.Float)
+    service_charge = db.Column(db.Float)
+    ground_rent = db.Column(db.Float)
+    maintenance = db.Column(db.Float)
+    property_tax = db.Column(db.Float)
+    insurance = db.Column(db.Float)
+    management_fees = db.Column(db.Float)
+    one_time_expenses = db.Column(db.Float)
+    cash_flow_growth_rate = db.Column(db.Float)
+    discount_rate = db.Column(db.Float)
+    holding_period = db.Column(db.Integer)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'created_at': self.created_at,
+            'initial_investment': self.initial_investment,
+            'annual_rental_income': self.annual_rental_income,
+            'service_charge': self.service_charge,
+            'ground_rent': self.ground_rent,
+            'maintenance': self.maintenance,
+            'property_tax': self.property_tax,
+            'insurance': self.insurance,
+            'management_fees': self.management_fees,
+            'one_time_expenses': self.one_time_expenses,
+            'cash_flow_growth_rate': self.cash_flow_growth_rate,
+            'discount_rate': self.discount_rate,
+            'holding_period': self.holding_period,
+            'created_at': self.created_at
+        }
+
+# Ensure all tables are created on startup
+with app.app_context():
+    db.create_all()
+
+def calculate_cash_flows(input):
+    initial_investment = Fraction(str(input['initial_investment']))
+    annual_rental_income = Fraction(str(input['annual_rental_income']))
+    service_charge = Fraction(str(input['service_charge']))
+    ground_rent = Fraction(str(input['ground_rent']))
+    maintenance = Fraction(str(input['maintenance']))
+    property_tax = Fraction(str(input['property_tax']))
+    insurance = Fraction(str(input['insurance']))
+    management_fees = Fraction(str(input['management_fees']))
+    one_time_expenses = Fraction(str(input['one_time_expenses']))
+    cash_flow_growth_rate = Fraction(str(input['cash_flow_growth_rate']))
+    discount_rate = Fraction(str(input['discount_rate']))
+    holding_period = int(input['holding_period'])
+
+    rows = []
+    cumulative_pv = Fraction(0)
+
+    # Year 0
+    year0_revenue = -initial_investment
+    year0_expenses = one_time_expenses + property_tax
+    year0_net_cash_flow = year0_revenue - year0_expenses
+    year0_pv = year0_net_cash_flow
+    cumulative_pv += year0_pv
+    rows.append({
+        'year': 0,
+        'revenue': float(f"{float(year0_revenue):.2f}"),
+        'totalExpenses': float(f"{float(year0_expenses):.2f}"),
+        'netCashFlow': float(f"{float(year0_net_cash_flow):.2f}"),
+        'presentValue': float(f"{float(year0_pv):.2f}"),
+        'cumulativePV': float(f"{float(cumulative_pv):.2f}"),
+    })
+
+    for year in range(1, holding_period + 1):
+        revenue = annual_rental_income * (1 + cash_flow_growth_rate / 100) ** (year - 1)
+        management_fee = revenue * management_fees / 100
+        total_expenses = service_charge + ground_rent + maintenance + insurance + management_fee
+        net_cash_flow = revenue - total_expenses
+        denominator = (1 + discount_rate / 100) ** year
+        present_value = net_cash_flow / denominator
+        cumulative_pv += present_value
+        rows.append({
+            'year': year,
+            'revenue': float(f"{float(revenue):.2f}"),
+            'totalExpenses': float(f"{float(total_expenses):.2f}"),
+            'netCashFlow': float(f"{float(net_cash_flow):.2f}"),
+            'presentValue': float(f"{float(present_value):.2f}"),
+            'cumulativePV': float(f"{float(cumulative_pv):.2f}"),
+        })
+    return rows
+
+# GET/POST /api/valuations
+@app.route('/api/valuations', methods=['GET', 'POST'])
+def valuations_collection():
+    if request.method == 'GET':
+        vals = Valuation.query.all()
+        return jsonify([v.to_dict() for v in vals])
+    elif request.method == 'POST':
+        data = request.json
+        val_id = str(uuid.uuid4())
+        now = datetime.utcnow().isoformat()
+        valuation = Valuation(
+            id=val_id,
+            created_at=now,
+            initial_investment=data.get('initial_investment', 0),
+            annual_rental_income=data.get('annual_rental_income', 0),
+            service_charge=data.get('service_charge', 0),
+            ground_rent=data.get('ground_rent', 0),
+            maintenance=data.get('maintenance', 0),
+            property_tax=data.get('property_tax', 0),
+            insurance=data.get('insurance', 0),
+            management_fees=data.get('management_fees', 0),
+            one_time_expenses=data.get('one_time_expenses', 0),
+            cash_flow_growth_rate=data.get('cash_flow_growth_rate', 0),
+            discount_rate=data.get('discount_rate', 0),
+            holding_period=data.get('holding_period', 0)
+        )
+        db.session.add(valuation)
+        db.session.commit()
+        return jsonify(valuation.to_dict()), 201
+
+# GET/PUT/DELETE /api/valuations/<id>
+@app.route('/api/valuations/<val_id>', methods=['GET', 'PUT', 'DELETE'])
+def valuation_item(val_id):
+    valuation = Valuation.query.get(val_id)
+    if not valuation:
+        abort(404)
+    if request.method == 'GET':
+        return jsonify(valuation.to_dict())
+    elif request.method == 'PUT':
+        data = request.json
+        for key, value in data.items():
+            if hasattr(valuation, key):
+                setattr(valuation, key, value)
+        db.session.commit()
+        return jsonify(valuation.to_dict())
+    elif request.method == 'DELETE':
+        db.session.delete(valuation)
+        db.session.commit()
+        return '', 204
+
+# GET /api/valuations/<id>/cashflows
+@app.route('/api/valuations/<val_id>/cashflows', methods=['GET'])
+def valuation_cashflows(val_id):
+    valuation = Valuation.query.get(val_id)
+    if not valuation:
+        abort(404)
+    cash_flows = calculate_cash_flows(valuation.to_dict())
+    return jsonify({'cashFlows': cash_flows})
+
+# POST /api/cashflows/calculate (ad-hoc DCF calculation)
+@app.route('/api/cashflows/calculate', methods=['POST'])
+def cashflows_calculate():
+    data = request.json
+    cash_flows = calculate_cash_flows(data)
+    return jsonify({'cashFlows': cash_flows})
+
+@app.route('/api/valuations', methods=['OPTIONS'])
+@app.route('/api/valuations/<val_id>', methods=['OPTIONS'])
+@app.route('/api/valuations/<val_id>/cashflows', methods=['OPTIONS'])
+@app.route('/api/cashflows/calculate', methods=['OPTIONS'])
+def options_handler(val_id=None):
+    return '', 204
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8000) 

@@ -14,15 +14,20 @@ export default function ValuationsListPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/valuations');
-        const json = await res.json();
-        if (json.success) {
-          setValuations(json.data);
-        } else {
+        const res = await fetch('http://localhost:8000/api/valuations', {
+          credentials: 'include'
+        });
+        if (!res.ok) {
           setError('Failed to fetch valuations');
+          setValuations([]);
+          setLoading(false);
+          return;
         }
+        const json = await res.json();
+        setValuations(Array.isArray(json) ? json : []);
       } catch {
         setError('Failed to fetch valuations');
+        setValuations([]);
       }
       setLoading(false);
     }

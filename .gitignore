@@ -1,5 +1,34 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+*.pyo
+*.db
+
+# Node/Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.env
+
+# System/Editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+*.local
+
 # dependencies
 /node_modules
 /.pnp
@@ -14,7 +43,6 @@
 /coverage
 
 # next.js
-/.next/
 /out/
 
 # production
