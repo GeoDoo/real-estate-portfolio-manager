@@ -62,17 +62,6 @@ export default function Home() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Terminal Value ($)
-            </label>
-            <input
-              type="number"
-              className="w-full p-2 border rounded"
-              placeholder="0"
-            />
-          </div>
-
           <button
             type="submit"
             className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
