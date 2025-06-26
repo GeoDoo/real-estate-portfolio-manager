@@ -10,4 +10,13 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Failed to save calculation' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  try {
+    const data = dcfDB.getCalculations();
+    return NextResponse.json({ success: true, data });
+  } catch {
+    return NextResponse.json({ error: 'Failed to fetch calculations' }, { status: 500 });
+  }
 } 

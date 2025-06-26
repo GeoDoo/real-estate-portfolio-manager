@@ -21,6 +21,7 @@ export default function Home() {
     holding_period: '',
   });
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -33,6 +34,7 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveStatus(null);
+    setFormError(null);
     // Convert all values to numbers, default to 0 if empty
     const data: DCFInput = {
       initial_investment: Number(form.initial_investment) || 0,
@@ -48,6 +50,13 @@ export default function Home() {
       discount_rate: Number(form.discount_rate) || 0,
       holding_period: Number(form.holding_period) || 0,
     };
+    // Validation: require at least initial_investment > 0
+    if (data.initial_investment <= 0) {
+      setFormError('Initial Investment must be greater than 0.');
+      return;
+    }
+    // Debug: log the data being sent
+    console.log('Saving DCF:', data);
     try {
       const res = await fetch('/api/save-dcf', {
         method: 'POST',
@@ -284,6 +293,10 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              {formError && (
+                <div className="text-center text-red-600 font-semibold mb-4">{formError}</div>
+              )}
 
               <button
                 type="submit"

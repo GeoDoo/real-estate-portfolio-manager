@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -27,6 +28,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <nav className="w-full bg-white shadow-sm mb-8">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex gap-6 items-center">
+            <Link href="/" className="font-semibold text-lg text-blue-700 hover:underline">
+              Home
+            </Link>
+            <Link href="/dcfs" className="font-semibold text-lg text-blue-700 hover:underline">
+              DCF List
+            </Link>
+          </div>
+        </nav>
         {children}
       </body>
     </html>
