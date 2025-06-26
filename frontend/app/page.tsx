@@ -84,52 +84,21 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Valuation Calculator</h1>
         <div className="bg-white rounded-lg shadow-md p-8">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Investment */}
+            {/* Initial Costs (Year 0) */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Investment</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Initial Investment ($)
-                </label>
-                <input
-                  type="number"
-                  name="initial_investment"
-                  value={form.initial_investment}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            {/* Revenue */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Revenue</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Annual Rental Income ($)
-                </label>
-                <input
-                  type="number"
-                  name="annual_rental_income"
-                  value={form.annual_rental_income}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            {/* Expenses */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Annual Expenses</h2>
+              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center">
+                <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium mr-3">Year 0</span>
+                Initial Investment & Setup Costs
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Service Charge ($)
+                    Initial Investment ($)
                   </label>
                   <input
                     type="number"
-                    name="service_charge"
-                    value={form.service_charge}
+                    name="initial_investment"
+                    value={form.initial_investment}
                     onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0"
@@ -137,88 +106,138 @@ export default function Home() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ground Rent ($)
+                    One-time Expenses ($)
                   </label>
                   <input
                     type="number"
-                    name="ground_rent"
-                    value={form.ground_rent}
+                    name="one_time_expenses"
+                    value={form.one_time_expenses}
                     onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Maintenance ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="maintenance"
-                    value={form.maintenance}
-                    onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Property Tax ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="property_tax"
-                    value={form.property_tax}
-                    onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Insurance ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="insurance"
-                    value={form.insurance}
-                    onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Management Fees (%)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="management_fees"
-                    value={form.management_fees}
-                    onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  One-time Expenses ($)
-                </label>
-                <input
-                  type="number"
-                  name="one_time_expenses"
-                  value={form.one_time_expenses}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
-                />
               </div>
             </div>
+
+            {/* Annual Revenue & Expenses */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center">
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">Annual</span>
+                Ongoing Revenue & Expenses
+              </h2>
+              
+              {/* Revenue */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-700">Revenue</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Annual Rental Income ($)
+                  </label>
+                  <input
+                    type="number"
+                    name="annual_rental_income"
+                    value={form.annual_rental_income}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Annual Expenses */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-700">Annual Expenses</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Service Charge ($)
+                    </label>
+                    <input
+                      type="number"
+                      name="service_charge"
+                      value={form.service_charge}
+                      onChange={handleChange}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ground Rent ($)
+                    </label>
+                    <input
+                      type="number"
+                      name="ground_rent"
+                      value={form.ground_rent}
+                      onChange={handleChange}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maintenance ($)
+                    </label>
+                    <input
+                      type="number"
+                      name="maintenance"
+                      value={form.maintenance}
+                      onChange={handleChange}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Property Tax ($)
+                    </label>
+                    <input
+                      type="number"
+                      name="property_tax"
+                      value={form.property_tax}
+                      onChange={handleChange}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Insurance ($)
+                    </label>
+                    <input
+                      type="number"
+                      name="insurance"
+                      value={form.insurance}
+                      onChange={handleChange}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Management Fees (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="management_fees"
+                      value={form.management_fees}
+                      onChange={handleChange}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Assumptions */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Assumptions</h2>
+              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center">
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mr-3">Model</span>
+                Analysis Parameters
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
