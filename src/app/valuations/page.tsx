@@ -5,8 +5,8 @@ import { DCFInput } from '@/types/dcf';
 
 type DCFRow = DCFInput & { id: number; created_at: string };
 
-export default function DCFListPage() {
-  const [dcfs, setDcfs] = useState<DCFRow[]>([]);
+export default function ValuationsListPage() {
+  const [valuations, setValuations] = useState<DCFRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,15 +15,15 @@ export default function DCFListPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/dcfs');
+        const res = await fetch('/api/valuations');
         const json = await res.json();
         if (json.success) {
-          setDcfs(json.data);
+          setValuations(json.data);
         } else {
-          setError('Failed to fetch DCFs');
+          setError('Failed to fetch valuations');
         }
       } catch {
-        setError('Failed to fetch DCFs');
+        setError('Failed to fetch valuations');
       }
       setLoading(false);
     }
@@ -33,13 +33,13 @@ export default function DCFListPage() {
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">All DCF Calculations</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Saved Valuations</h1>
         {loading ? (
           <div className="text-center text-gray-500">Loading...</div>
         ) : error ? (
           <div className="text-center text-red-600">{error}</div>
-        ) : dcfs.length === 0 ? (
-          <div className="text-center text-gray-500">No DCF calculations found.</div>
+        ) : valuations.length === 0 ? (
+          <div className="text-center text-gray-500">No valuations found.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm bg-white rounded-lg shadow-md">
@@ -63,7 +63,7 @@ export default function DCFListPage() {
                 </tr>
               </thead>
               <tbody>
-                {dcfs.map((row) => (
+                {valuations.map((row) => (
                   <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2 px-2">{row.id}</td>
                     <td className="py-2 px-2">{row.created_at}</td>
@@ -81,7 +81,7 @@ export default function DCFListPage() {
                     <td className="py-2 px-2">{row.holding_period}</td>
                     <td className="py-2 px-2">
                       <Link
-                        href={`/dcfs/${row.id}`}
+                        href={`/valuations/${row.id}`}
                         className="inline-block px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-semibold shadow"
                       >
                         View

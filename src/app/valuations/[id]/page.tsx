@@ -23,9 +23,9 @@ const mockData: CashFlowRow[] = [
   { year: 5, revenue: 72930, totalExpenses: 18233, netCashFlow: 54698, presentValue: 33995, cumulativePV: -313166 },
 ];
 
-export default function DCFDetailsPage() {
+export default function ValuationDetailsPage() {
   const { id } = useParams();
-  const [dcf, setDcf] = useState<DCFRow | null>(null);
+  const [valuation, setValuation] = useState<DCFRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +34,10 @@ export default function DCFDetailsPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/dcfs/${id}`);
+        const res = await fetch(`/api/valuations/${id}`);
         const json = await res.json();
         if (json.success) {
-          setDcf(json.data);
+          setValuation(json.data);
         } else {
           setError('Not found');
         }
@@ -51,13 +51,13 @@ export default function DCFDetailsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">DCF Results</h1>
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Valuation Results</h1>
         {loading ? (
           <div className="text-center text-gray-500">Loading...</div>
         ) : error ? (
           <div className="text-center text-red-600">{error}</div>
-        ) : dcf ? (
+        ) : valuation ? (
           <div className="bg-white rounded-lg shadow-md p-8">
             <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-6">Cash Flow Breakdown</h2>
             <div className="overflow-x-auto">

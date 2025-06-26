@@ -33,8 +33,8 @@ export default function RootLayout({
             <Link href="/" className="font-semibold text-lg text-blue-700 hover:underline">
               Home
             </Link>
-            <Link href="/dcfs" className="font-semibold text-lg text-blue-700 hover:underline">
-              DCF List
+            <Link href="/valuations" className="font-semibold text-lg text-blue-700 hover:underline">
+              Saved Valuations
             </Link>
           </div>
         </nav>

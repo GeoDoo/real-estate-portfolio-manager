@@ -56,10 +56,8 @@ export default function Home() {
       setFormError('Initial Investment must be greater than 0.');
       return;
     }
-    // Debug: log the data being sent
-    console.log('Saving DCF:', data);
     try {
-      const res = await fetch('/api/save-dcf', {
+      const res = await fetch('/api/valuations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -67,7 +65,7 @@ export default function Home() {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.id) {
-          router.push(`/dcfs/${json.id}`);
+          router.push(`/valuations/${json.id}`);
         } else {
           setSaveStatus('Error saving data');
         }
@@ -82,7 +80,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">DCF Calculator</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Valuation Calculator</h1>
         <div className="bg-white rounded-lg shadow-md p-8">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Investment */}
