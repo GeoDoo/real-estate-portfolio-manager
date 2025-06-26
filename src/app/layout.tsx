@@ -28,7 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <nav className="w-full bg-white shadow-sm mb-8">
+        <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 flex gap-6 items-center">
             <Link href="/" className="font-semibold text-lg text-blue-700 hover:underline">
               Home
@@ -38,7 +38,9 @@ export default function RootLayout({
             </Link>
           </div>
         </nav>
-        {children}
+        <div className="pt-16">
+          {children}
+        </div>
       </body>
     </html>
   );
