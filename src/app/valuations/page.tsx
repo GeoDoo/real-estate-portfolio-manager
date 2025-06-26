@@ -52,7 +52,7 @@ export default function ValuationsListPage() {
                   <th className="py-3 px-2">Maintenance</th>
                   <th className="py-3 px-2">Property Tax</th>
                   <th className="py-3 px-2">Insurance</th>
-                  <th className="py-3 px-2">Management Fees</th>
+                  <th className="py-3 px-2">Management Fees (%)</th>
                   <th className="py-3 px-2">One-time Expenses</th>
                   <th className="py-3 px-2">Growth Rate (%)</th>
                   <th className="py-3 px-2">Discount Rate (%)</th>
@@ -72,7 +72,7 @@ export default function ValuationsListPage() {
                     <td className="py-2 px-2">{row.maintenance}</td>
                     <td className="py-2 px-2">{row.property_tax}</td>
                     <td className="py-2 px-2">{row.insurance}</td>
-                    <td className="py-2 px-2">{row.management_fees}</td>
+                    <td className="py-2 px-2">{row.management_fees}%</td>
                     <td className="py-2 px-2">{row.one_time_expenses}</td>
                     <td className="py-2 px-2">{row.cash_flow_growth_rate}</td>
                     <td className="py-2 px-2">{row.discount_rate}</td>

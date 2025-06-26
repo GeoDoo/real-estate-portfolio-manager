@@ -188,10 +188,11 @@ export default function Home() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Management Fees ($)
+                    Management Fees (%)
                   </label>
                   <input
                     type="number"
+                    step="0.01"
                     name="management_fees"
                     value={form.management_fees}
                     onChange={handleChange}

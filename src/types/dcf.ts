@@ -6,7 +6,7 @@ export interface DCFInput {
   maintenance: number
   property_tax: number
   insurance: number
-  management_fees: number
+  management_fees: number // percent, not dollars
   one_time_expenses: number
   cash_flow_growth_rate: number
   discount_rate: number

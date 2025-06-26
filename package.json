@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "migrate": "tsx src/db/migrate.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",
