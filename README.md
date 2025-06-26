@@ -1,97 +1,93 @@
 # Real Estate Portfolio Manager
 
-A Next.js application for managing real estate investments with DCF (Discounted Cash Flow) valuation tools.
+A modern real estate investment portfolio manager with mathematically precise DCF (Discounted Cash Flow) calculations.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## 🏗️ Architecture
 
-## Getting Started
+This is a **monorepo** with:
+- **Backend**: Python Flask API with mathematically exact DCF/NPV calculations
+- **Frontend**: Next.js/React UI with modern, responsive design
+- **Database**: SQLite for persistent storage
 
-First, run the development server:
+## 🚀 Quick Start
+
+### 1. Backend Setup (Python/Flask)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd backend
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The API will be available at `http://localhost:8000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Frontend Setup (Next.js/React)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Learn More
+The UI will be available at `http://localhost:3000`
 
-To learn more about Next.js, take a look at the following resources:
+## 📊 Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Mathematically Exact DCF Calculations**: Uses Python's `Fraction` module for precision
+- **26-Year Cash Flow Projections**: Complete DCF breakdown for years 0-25
+- **Persistent Storage**: SQLite database for saving valuations
+- **Modern UI**: Clean, responsive Next.js interface
+- **RESTful API**: Full CRUD operations for valuations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 API Endpoints
 
-## Deploy on Vercel
+- `GET/POST /api/valuations` - List/create valuations
+- `GET/PUT/DELETE /api/valuations/<id>` - Get/update/delete specific valuation
+- `GET /api/valuations/<id>/cashflows` - Get DCF breakdown for valuation
+- `POST /api/cashflows/calculate` - Ad-hoc DCF calculation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+real-estate-portfolio-manager/
+├── backend/                 # Python Flask backend
+│   ├── app.py              # Main Flask application
+│   ├── requirements.txt    # Python dependencies
+│   ├── test_dcf.py         # Mathematical verification tests
+│   └── venv/               # Python virtual environment
+├── frontend/               # Next.js frontend
+│   ├── app/                # Next.js app directory
+│   ├── package.json        # Node.js dependencies
+│   └── ...
+├── dcf_calculations.db     # SQLite database
+└── README.md
+```
 
-## Project Structure
+## 🧮 Mathematical Precision
 
-- `src/backend/` — Python Flask backend for DCF/NPV calculations (mathematically precise)
-- `src/app/` — Next.js/React frontend for UI display
+All DCF calculations use Python's `Fraction` module for exact arithmetic, ensuring:
+- No floating-point errors
+- Mathematically correct present values
+- Excel-compatible results
+- Comprehensive test coverage for all 26 years
 
-## Backend (Python/Flask)
+## 🧪 Testing
 
-1. **Setup**
-   ```sh
-   cd src/backend
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
+```bash
+cd backend
+python -m pytest test_dcf.py -v
+```
 
-2. **Run the backend**
-   ```sh
-   python app.py
-   ```
-   The API will be available at `http://localhost:5000/api/dcf`.
+Tests verify mathematical correctness for all years (0-25) with hardcoded expected values.
 
-3. **API Usage**
-   - POST JSON to `/api/dcf` with DCF input fields:
-     ```json
-     {
-       "initial_investment": 200000,
-       "annual_rental_income": 20000,
-       "service_charge": 3000,
-       "ground_rent": 500,
-       "maintenance": 1000,
-       "property_tax": 6000,
-       "insurance": 300,
-       "management_fees": 12,
-       "one_time_expenses": 0,
-       "cash_flow_growth_rate": 2,
-       "discount_rate": 15,
-       "holding_period": 25
-     }
-     ```
-   - Response: `{ "cashFlows": [ ... ] }`
+## 🛠️ Development
 
-## Frontend (Next.js/React)
-
-1. **Setup**
-   ```sh
-   npm install
-   npm run dev
-   ```
-
-2. **Usage**
-   - The frontend will fetch DCF results from the Python backend and display them.
-   - Make sure the backend is running before using the UI.
+- **Backend**: Python 3.12+, Flask, SQLAlchemy, SQLite
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Database**: SQLite with SQLAlchemy ORM
 
 ---
 
-**All DCF/NPV calculations are now handled in Python for mathematical precision.**
+**Built with mathematical precision for real estate investment professionals.**
