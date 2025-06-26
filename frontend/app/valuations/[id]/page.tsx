@@ -9,6 +9,7 @@ export default function ValuationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cashFlows, setCashFlows] = useState<any[]>([]);
+  const [irr, setIrr] = useState<number|null>(null);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -31,14 +32,33 @@ export default function ValuationDetailPage() {
           if (cfRes.ok) {
             const cfJson = await cfRes.json();
             setCashFlows(cfJson.cashFlows || []);
+            // Fetch IRR if cash flows are available
+            if (cfJson.cashFlows && cfJson.cashFlows.length > 1) {
+              const netCashFlows = cfJson.cashFlows.map((row: any) => row.netCashFlow);
+              const irrRes = await fetch("http://localhost:8000/api/cashflows/irr", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cash_flows: netCashFlows }),
+              });
+              if (irrRes.ok) {
+                const irrJson = await irrRes.json();
+                setIrr(irrJson.irr);
+              } else {
+                setIrr(null);
+              }
+            } else {
+              setIrr(null);
+            }
           } else {
             setCashFlows([]);
+            setIrr(null);
           }
         }
       } catch {
         setError("Failed to fetch valuation");
         setValuation(null);
         setCashFlows([]);
+        setIrr(null);
       }
       setLoading(false);
     }
@@ -92,6 +112,9 @@ export default function ValuationDetailPage() {
                   }>
                     {cashFlows.length > 0 ? cashFlows[cashFlows.length - 1].cumulativePV.toLocaleString(undefined, {maximumFractionDigits: 2}) : "-"}
                   </span>
+                  {irr !== null && (
+                    <span className="ml-8">IRR: <span className={irr < 0 ? 'text-red-600' : 'text-green-700'}>{irr.toFixed(2)}%</span></span>
+                  )}
                 </div>
               </div>
             )}

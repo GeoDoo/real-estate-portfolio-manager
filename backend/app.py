@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 import os
+from scipy.optimize import brentq
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dcf_calculations.db')
@@ -167,10 +168,33 @@ def cashflows_calculate():
     cash_flows = calculate_cash_flows(data)
     return jsonify({'cashFlows': cash_flows})
 
+def npv(rate, cash_flows):
+    return sum(cf / (1 + rate) ** i for i, cf in enumerate(cash_flows))
+
+def calculate_irr(cash_flows):
+    # IRR is the rate that makes NPV = 0
+    try:
+        irr = brentq(lambda r: npv(r, cash_flows), -0.99, 10)
+        return irr
+    except Exception:
+        return None
+
+@app.route('/api/cashflows/irr', methods=['POST'])
+def irr_calculate():
+    data = request.json
+    cash_flows = data.get('cash_flows')
+    if not isinstance(cash_flows, list) or len(cash_flows) < 2:
+        return jsonify({'error': 'cash_flows must be a list of at least two numbers'}), 400
+    irr = calculate_irr(cash_flows)
+    if irr is None:
+        return jsonify({'error': 'IRR could not be calculated'}), 400
+    return jsonify({'irr': irr * 100})
+
 @app.route('/api/valuations', methods=['OPTIONS'])
 @app.route('/api/valuations/<val_id>', methods=['OPTIONS'])
 @app.route('/api/valuations/<val_id>/cashflows', methods=['OPTIONS'])
 @app.route('/api/cashflows/calculate', methods=['OPTIONS'])
+@app.route('/api/cashflows/irr', methods=['OPTIONS'])
 def options_handler(val_id=None):
     return '', 204
 
