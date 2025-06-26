@@ -1,35 +1,67 @@
 'use client';
 
 import { useState } from 'react';
-
-interface CashFlowRow {
-  year: number;
-  revenue: number;
-  totalExpenses: number;
-  netCashFlow: number;
-  presentValue: number;
-  cumulativePV: number;
-}
+import { DCFInput } from '@/types/dcf';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'input' | 'results'>('input');
-  const [cashFlowData, setCashFlowData] = useState<CashFlowRow[]>([]);
+  // Form state as strings
+  const [form, setForm] = useState({
+    initial_investment: '',
+    annual_rental_income: '',
+    service_charge: '',
+    ground_rent: '',
+    maintenance: '',
+    property_tax: '',
+    insurance: '',
+    management_fees: '',
+    one_time_expenses: '',
+    cash_flow_growth_rate: '',
+    discount_rate: '',
+    holding_period: '',
+  });
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Only allow numbers and empty string
+    if (/^\d*$/.test(value)) {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Mock calculation for now - we'll implement real DCF logic next
-    const mockData: CashFlowRow[] = [
-      { year: 0, revenue: 0, totalExpenses: 0, netCashFlow: -500000, presentValue: -500000, cumulativePV: -500000 },
-      { year: 1, revenue: 60000, totalExpenses: 15000, netCashFlow: 45000, presentValue: 40909, cumulativePV: -459091 },
-      { year: 2, revenue: 63000, totalExpenses: 15750, netCashFlow: 47250, presentValue: 39050, cumulativePV: -420041 },
-      { year: 3, revenue: 66150, totalExpenses: 16538, netCashFlow: 49613, presentValue: 37285, cumulativePV: -382756 },
-      { year: 4, revenue: 69458, totalExpenses: 17365, netCashFlow: 52093, presentValue: 35595, cumulativePV: -347161 },
-      { year: 5, revenue: 72930, totalExpenses: 18233, netCashFlow: 54698, presentValue: 33995, cumulativePV: -313166 },
-    ];
-    
-    setCashFlowData(mockData);
-    setActiveTab('results');
+    setSaveStatus(null);
+    // Convert all values to numbers, default to 0 if empty
+    const data: DCFInput = {
+      initial_investment: Number(form.initial_investment) || 0,
+      annual_rental_income: Number(form.annual_rental_income) || 0,
+      service_charge: Number(form.service_charge) || 0,
+      ground_rent: Number(form.ground_rent) || 0,
+      maintenance: Number(form.maintenance) || 0,
+      property_tax: Number(form.property_tax) || 0,
+      insurance: Number(form.insurance) || 0,
+      management_fees: Number(form.management_fees) || 0,
+      one_time_expenses: Number(form.one_time_expenses) || 0,
+      cash_flow_growth_rate: Number(form.cash_flow_growth_rate) || 0,
+      discount_rate: Number(form.discount_rate) || 0,
+      holding_period: Number(form.holding_period) || 0,
+    };
+    try {
+      const res = await fetch('/api/save-dcf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        setSaveStatus('Saved!');
+      } else {
+        setSaveStatus('Error saving data');
+      }
+    } catch {
+      setSaveStatus('Error saving data');
+    }
   };
 
   return (
@@ -58,12 +90,10 @@ export default function Home() {
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
-                disabled={cashFlowData.length === 0}
+                disabled
               >
                 Results
-                {cashFlowData.length === 0 && (
-                  <span className="ml-2 text-xs text-gray-400">(Calculate first)</span>
-                )}
+                <span className="ml-2 text-xs text-gray-400">(Not implemented)</span>
               </button>
             </nav>
           </div>
@@ -82,6 +112,9 @@ export default function Home() {
                   </label>
                   <input
                     type="number"
+                    name="initial_investment"
+                    value={form.initial_investment}
+                    onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0"
                   />
@@ -97,6 +130,9 @@ export default function Home() {
                   </label>
                   <input
                     type="number"
+                    name="annual_rental_income"
+                    value={form.annual_rental_income}
+                    onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0"
                   />
@@ -113,6 +149,9 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
+                      name="service_charge"
+                      value={form.service_charge}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -123,6 +162,9 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
+                      name="ground_rent"
+                      value={form.ground_rent}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -133,6 +175,9 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
+                      name="maintenance"
+                      value={form.maintenance}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -143,6 +188,9 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
+                      name="property_tax"
+                      value={form.property_tax}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -153,6 +201,9 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
+                      name="insurance"
+                      value={form.insurance}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -163,6 +214,9 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
+                      name="management_fees"
+                      value={form.management_fees}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -174,6 +228,9 @@ export default function Home() {
                   </label>
                   <input
                     type="number"
+                    name="one_time_expenses"
+                    value={form.one_time_expenses}
+                    onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0"
                   />
@@ -191,6 +248,9 @@ export default function Home() {
                     <input
                       type="number"
                       step="0.1"
+                      name="cash_flow_growth_rate"
+                      value={form.cash_flow_growth_rate}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -202,6 +262,9 @@ export default function Home() {
                     <input
                       type="number"
                       step="0.1"
+                      name="discount_rate"
+                      value={form.discount_rate}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -212,6 +275,9 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
+                      name="holding_period"
+                      value={form.holding_period}
+                      onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0"
                     />
@@ -223,13 +289,16 @@ export default function Home() {
                 type="submit"
                 className="w-full bg-blue-600 text-white p-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium text-lg transition-colors"
               >
-                Calculate DCF
+                Save Data
               </button>
+              {saveStatus && (
+                <div className="mt-4 text-center text-green-600 font-semibold">{saveStatus}</div>
+              )}
             </form>
           </div>
         )}
 
-        {activeTab === 'results' && cashFlowData.length > 0 && (
+        {activeTab === 'results' && (
           <div className="bg-white rounded-lg shadow-md p-8">
             <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-6">Cash Flow Breakdown</h2>
             
@@ -246,34 +315,19 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {cashFlowData.map((row, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-2 font-medium">{row.year}</td>
-                      <td className="py-3 px-2 text-right">${row.revenue.toLocaleString()}</td>
-                      <td className="py-3 px-2 text-right">${row.totalExpenses.toLocaleString()}</td>
-                      <td className={`py-3 px-2 text-right font-medium ${row.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${row.netCashFlow.toLocaleString()}
-                      </td>
-                      <td className={`py-3 px-2 text-right ${row.presentValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${row.presentValue.toLocaleString()}
-                      </td>
-                      <td className={`py-3 px-2 text-right font-medium ${row.cumulativePV >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${row.cumulativePV.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                  {/* Add table rows here */}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {activeTab === 'results' && cashFlowData.length === 0 && (
+        {activeTab === 'results' && (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <p className="text-gray-500">No results available. Please calculate DCF first.</p>
           </div>
         )}
-      </div>
+    </div>
     </main>
   );
 }
