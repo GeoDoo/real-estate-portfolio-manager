@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { DCFInput } from '@/types/dcf';
-
-type DCFRow = DCFInput & { id: number; created_at: string };
+import { DCFRow } from '@/types/dcf';
 
 export default function ValuationsListPage() {
   const [valuations, setValuations] = useState<DCFRow[]>([]);
@@ -65,7 +63,7 @@ export default function ValuationsListPage() {
               <tbody>
                 {valuations.map((row) => (
                   <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-2">{row.id}</td>
+                    <td className="py-2 px-2 font-mono text-xs">{row.id.substring(0, 8)}...</td>
                     <td className="py-2 px-2">{row.created_at}</td>
                     <td className="py-2 px-2">{row.initial_investment}</td>
                     <td className="py-2 px-2">{row.annual_rental_income}</td>

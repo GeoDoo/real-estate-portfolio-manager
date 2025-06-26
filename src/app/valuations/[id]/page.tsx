@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { DCFInput } from '@/types/dcf';
-
-type DCFRow = DCFInput & { id: number; created_at: string };
+import { DCFRow } from '@/types/dcf';
 
 type CashFlowRow = {
   year: number;
@@ -31,6 +29,12 @@ export default function ValuationDetailsPage() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!id || typeof id !== 'string') {
+        setError('Invalid ID');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -59,6 +63,15 @@ export default function ValuationDetailsPage() {
           <div className="text-center text-red-600">{error}</div>
         ) : valuation ? (
           <div className="bg-white rounded-lg shadow-md p-8">
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-4">Valuation Details</h2>
+              <div className="text-sm text-gray-600 mb-2">
+                <span className="font-medium">ID:</span> <span className="font-mono">{valuation.id}</span>
+              </div>
+              <div className="text-sm text-gray-600">
+                <span className="font-medium">Created:</span> {valuation.created_at}
+              </div>
+            </div>
             <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-6">Cash Flow Breakdown</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

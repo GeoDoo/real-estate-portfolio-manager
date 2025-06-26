@@ -13,6 +13,11 @@ export interface DCFInput {
   holding_period: number
 }
 
+export interface DCFRow extends DCFInput {
+  id: string
+  created_at: string
+}
+
 export interface CashFlowRow {
   year: number
   revenue: number
