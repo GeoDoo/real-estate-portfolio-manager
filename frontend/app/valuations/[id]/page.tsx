@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
+import { CashFlowRow, DCFRow } from '../../../types/dcf';
 
 export default function ValuationDetailPage() {
   const { id } = useParams();
-  const [valuation, setValuation] = useState<any>(null);
+  const [valuation, setValuation] = useState<DCFRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cashFlows, setCashFlows] = useState<any[]>([]);
+  const [cashFlows, setCashFlows] = useState<CashFlowRow[]>([]);
   const [irr, setIrr] = useState<number|null>(null);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function ValuationDetailPage() {
           setError("Valuation not found");
           setValuation(null);
         } else {
-          const json = await res.json();
+          const json: DCFRow = await res.json();
           setValuation(json);
           // Fetch cash flows breakdown
           const cfRes = await fetch(`http://localhost:8000/api/valuations/${id}/cashflows`, {
@@ -31,10 +31,10 @@ export default function ValuationDetailPage() {
           });
           if (cfRes.ok) {
             const cfJson = await cfRes.json();
-            setCashFlows(cfJson.cashFlows || []);
+            setCashFlows(cfJson.cashFlows as CashFlowRow[] || []);
             // Fetch IRR if cash flows are available
             if (cfJson.cashFlows && cfJson.cashFlows.length > 1) {
-              const netCashFlows = cfJson.cashFlows.map((row: any) => row.netCashFlow);
+              const netCashFlows = (cfJson.cashFlows as CashFlowRow[]).map((row) => row.netCashFlow);
               const irrRes = await fetch("http://localhost:8000/api/cashflows/irr", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { DCFRow } from '@/types/dcf';
+import { DCFRow } from '../../types/dcf';
 import { EyeIcon } from '@heroicons/react/24/outline';
 
 export default function ValuationsListPage() {

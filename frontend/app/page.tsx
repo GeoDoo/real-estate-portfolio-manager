@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DCFInput } from '@/types/dcf';
+import { DCFInput } from '../types/dcf';
 
 export default function Home() {
   const router = useRouter();
