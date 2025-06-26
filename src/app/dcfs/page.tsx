@@ -1,8 +1,12 @@
 "use client";
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { DCFInput } from '@/types/dcf';
+
+type DCFRow = DCFInput & { id: number; created_at: string };
 
 export default function DCFListPage() {
-  const [dcfs, setDcfs] = useState<any[]>([]);
+  const [dcfs, setDcfs] = useState<DCFRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +59,7 @@ export default function DCFListPage() {
                   <th className="py-3 px-2">Growth Rate (%)</th>
                   <th className="py-3 px-2">Discount Rate (%)</th>
                   <th className="py-3 px-2">Holding Period</th>
+                  <th className="py-3 px-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -74,6 +79,14 @@ export default function DCFListPage() {
                     <td className="py-2 px-2">{row.cash_flow_growth_rate}</td>
                     <td className="py-2 px-2">{row.discount_rate}</td>
                     <td className="py-2 px-2">{row.holding_period}</td>
+                    <td className="py-2 px-2">
+                      <Link
+                        href={`/dcfs/${row.id}`}
+                        className="inline-block px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-semibold shadow"
+                      >
+                        View
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
