@@ -1,3 +1,7 @@
+# Real Estate Portfolio Manager
+
+A Next.js application for managing real estate investments with DCF (Discounted Cash Flow) valuation tools.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
