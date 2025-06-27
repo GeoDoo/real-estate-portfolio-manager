@@ -27,14 +27,7 @@ export default function Breadcrumbs({ propertyId, last }: BreadcrumbsProps) {
   if (propertyId) {
     crumbs.push({ name: propertyId.substring(0, 8) + '...' });
   }
-  if (pathname.includes('/compare')) {
-    if (propertyId) {
-      crumbs.push({ name: 'Valuation', href: `/properties/${propertyId}/valuation` });
-    } else {
-      crumbs.push({ name: 'Valuation' });
-    }
-    crumbs.push({ name: 'Compare' });
-  } else if (pathname.includes('/valuation')) {
+  if (pathname.includes('/valuation')) {
     crumbs.push({ name: 'Valuation' });
   }
   if (last && !crumbs.some(c => c.name === last)) {

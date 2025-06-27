@@ -2,9 +2,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CashFlowRow, DCFRow } from '@/types/dcf';
-import { PencilIcon, CheckIcon, XMarkIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import ValuationForm from '@/components/ValuationForm';
-import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { valuationsAPI } from '@/lib/api/valuations';
 
@@ -221,16 +220,6 @@ export default function ValuationDetailPage() {
                     </button>
                   </>
                 )}
-                <Link
-                  href={`/properties/${propertyId}/valuation/compare`}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
-                  style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
-                  onMouseOver={e => (e.currentTarget.style.backgroundColor = 'var(--primary)', e.currentTarget.style.color = '#fff')}
-                  onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent', e.currentTarget.style.color = 'var(--primary)')}
-                >
-                  <ChartBarIcon className="w-4 h-4 mr-2" />
-                  Compare
-                </Link>
               </div>
             </div>
 
