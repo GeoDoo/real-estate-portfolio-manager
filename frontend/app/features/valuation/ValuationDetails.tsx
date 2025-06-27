@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { CashFlowRow, DCFRow } from '../../../types/dcf';
+import { CashFlowRow, DCFRow } from '@/types/dcf';
 import { PencilIcon, CheckIcon, XMarkIcon, ChartBarIcon } from '@heroicons/react/24/outline';
-import ValuationForm from '../../components/ValuationForm';
+import ValuationForm from '@/components/ValuationForm';
 import Link from 'next/link';
-import Breadcrumbs from '../../components/Breadcrumbs';
-import { config } from '../../config';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { config } from '@/config';
 
 export default function ValuationDetailPage() {
   const { id } = useParams();

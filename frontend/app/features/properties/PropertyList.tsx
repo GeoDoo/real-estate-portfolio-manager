@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Property } from '../../../types/dcf';
+import { Property } from '@/types/dcf';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import Breadcrumbs from '../../components/Breadcrumbs';
-import { config } from '../../config';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { config } from '@/config';
 
 export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([]);

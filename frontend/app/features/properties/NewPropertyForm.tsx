@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { config } from '../../config';
+import { config } from '@/config';
 
 export default function NewPropertyPage() {
   const router = useRouter();

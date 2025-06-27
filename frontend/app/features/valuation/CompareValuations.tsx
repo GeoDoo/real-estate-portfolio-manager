@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { DCFRow, CashFlowRow } from '../../../types/dcf';
+import { DCFRow, CashFlowRow } from '@/types/dcf';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useParams } from 'next/navigation';
-import Breadcrumbs from '../../components/Breadcrumbs';
-import { config } from '../../config';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { config } from '@/config';
 
 export default function CompareValuationsPage() {
   const [valuations, setValuations] = useState<DCFRow[]>([]);
