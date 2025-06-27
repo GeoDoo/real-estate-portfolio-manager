@@ -26,7 +26,7 @@ export default function ValuationDetailPage() {
     property_tax: '',
     insurance: '',
     management_fees: '',
-    one_time_expenses: '',
+    transaction_costs: '',
     annual_rent_growth: '',
     discount_rate: '',
     holding_period: '',
@@ -49,18 +49,18 @@ export default function ValuationDetailPage() {
           const json: DCFRow = await res.json();
           setValuation(json);
           setForm({
-            initial_investment: String(json.initial_investment),
-            annual_rental_income: String(json.annual_rental_income),
-            service_charge: String(json.service_charge),
-            ground_rent: String(json.ground_rent),
-            maintenance: String(json.maintenance),
-            property_tax: String(json.property_tax),
-            insurance: String(json.insurance),
-            management_fees: String(json.management_fees),
-            one_time_expenses: String(json.one_time_expenses),
-            annual_rent_growth: String(json.annual_rent_growth),
-            discount_rate: String(json.discount_rate),
-            holding_period: String(json.holding_period),
+            initial_investment: String(json.initial_investment ?? ''),
+            annual_rental_income: String(json.annual_rental_income ?? ''),
+            service_charge: String(json.service_charge ?? ''),
+            ground_rent: String(json.ground_rent ?? ''),
+            maintenance: String(json.maintenance ?? ''),
+            property_tax: String(json.property_tax ?? ''),
+            insurance: String(json.insurance ?? ''),
+            management_fees: String(json.management_fees ?? ''),
+            transaction_costs: String(json.transaction_costs ?? ''),
+            annual_rent_growth: String(json.annual_rent_growth ?? ''),
+            discount_rate: String(json.discount_rate ?? ''),
+            holding_period: String(json.holding_period ?? ''),
           });
           await fetchCashFlows(json);
         }
@@ -127,18 +127,18 @@ export default function ValuationDetailPage() {
   const handleCancel = () => {
     if (!valuation) return;
     setForm({
-      initial_investment: String(valuation.initial_investment),
-      annual_rental_income: String(valuation.annual_rental_income),
-      service_charge: String(valuation.service_charge),
-      ground_rent: String(valuation.ground_rent),
-      maintenance: String(valuation.maintenance),
-      property_tax: String(valuation.property_tax),
-      insurance: String(valuation.insurance),
-      management_fees: String(valuation.management_fees),
-      one_time_expenses: String(valuation.one_time_expenses),
-      annual_rent_growth: String(valuation.annual_rent_growth),
-      discount_rate: String(valuation.discount_rate),
-      holding_period: String(valuation.holding_period),
+      initial_investment: String(valuation.initial_investment ?? ''),
+      annual_rental_income: String(valuation.annual_rental_income ?? ''),
+      service_charge: String(valuation.service_charge ?? ''),
+      ground_rent: String(valuation.ground_rent ?? ''),
+      maintenance: String(valuation.maintenance ?? ''),
+      property_tax: String(valuation.property_tax ?? ''),
+      insurance: String(valuation.insurance ?? ''),
+      management_fees: String(valuation.management_fees ?? ''),
+      transaction_costs: String(valuation.transaction_costs ?? ''),
+      annual_rent_growth: String(valuation.annual_rent_growth ?? ''),
+      discount_rate: String(valuation.discount_rate ?? ''),
+      holding_period: String(valuation.holding_period ?? ''),
     });
     setIsEditing(false);
     setFormError(null);
@@ -156,7 +156,7 @@ export default function ValuationDetailPage() {
       property_tax: parseFloat(form.property_tax) || 0,
       insurance: parseFloat(form.insurance) || 0,
       management_fees: parseFloat(form.management_fees) || 0,
-      one_time_expenses: parseFloat(form.one_time_expenses) || 0,
+      transaction_costs: parseFloat(form.transaction_costs) || 0,
       annual_rent_growth: parseFloat(form.annual_rent_growth) || 0,
       discount_rate: parseFloat(form.discount_rate) || 0,
       holding_period: parseFloat(form.holding_period) || 0,
@@ -173,18 +173,18 @@ export default function ValuationDetailPage() {
         setValuation(updatedValuation);
         setIsEditing(false);
         setForm({
-          initial_investment: String(updatedValuation.initial_investment),
-          annual_rental_income: String(updatedValuation.annual_rental_income),
-          service_charge: String(updatedValuation.service_charge),
-          ground_rent: String(updatedValuation.ground_rent),
-          maintenance: String(updatedValuation.maintenance),
-          property_tax: String(updatedValuation.property_tax),
-          insurance: String(updatedValuation.insurance),
-          management_fees: String(updatedValuation.management_fees),
-          one_time_expenses: String(updatedValuation.one_time_expenses),
-          annual_rent_growth: String(updatedValuation.annual_rent_growth),
-          discount_rate: String(updatedValuation.discount_rate),
-          holding_period: String(updatedValuation.holding_period),
+          initial_investment: String(updatedValuation.initial_investment ?? ''),
+          annual_rental_income: String(updatedValuation.annual_rental_income ?? ''),
+          service_charge: String(updatedValuation.service_charge ?? ''),
+          ground_rent: String(updatedValuation.ground_rent ?? ''),
+          maintenance: String(updatedValuation.maintenance ?? ''),
+          property_tax: String(updatedValuation.property_tax ?? ''),
+          insurance: String(updatedValuation.insurance ?? ''),
+          management_fees: String(updatedValuation.management_fees ?? ''),
+          transaction_costs: String(updatedValuation.transaction_costs ?? ''),
+          annual_rent_growth: String(updatedValuation.annual_rent_growth ?? ''),
+          discount_rate: String(updatedValuation.discount_rate ?? ''),
+          holding_period: String(updatedValuation.holding_period ?? ''),
         });
         await fetchCashFlows(updatedValuation);
       } else {
@@ -197,7 +197,7 @@ export default function ValuationDetailPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12 px-4">
+    <main className="bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <Breadcrumbs propertyId={propertyId} />
         <div className="flex justify-between items-center mb-8">

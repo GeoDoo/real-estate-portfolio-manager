@@ -44,7 +44,7 @@ class Valuation(db.Model):
     property_tax = db.Column(db.Float)
     insurance = db.Column(db.Float)
     management_fees = db.Column(db.Float)
-    one_time_expenses = db.Column(db.Float)
+    transaction_costs = db.Column(db.Float)
     annual_rent_growth = db.Column(db.Float)
     discount_rate = db.Column(db.Float)
     holding_period = db.Column(db.Integer)
@@ -62,7 +62,7 @@ class Valuation(db.Model):
             'property_tax': self.property_tax,
             'insurance': self.insurance,
             'management_fees': self.management_fees,
-            'one_time_expenses': self.one_time_expenses,
+            'transaction_costs': self.transaction_costs,
             'annual_rent_growth': self.annual_rent_growth,
             'discount_rate': self.discount_rate,
             'holding_period': self.holding_period,
@@ -74,6 +74,21 @@ with app.app_context():
     db.create_all()
 
 def calculate_cash_flows(input):
+    # Provide defaults for all expected fields
+    input = {
+        'initial_investment': input.get('initial_investment', 0),
+        'annual_rental_income': input.get('annual_rental_income', 0),
+        'service_charge': input.get('service_charge', 0),
+        'ground_rent': input.get('ground_rent', 0),
+        'maintenance': input.get('maintenance', 0),
+        'property_tax': input.get('property_tax', 0),
+        'insurance': input.get('insurance', 0),
+        'management_fees': input.get('management_fees', 0),
+        'transaction_costs': input.get('transaction_costs', 0),
+        'annual_rent_growth': input.get('annual_rent_growth', 0),
+        'discount_rate': input.get('discount_rate', 0),
+        'holding_period': input.get('holding_period', 0),
+    }
     initial_investment = Fraction(str(input['initial_investment']))
     annual_rental_income = Fraction(str(input['annual_rental_income']))
     service_charge = Fraction(str(input['service_charge']))
@@ -82,7 +97,7 @@ def calculate_cash_flows(input):
     property_tax = Fraction(str(input['property_tax']))
     insurance = Fraction(str(input['insurance']))
     management_fees = Fraction(str(input['management_fees']))
-    one_time_expenses = Fraction(str(input['one_time_expenses']))
+    transaction_costs = Fraction(str(input['transaction_costs']))
     annual_rent_growth = Fraction(str(input['annual_rent_growth']))
     discount_rate = Fraction(str(input['discount_rate']))
     holding_period = int(input['holding_period'])
@@ -92,7 +107,7 @@ def calculate_cash_flows(input):
 
     # Year 0
     year0_revenue = -initial_investment
-    year0_expenses = one_time_expenses + property_tax
+    year0_expenses = transaction_costs + property_tax
     year0_net_cash_flow = year0_revenue - year0_expenses
     year0_pv = year0_net_cash_flow
     cumulative_pv += year0_pv
@@ -144,7 +159,7 @@ def valuations_collection():
             property_tax=data.get('property_tax', 0),
             insurance=data.get('insurance', 0),
             management_fees=data.get('management_fees', 0),
-            one_time_expenses=data.get('one_time_expenses', 0),
+            transaction_costs=data.get('transaction_costs', 0),
             annual_rent_growth=data.get('annual_rent_growth', 0),
             discount_rate=data.get('discount_rate', 0),
             holding_period=data.get('holding_period', 0)
@@ -219,16 +234,6 @@ def irr_calculate():
 def options_handler(val_id=None):
     return '', 204
 
-@app.after_request
-def after_request(response):
-    # Use environment variable for CORS origin
-    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
-    response.headers.add('Access-Control-Allow-Origin', frontend_url)
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
-
 # --- Property Endpoints ---
 @app.route('/api/properties', methods=['GET', 'POST'])
 def properties_collection():
@@ -257,7 +262,7 @@ def property_item(prop_id):
     return jsonify(prop.to_dict())
 
 # --- Property Valuation Endpoints ---
-@app.route('/api/properties/<prop_id>/valuation', methods=['GET', 'POST'])
+@app.route('/api/properties/<prop_id>/valuation', methods=['GET', 'POST', 'PUT'])
 def property_valuation(prop_id):
     prop = Property.query.get(prop_id)
     if not prop:
@@ -267,7 +272,7 @@ def property_valuation(prop_id):
         if not val:
             return jsonify({}), 200
         return jsonify(val.to_dict())
-    elif request.method == 'POST':
+    elif request.method in ['POST', 'PUT']:
         data = request.json
         val = Valuation.query.filter_by(property_id=prop_id).first()
         now = datetime.utcnow().isoformat()
@@ -292,7 +297,7 @@ def property_valuation(prop_id):
                 property_tax=data.get('property_tax', 0),
                 insurance=data.get('insurance', 0),
                 management_fees=data.get('management_fees', 0),
-                one_time_expenses=data.get('one_time_expenses', 0),
+                transaction_costs=data.get('transaction_costs', 0),
                 annual_rent_growth=data.get('annual_rent_growth', 0),
                 discount_rate=data.get('discount_rate', 0),
                 holding_period=data.get('holding_period', 0)

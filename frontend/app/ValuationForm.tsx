@@ -29,11 +29,11 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">One-time Expenses ($)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Transaction Costs ($)</label>
             <input
               type="text"
-              name="one_time_expenses"
-              value={form.one_time_expenses}
+              name="transaction_costs"
+              value={form.transaction_costs}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="0"

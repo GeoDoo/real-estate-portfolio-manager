@@ -7,7 +7,7 @@ export interface DCFInput {
   property_tax: number;
   insurance: number;
   management_fees: number;
-  one_time_expenses: number;
+  transaction_costs: number;
   annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
@@ -29,7 +29,7 @@ export interface PropertyValuation {
   property_tax: number;
   insurance: number;
   management_fees: number;
-  one_time_expenses: number;
+  transaction_costs: number;
   annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
@@ -46,7 +46,7 @@ export interface DCFRow {
   property_tax: number;
   insurance: number;
   management_fees: number;
-  one_time_expenses: number;
+  transaction_costs: number;
   annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
