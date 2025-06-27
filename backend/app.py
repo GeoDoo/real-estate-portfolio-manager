@@ -1,11 +1,14 @@
 from fractions import Fraction
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort, Response, stream_with_context
 from flask_cors import CORS
 import uuid
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 import os
 from scipy.optimize import brentq
+import numpy as np
+import json
+from urllib.parse import unquote
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dcf_calculations.db')
@@ -305,6 +308,113 @@ def property_valuation(prop_id):
             db.session.add(val)
         db.session.commit()
         return jsonify(val.to_dict()), 201
+
+@app.route('/api/valuations/monte-carlo', methods=['POST'])
+def monte_carlo_valuation():
+    data = request.json
+    num_simulations = max(5000, data.get('num_simulations', 1000))
+    # Support normal distribution for annual_rent_growth and discount_rate
+    rent_growth_dist = data.get('annual_rent_growth', {'distribution': 'normal', 'mean': 2, 'stddev': 1})
+    discount_rate_dist = data.get('discount_rate', {'distribution': 'normal', 'mean': 15, 'stddev': 2})
+    # Copy other inputs as fixed values
+    base_input = {k: v for k, v in data.items() if k not in ['annual_rent_growth', 'discount_rate', 'num_simulations']}
+    npvs = []
+    irrs = []
+    for _ in range(num_simulations):
+        if rent_growth_dist['distribution'] == 'normal':
+            rent_growth = np.random.normal(rent_growth_dist['mean'], rent_growth_dist['stddev'])
+        else:
+            rent_growth = rent_growth_dist['mean']
+        if discount_rate_dist['distribution'] == 'normal':
+            discount_rate = np.random.normal(discount_rate_dist['mean'], discount_rate_dist['stddev'])
+        else:
+            discount_rate = discount_rate_dist['mean']
+        sim_input = base_input.copy()
+        sim_input['annual_rent_growth'] = rent_growth
+        sim_input['discount_rate'] = discount_rate
+        cash_flows = calculate_cash_flows(sim_input)
+        npv = cash_flows[-1]['cumulativePV']
+        net_cash_flows = [row['netCashFlow'] for row in cash_flows]
+        irr = calculate_irr(net_cash_flows)
+        npvs.append(npv)
+        irrs.append(irr if irr is not None else float('nan'))
+    npvs_arr = np.array(npvs)
+    irrs_arr = np.array(irrs)
+    summary = {
+        'npv_mean': float(np.nanmean(npvs_arr)),
+        'npv_5th_percentile': float(np.nanpercentile(npvs_arr, 5)),
+        'npv_95th_percentile': float(np.nanpercentile(npvs_arr, 95)),
+        'irr_mean': float(np.nanmean(irrs_arr)),
+        'irr_5th_percentile': float(np.nanpercentile(irrs_arr, 5)),
+        'irr_95th_percentile': float(np.nanpercentile(irrs_arr, 95)),
+        'probability_npv_positive': float(np.mean(npvs_arr > 0)),
+    }
+    return jsonify({
+        'npv_results': npvs,
+        'irr_results': irrs,
+        'summary': summary
+    })
+
+@app.route('/api/valuations/monte-carlo-stream', methods=['GET'])
+def monte_carlo_stream():
+    num_simulations = int(request.args.get('num_simulations', 5000))
+    rent_growth_dist = json.loads(unquote(request.args.get('annual_rent_growth', '%7B%7D')))
+    discount_rate_dist = json.loads(unquote(request.args.get('discount_rate', '%7B%7D')))
+    # All other fields as base_input
+    base_input = {}
+    for k in request.args:
+        if k not in ['annual_rent_growth', 'discount_rate', 'num_simulations']:
+            try:
+                base_input[k] = float(request.args[k])
+            except ValueError:
+                base_input[k] = request.args[k]
+
+    def event_stream():
+        npvs = []
+        irrs = []
+        batch_size = 500
+        for i in range(num_simulations):
+            if rent_growth_dist['distribution'] == 'normal':
+                rent_growth = np.random.normal(rent_growth_dist['mean'], rent_growth_dist['stddev'])
+            else:
+                rent_growth = rent_growth_dist['mean']
+            if discount_rate_dist['distribution'] == 'normal':
+                discount_rate = np.random.normal(discount_rate_dist['mean'], discount_rate_dist['stddev'])
+            else:
+                discount_rate = discount_rate_dist['mean']
+            sim_input = base_input.copy()
+            sim_input['annual_rent_growth'] = rent_growth
+            sim_input['discount_rate'] = discount_rate
+            cash_flows = calculate_cash_flows(sim_input)
+            npv = cash_flows[-1]['cumulativePV']
+            net_cash_flows = [row['netCashFlow'] for row in cash_flows]
+            irr = calculate_irr(net_cash_flows)
+            npvs.append(npv)
+            irrs.append(irr if irr is not None else float('nan'))
+            if (i + 1) % batch_size == 0 or (i + 1) == num_simulations:
+                progress = i + 1
+                partial = {
+                    'progress': progress,
+                    'total': num_simulations,
+                    'npvs': npvs[:],
+                    'irrs': irrs[:],
+                }
+                yield f"data: {json.dumps(partial)}\n\n"
+        # Final summary
+        npvs_arr = np.array(npvs)
+        irrs_arr = np.array(irrs)
+        summary = {
+            'npv_mean': float(np.nanmean(npvs_arr)),
+            'npv_5th_percentile': float(np.nanpercentile(npvs_arr, 5)),
+            'npv_95th_percentile': float(np.nanpercentile(npvs_arr, 95)),
+            'irr_mean': float(np.nanmean(irrs_arr)),
+            'irr_5th_percentile': float(np.nanpercentile(irrs_arr, 5)),
+            'irr_95th_percentile': float(np.nanpercentile(irrs_arr, 95)),
+            'probability_npv_positive': float(np.mean(npvs_arr > 0)),
+        }
+        yield f"data: {json.dumps({'done': True, 'summary': summary, 'npvs': npvs, 'irrs': irrs})}\n\n"
+
+    return Response(stream_with_context(event_stream()), mimetype='text/event-stream')
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000) 

@@ -5,11 +5,13 @@ import { Property } from '@/types/dcf';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { propertiesAPI } from '@/lib/api/properties';
+import { valuationsAPI } from '@/lib/api/valuations';
 
 export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ribbons, setRibbons] = useState<Record<string, { status: 'loading' | 'buy' | 'no-buy' | 'none' }>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -18,6 +20,31 @@ export default function HomePage() {
       try {
         const data = await propertiesAPI.getAll();
         setProperties(data);
+        // For each property, fetch valuation and cash flows
+        const ribbonsObj: Record<string, { status: 'loading' | 'buy' | 'no-buy' | 'none' }> = {};
+        await Promise.all(data.map(async (property) => {
+          ribbonsObj[property.id] = { status: 'loading' };
+          const valuation = await valuationsAPI.getByPropertyId(property.id);
+          if (!valuation) {
+            ribbonsObj[property.id] = { status: 'none' };
+            return;
+          }
+          const cashFlows = await valuationsAPI.calculateCashFlows(valuation);
+          const npv = cashFlows[cashFlows.length - 1]?.cumulativePV;
+          const netCashFlows = cashFlows.map(row => row.netCashFlow);
+          let irr: number | null = null;
+          try {
+            irr = await valuationsAPI.calculateIRR(netCashFlows);
+          } catch {
+            irr = null;
+          }
+          if (npv > 0 && irr && irr > 0) {
+            ribbonsObj[property.id] = { status: 'buy' };
+          } else {
+            ribbonsObj[property.id] = { status: 'no-buy' };
+          }
+        }));
+        setRibbons(ribbonsObj);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties';
         setError(errorMessage);
@@ -58,17 +85,29 @@ export default function HomePage() {
               // Format the date
               const date = property.created_at ? new Date(property.created_at) : null;
               const formattedDate = date ? date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+              const ribbon = ribbons[property.id];
               return (
                 <Link
                   key={property.id}
                   href={`/properties/${property.id}/valuation`}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block focus:outline-none focus:ring-2"
+                  className="bg-white rounded-lg shadow-md p-8 min-h-[180px] hover:shadow-lg transition-shadow block focus:outline-none focus:ring-2 relative"
                   style={{ textDecoration: 'none', '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
                 >
-                  <div className="mb-4">
-                    <p className="text-xl font-bold text-gray-900 mb-2 break-words">{property.address}</p>
+                  {/* Ribbon */}
+                  {ribbon && ribbon.status !== 'none' && (
+                    <div
+                      className={`absolute top-0 right-0 px-6 py-2 rounded-tr-2xl rounded-bl-2xl text-base font-bold shadow-lg z-20 ${
+                        ribbon.status === 'buy' ? 'bg-green-500 text-white' : ribbon.status === 'no-buy' ? 'bg-red-600 text-white' : 'bg-gray-300 text-gray-700'
+                      }`}
+                      style={{ minWidth: 120, textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}
+                    >
+                      {ribbon.status === 'loading' ? '...' : ribbon.status === 'buy' ? 'BUY' : 'DO NOT BUY'}
+                    </div>
+                  )}
+                  <div className="mb-6 mt-4">
+                    <p className="text-2xl font-bold text-gray-900 mb-2 break-words">{property.address}</p>
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-sm text-gray-500">
                     {formattedDate && `Added: ${formattedDate}`}
                   </div>
                 </Link>

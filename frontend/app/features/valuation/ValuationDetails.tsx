@@ -6,6 +6,23 @@ import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import ValuationForm from '@/components/ValuationForm';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { valuationsAPI } from '@/lib/api/valuations';
+import Button from '@/components/Button';
+
+function getNumberColorClass(n: number) {
+  if (n > 0) return 'text-green-700 font-bold';
+  if (n < 0) return 'text-red-600 font-bold';
+  return 'text-gray-500 font-bold';
+}
+
+function getChanceLabel(prob: number) {
+  if (prob < 0.05) return 'Highly Unlikely';
+  if (prob < 0.2) return 'Unlikely';
+  if (prob < 0.4) return 'Somewhat Unlikely';
+  if (prob < 0.6) return 'Even Odds';
+  if (prob < 0.8) return 'Somewhat Likely';
+  if (prob < 0.95) return 'Likely';
+  return 'Highly Likely';
+}
 
 export default function ValuationDetailPage() {
   const { id } = useParams();
@@ -32,6 +49,16 @@ export default function ValuationDetailPage() {
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mcRentGrowthMean, setMcRentGrowthMean] = useState(2);
+  const [mcRentGrowthStd, setMcRentGrowthStd] = useState(1);
+  const [mcDiscountMean, setMcDiscountMean] = useState(15);
+  const [mcDiscountStd, setMcDiscountStd] = useState(2);
+  const [mcNumSim, setMcNumSim] = useState(5000);
+  const [mcResults, setMcResults] = useState<number[]>([]);
+  const [mcSummary, setMcSummary] = useState<any>(null);
+  const [mcProgress, setMcProgress] = useState(0);
+  const [mcTotal, setMcTotal] = useState(0);
+  const [mcRunning, setMcRunning] = useState(false);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -171,6 +198,70 @@ export default function ValuationDetailPage() {
     setSaving(false);
   };
 
+  const runMonteCarlo = async () => {
+    if (!valuation) return;
+    setMcRunning(true);
+    setMcProgress(0);
+    setMcTotal(mcNumSim);
+    setMcResults([]);
+    setMcSummary(null);
+    const params = new URLSearchParams({
+      ...Object.fromEntries(Object.entries(valuation).map(([k, v]) => [k, String(v)])),
+      annual_rent_growth: encodeURIComponent(JSON.stringify({ distribution: 'normal', mean: mcRentGrowthMean, stddev: mcRentGrowthStd })),
+      discount_rate: encodeURIComponent(JSON.stringify({ distribution: 'normal', mean: mcDiscountMean, stddev: mcDiscountStd })),
+      num_simulations: String(mcNumSim),
+    });
+    const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/valuations/monte-carlo-stream?${params.toString()}`;
+    const es = new window.EventSource(url);
+    let allNPVs: number[] = [];
+    es.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.done) {
+        setMcResults(data.npvs);
+        setMcSummary(data.summary);
+        setMcProgress(mcNumSim);
+        setMcRunning(false);
+        es.close();
+      } else {
+        setMcProgress(data.progress);
+        setMcTotal(data.total);
+        allNPVs = data.npvs;
+        setMcResults([...allNPVs]);
+      }
+    };
+    es.onerror = () => {
+      setMcRunning(false);
+      es.close();
+    };
+  };
+
+  function getHistogram(data: number[], bins: number) {
+    if (!data.length) return [];
+    const min = Math.min(...data), max = Math.max(...data);
+    const binSize = (max - min) / bins;
+    const hist = Array.from({ length: bins }, (_, i) => ({ count: 0, range: [min + i * binSize, min + (i + 1) * binSize], height: 0 }));
+    data.forEach(val => {
+      let idx = Math.floor((val - min) / binSize);
+      if (idx === bins) idx--;
+      hist[idx].count++;
+    });
+    const maxCount = Math.max(...hist.map(b => b.count));
+    hist.forEach(b => { b.height = Math.round((b.count / maxCount) * 100); });
+    return hist;
+  }
+
+  function formatXAxisTick(n: number) {
+    if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'm';
+    if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(0) + 'k';
+    return Math.round(n).toLocaleString();
+  }
+
+  function formatYAxisTick(n: number) {
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'm';
+    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'k';
+    return n.toLocaleString();
+  }
+
   return (
     <main className="bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
@@ -187,37 +278,32 @@ export default function ValuationDetailPage() {
               <h1 className="text-3xl font-bold text-gray-900">Property Valuation</h1>
               <div className="flex space-x-3">
                 {!isEditing && (
-                  <button
+                  <Button
                     onClick={handleEdit}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
-                    style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
-                    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
-                    onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
                   >
                     <PencilIcon className="w-4 h-4 mr-2" />
                     Edit
-                  </button>
+                  </Button>
                 )}
                 {isEditing && (
                   <>
-                    <button
+                    <Button
                       onClick={handleSave}
                       disabled={saving}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
-                      style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
-                      onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
-                      onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
                     >
                       <CheckIcon className="w-4 h-4 mr-2" />
                       {saving ? 'Saving...' : 'Save'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={handleCancel}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      variant="secondary"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md"
                     >
                       <XMarkIcon className="w-4 h-4 mr-2" />
                       Cancel
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
@@ -235,23 +321,7 @@ export default function ValuationDetailPage() {
 
             {/* Results */}
             {cashFlows.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6 relative">
-                {/* Recommendation Ribbon */}
-                {(() => {
-                  const npv = cashFlows[cashFlows.length - 1].cumulativePV;
-                  const irrValue = irr ?? 0;
-                  const isBuy = npv > 0 && irrValue > 0;
-                  return (
-                    <div
-                      className={`absolute top-0 right-0 px-6 py-2 rounded-bl-lg text-sm font-bold shadow-lg z-10 ${
-                        isBuy ? 'bg-green-500 text-white' : 'bg-red-600 text-white'
-                      }`}
-                      style={{ transform: 'translateY(-1px) translateX(1px)' }}
-                    >
-                      {isBuy ? 'BUY' : 'DO NOT BUY'}
-                    </div>
-                  );
-                })()}
+              <div className="bg-white rounded-lg shadow-md p-6 mb-8 relative">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Valuation Results</h2>
                 {/* Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -338,6 +408,209 @@ export default function ValuationDetailPage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+
+            {/* Monte Carlo Simulation */}
+            {!isEditing && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 className="text-xl font-bold mb-4">Monte Carlo Simulation</h2>
+                <p className="text-gray-600 mb-6">Simulate thousands of possible outcomes for this property based on your assumptions. Adjust the values below and click Run Simulation to see the range of possible results.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Rent Growth</h3>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mean (%)</label>
+                    <input type="number" value={mcRentGrowthMean} onChange={e => setMcRentGrowthMean(Number(e.target.value))} className="w-full p-2 border rounded mb-2" disabled={mcRunning} />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Stddev (%)</label>
+                    <input type="number" value={mcRentGrowthStd} onChange={e => setMcRentGrowthStd(Number(e.target.value))} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Discount Rate</h3>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mean (%)</label>
+                    <input type="number" value={mcDiscountMean} onChange={e => setMcDiscountMean(Number(e.target.value))} className="w-full p-2 border rounded mb-2" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Stddev (%)</label>
+                    <input type="number" value={mcDiscountStd} onChange={e => setMcDiscountStd(Number(e.target.value))} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Simulation Settings</h3>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Simulations</label>
+                    <input type="number" value={mcNumSim} min={5000} onChange={e => setMcNumSim(Math.max(5000, Number(e.target.value)))} className="w-full p-2 border rounded" />
+                    <Button
+                      onClick={runMonteCarlo}
+                      className="w-full mt-8 px-4 py-2"
+                      disabled={mcRunning}
+                    >
+                      {mcRunning ? `Running... (${mcProgress}/${mcTotal})` : 'Run Simulation'}
+                    </Button>
+                  </div>
+                </div>
+                {mcRunning && (
+                  <div className="w-full bg-gray-200 rounded h-2 mt-4 mb-4">
+                    <div
+                      className="bg-[var(--primary)] h-2 rounded"
+                      style={{ width: `${(mcProgress / mcTotal) * 100}%` }}
+                    />
+                  </div>
+                )}
+                {mcSummary && (
+                  <div className="mt-8">
+                    <h3 className="font-bold mb-2 text-lg">Summary</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-max w-auto text-base border-separate border-spacing-y-2">
+                        <tbody>
+                          <tr>
+                            <td className="font-bold text-right pr-4 text-[var(--color-dark)]">NPV Mean:</td>
+                            <td><span className={getNumberColorClass(mcSummary.npv_mean)}>{mcSummary.npv_mean > 0 ? '+' : ''}${mcSummary.npv_mean.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold text-right pr-4 text-[var(--color-dark)]">NPV 5th Percentile:</td>
+                            <td><span className={getNumberColorClass(mcSummary.npv_5th_percentile)}>${mcSummary.npv_5th_percentile.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold text-right pr-4 text-[var(--color-dark)]">NPV 95th Percentile:</td>
+                            <td><span className={getNumberColorClass(mcSummary.npv_95th_percentile)}>${mcSummary.npv_95th_percentile.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold text-right pr-4 text-[var(--color-dark)]">IRR Mean:</td>
+                            <td><span className={getNumberColorClass(mcSummary.irr_mean)}>{(mcSummary.irr_mean * 100).toFixed(2)}%</span></td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold text-right pr-4 text-[var(--color-dark)]">Chance of Positive NPV:</td>
+                            <td>
+                              <span className="text-gray-500 font-bold">{getChanceLabel(mcSummary.probability_npv_positive)} </span>
+                              <span className="text-gray-500 font-normal">({(mcSummary.probability_npv_positive * 100).toFixed(1)}%)</span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    {mcSummary.probability_npv_positive < 0.5 && (
+                      <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 font-semibold mt-4">
+                        Warning: This scenario is unlikely to be profitable under your current assumptions.
+                      </div>
+                    )}
+                  </div>
+                )}
+                {mcResults && mcResults.length > 0 && (
+                  <div className="mt-6">
+                    <div className="flex justify-center">
+                      <div
+                        className="relative bg-white border border-gray-200 rounded-lg"
+                        style={{ width: '100%', height: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
+                      >
+                        {/* Y-axis label */}
+                        <span
+                          className="absolute left-0 top-1/2 -translate-y-1/2 -rotate-90 text-base text-gray-600 font-medium"
+                          style={{ transform: 'translateY(-100%)' }}
+                        >
+                          Simulations
+                        </span>
+                        {/* X-axis label (now inside the border, just above the bottom edge) */}
+                        <span
+                          className="absolute left-1/2 text-base text-gray-600 font-medium"
+                          style={{ transform: 'translateX(-100%)', bottom: 24 }}
+                        >
+                          Net Present Value ($)
+                        </span>
+                        {/* Y-axis ticks */}
+                        {(() => {
+                          const hist = getHistogram(mcResults, 20);
+                          const maxCount = Math.max(...hist.map(b => b.count));
+                          return [0, 0.25, 0.5, 0.75, 1].map((t, i) => (
+                            <span
+                              key={i}
+                              className="absolute left-10 text-sm text-gray-400 font-semibold"
+                              style={{ bottom: `${60 + t * 360}px`, maxWidth: 48, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
+                              {formatYAxisTick(Math.round(maxCount * t))}
+                            </span>
+                          ));
+                        })()}
+                        {/* X-axis ticks */}
+                        {(() => {
+                          const hist = getHistogram(mcResults, 20);
+                          const min = hist[0].range[0];
+                          const max = hist[hist.length - 1].range[1];
+                          return [0, 0.25, 0.5, 0.75, 1].map((t, i) => (
+                            <span
+                              key={i}
+                              className="absolute bottom-14 text-sm text-gray-400 font-semibold"
+                              style={{ left: `calc(${60 + t * 860}px)`, maxWidth: 60, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
+                              {formatXAxisTick(min + t * (max - min))}
+                            </span>
+                          ));
+                        })()}
+                        {/* NPV=0 line (only if in range) */}
+                        {(() => {
+                          const data = mcResults;
+                          const min = Math.min(...data), max = Math.max(...data);
+                          if (min < 0 && max > 0) {
+                            const zeroPos = ((0 - min) / (max - min)) * 100;
+                            return (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  left: `calc(${zeroPos}% + 60px)`,
+                                  top: 64,
+                                  bottom: 64,
+                                  width: 3,
+                                  background: 'var(--color-danger, #e11d48)',
+                                  opacity: 0.35,
+                                  zIndex: 10,
+                                  borderRadius: 2,
+                                }}
+                                title="NPV = 0"
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+                        {/* Histogram bars with counts and tooltips */}
+                        <div
+                          className="flex items-end h-full w-full"
+                          style={{ paddingLeft: 60, paddingRight: 40, paddingTop: 96, paddingBottom: 80, gap: 8, overflow: 'visible' }}
+                        >
+                          {getHistogram(mcResults, 20).map((bin, i) => (
+                            <div
+                              key={i}
+                              className="relative flex flex-col items-center group"
+                              style={{ width: 28 }}
+                            >
+                              <div
+                                style={{
+                                  width: 20,
+                                  height: bin.height * 3.2,
+                                  background: 'var(--primary)',
+                                  marginRight: 2,
+                                  borderRadius: 6,
+                                  transition: 'background 0.2s',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                  cursor: 'pointer',
+                                }}
+                                title={`$${formatXAxisTick(bin.range[0])} to $${formatXAxisTick(bin.range[1])}: ${bin.count} simulations`}
+                              />
+                              <span
+                                className="text-base text-gray-700 font-bold mt-2"
+                                style={{ minWidth: 20, textAlign: 'center', letterSpacing: 0, maxWidth: 40, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              >
+                                {bin.count > 0 ? formatYAxisTick(bin.count) : ''}
+                              </span>
+                              {/* Tooltip on hover */}
+                              <span
+                                className="absolute z-20 px-2 py-1 rounded bg-gray-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                                style={{ bottom: 40, whiteSpace: 'nowrap' }}
+                              >
+                                ${formatXAxisTick(bin.range[0])} to ${formatXAxisTick(bin.range[1])}<br />
+                                {bin.count} simulations
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>
