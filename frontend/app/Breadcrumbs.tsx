@@ -48,7 +48,7 @@ export default function Breadcrumbs({ propertyId, last }: BreadcrumbsProps) {
           <li key={idx} className="flex items-center">
             {idx > 0 && <span className="mx-2">/</span>}
             {crumb.href ? (
-              <Link href={crumb.href} className="hover:underline text-blue-600">{crumb.name}</Link>
+              <Link href={crumb.href} className="hover:underline" style={{ color: 'var(--primary)' }}>{crumb.name}</Link>
             ) : (
               <span className="text-gray-700">{crumb.name}</span>
             )}

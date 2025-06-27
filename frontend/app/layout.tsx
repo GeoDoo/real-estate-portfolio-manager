@@ -31,7 +31,7 @@ export default function RootLayout({
           <div className="max-w-6xl mx-auto w-full">
             <div className="flex justify-between h-16 items-center">
               <div>
-                <a href="/" className="text-xl font-bold text-blue-700">Geoshan Properties Ltd</a>
+                <a href="/" className="text-xl font-bold" style={{ color: 'var(--primary)' }}>Geoshan Properties Ltd</a>
               </div>
             </div>
           </div>

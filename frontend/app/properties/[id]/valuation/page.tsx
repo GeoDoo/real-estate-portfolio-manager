@@ -206,7 +206,10 @@ export default function ValuationDetailPage() {
             {!isEditing && (
               <button
                 onClick={handleEdit}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
+                style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
+                onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
               >
                 <PencilIcon className="w-4 h-4 mr-2" />
                 Edit
@@ -217,14 +220,20 @@ export default function ValuationDetailPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                  onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
+                  onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
                 >
                   <CheckIcon className="w-4 h-4 mr-2" />
                   {saving ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md"
+                  style={{ color: 'var(--primary-dark)', backgroundColor: '#fff' }}
+                  onMouseOver={e => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                  onMouseOut={e => (e.currentTarget.style.backgroundColor = '#fff')}
                 >
                   <XMarkIcon className="w-4 h-4 mr-2" />
                   Cancel
@@ -233,7 +242,10 @@ export default function ValuationDetailPage() {
             )}
             <Link
               href={`/properties/${propertyId}/valuation/compare`}
-              className="inline-flex items-center px-4 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-white hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 ml-2"
+              className="inline-flex items-center px-4 py-2 border border-[var(--primary)] text-sm font-medium rounded-md ml-2"
+              style={{ color: 'var(--primary)', backgroundColor: '#fff', borderColor: 'var(--primary)' }}
+              onMouseOver={e => (e.currentTarget.style.backgroundColor = '#e6fcf7')}
+              onMouseOut={e => (e.currentTarget.style.backgroundColor = '#fff')}
             >
               <ChartBarIcon className="w-4 h-4 mr-2" />
               Compare
