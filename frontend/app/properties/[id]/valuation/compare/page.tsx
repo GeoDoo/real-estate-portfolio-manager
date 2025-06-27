@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { DCFRow, CashFlowRow } from '../../../../../types/dcf';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useParams } from 'next/navigation';
+import Breadcrumbs from '../../../../Breadcrumbs';
+import { config } from '../../../../config';
 
 export default function CompareValuationsPage() {
   const [valuations, setValuations] = useState<DCFRow[]>([]);
@@ -10,26 +12,31 @@ export default function CompareValuationsPage() {
   const [comparisonData, setComparisonData] = useState<{[key: string]: CashFlowRow[]}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { propertyId } = useParams();
+  const { id } = useParams();
+  const propertyId = Array.isArray(id) ? id[0] : id;
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:8000/api/properties/${propertyId}/valuation`, {
+        const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation`, {
           credentials: 'include'
         });
         if (!res.ok) {
-          setError('Failed to fetch valuations');
+          setError('Failed to fetch valuation');
           setValuations([]);
           setLoading(false);
           return;
         }
         const json = await res.json();
-        setValuations(Array.isArray(json) ? json : []);
+        if (json && json.id) {
+          setValuations([json]);
+        } else {
+          setValuations([]);
+        }
       } catch {
-        setError('Failed to fetch valuations');
+        setError('Failed to fetch valuation');
         setValuations([]);
       }
       setLoading(false);
@@ -48,7 +55,7 @@ export default function CompareValuationsPage() {
       
       for (const valuationId of selectedValuations) {
         try {
-          const res = await fetch(`http://localhost:8000/api/properties/${propertyId}/valuation/cashflows/${valuationId}`, {
+          const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation/cashflows/${valuationId}`, {
             credentials: 'include'
           });
           if (res.ok) {
@@ -91,6 +98,7 @@ export default function CompareValuationsPage() {
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
+        <Breadcrumbs propertyId={propertyId} last="Compare" />
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Compare Valuations</h1>
         
         {loading ? (

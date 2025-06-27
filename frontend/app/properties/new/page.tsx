@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { config } from '../../config';
 
 export default function NewPropertyPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function NewPropertyPage() {
     setError(null);
 
     try {
-      const res = await fetch('http://localhost:8000/api/properties', {
+      const res = await fetch(`${config.apiBaseUrl}/api/properties`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

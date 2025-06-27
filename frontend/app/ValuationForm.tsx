@@ -1,3 +1,4 @@
+"use client";
 import React from 'react';
 
 interface ValuationFormProps {
@@ -6,7 +7,6 @@ interface ValuationFormProps {
   onSubmit?: (e: React.FormEvent) => void;
   disabled?: boolean;
   error?: string | null;
-  submitLabel?: string;
 }
 
 export default function ValuationForm({ form, onChange, onSubmit, disabled = false, error }: ValuationFormProps) {
@@ -14,17 +14,14 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
     <form onSubmit={onSubmit} className="space-y-8">
       {/* Initial Costs (Year 0) */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center">
-          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium mr-3">Year 0</span>
-          Initial Investment & Setup Costs
-        </h2>
+        <h3 className="text-lg font-semibold text-gray-900">Initial Investment</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Initial Investment ($)
+              Purchase Price
             </label>
             <input
-              type="number"
+              type="text"
               name="initial_investment"
               value={form.initial_investment}
               onChange={onChange}
@@ -35,10 +32,10 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              One-time Expenses ($)
+              One-time Expenses
             </label>
             <input
-              type="number"
+              type="text"
               name="one_time_expenses"
               value={form.one_time_expenses}
               onChange={onChange}
@@ -50,21 +47,16 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
         </div>
       </div>
 
-      {/* Annual Revenue & Expenses */}
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center">
-          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">Annual</span>
-          Ongoing Revenue & Expenses
-        </h2>
-        {/* Revenue */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-700">Revenue</h3>
+      {/* Annual Income */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900">Annual Income</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Annual Rental Income ($)
+              Annual Rental Income
             </label>
             <input
-              type="number"
+              type="text"
               name="annual_rental_income"
               value={form.annual_rental_income}
               onChange={onChange}
@@ -74,111 +66,109 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
         </div>
-        {/* Annual Expenses */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-700">Annual Expenses</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Service Charge ($)
-              </label>
-              <input
-                type="number"
-                name="service_charge"
-                value={form.service_charge}
-                onChange={onChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0"
-                disabled={disabled}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ground Rent ($)
-              </label>
-              <input
-                type="number"
-                name="ground_rent"
-                value={form.ground_rent}
-                onChange={onChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0"
-                disabled={disabled}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Maintenance ($)
-              </label>
-              <input
-                type="number"
-                name="maintenance"
-                value={form.maintenance}
-                onChange={onChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0"
-                disabled={disabled}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Property Tax ($)
-              </label>
-              <input
-                type="number"
-                name="property_tax"
-                value={form.property_tax}
-                onChange={onChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0"
-                disabled={disabled}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Insurance ($)
-              </label>
-              <input
-                type="number"
-                name="insurance"
-                value={form.insurance}
-                onChange={onChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0"
-                disabled={disabled}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Management Fees (%)
-              </label>
-              <input
-                type="number"
-                name="management_fees"
-                value={form.management_fees}
-                onChange={onChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0"
-                disabled={disabled}
-              />
-            </div>
+      </div>
+
+      {/* Annual Expenses */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900">Annual Expenses</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Charge
+            </label>
+            <input
+              type="text"
+              name="service_charge"
+              value={form.service_charge}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ground Rent
+            </label>
+            <input
+              type="text"
+              name="ground_rent"
+              value={form.ground_rent}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Maintenance
+            </label>
+            <input
+              type="text"
+              name="maintenance"
+              value={form.maintenance}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Property Tax
+            </label>
+            <input
+              type="text"
+              name="property_tax"
+              value={form.property_tax}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Insurance
+            </label>
+            <input
+              type="text"
+              name="insurance"
+              value={form.insurance}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Management Fees
+            </label>
+            <input
+              type="text"
+              name="management_fees"
+              value={form.management_fees}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+              disabled={disabled}
+            />
           </div>
         </div>
       </div>
 
-      {/* Analysis Parameters */}
+      {/* Assumptions */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center">
-          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mr-3">Model</span>
-          Analysis Parameters
-        </h2>
+        <h3 className="text-lg font-semibold text-gray-900">Assumptions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Annual Rent Growth (%)
             </label>
             <input
-              type="number"
+              type="text"
               name="annual_rent_growth"
               value={form.annual_rent_growth}
               onChange={onChange}
@@ -192,7 +182,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               Discount Rate (%)
             </label>
             <input
-              type="number"
+              type="text"
               name="discount_rate"
               value={form.discount_rate}
               onChange={onChange}
@@ -203,10 +193,10 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Holding Period (years)
+              Holding Period (Years)
             </label>
             <input
-              type="number"
+              type="text"
               name="holding_period"
               value={form.holding_period}
               onChange={onChange}
@@ -217,6 +207,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
           </div>
         </div>
       </div>
+
       {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
     </form>
   );

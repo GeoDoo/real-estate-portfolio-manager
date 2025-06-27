@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Property } from '../types/dcf';
 import { EyeIcon, PlusIcon } from '@heroicons/react/24/outline';
+import Breadcrumbs from './Breadcrumbs';
+import { config } from './config';
 
 export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -16,7 +18,7 @@ export default function HomePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('http://localhost:8000/api/properties', {
+        const res = await fetch(`${config.apiBaseUrl}/api/properties`, {
           credentials: 'include'
         });
         if (!res.ok) {
@@ -42,8 +44,9 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12 px-4">
+    <main className="min-h-screen bg-gray-50 pt-[30px] px-4 pb-12">
       <div className="max-w-6xl mx-auto">
+        <Breadcrumbs last="Properties" propertyId="" />
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
           <Link

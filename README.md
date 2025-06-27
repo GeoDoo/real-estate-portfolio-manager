@@ -33,6 +33,21 @@ npm run dev
 
 The UI will be available at `http://localhost:3000`
 
+### 3. Environment Configuration (Optional)
+
+For production or custom setups, create environment files:
+
+**Frontend** (create `frontend/.env.local`):
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
+```
+
+**Backend** (set environment variables):
+```bash
+export FRONTEND_URL=http://localhost:3000
+```
+
 ## 📊 Features
 
 - **Mathematically Exact DCF Calculations**: Uses Python's `Fraction` module for precision
@@ -40,13 +55,16 @@ The UI will be available at `http://localhost:3000`
 - **Persistent Storage**: SQLite database for saving valuations
 - **Modern UI**: Clean, responsive Next.js interface
 - **RESTful API**: Full CRUD operations for valuations
+- **Dynamic Configuration**: Environment-based API URLs and CORS settings
+- **Smart Breadcrumbs**: Route-based navigation with dynamic generation
 
 ## 🔧 API Endpoints
 
-- `GET/POST /api/valuations` - List/create valuations
-- `GET/PUT/DELETE /api/valuations/<id>` - Get/update/delete specific valuation
-- `GET /api/valuations/<id>/cashflows` - Get DCF breakdown for valuation
+- `GET/POST /api/properties` - List/create properties
+- `GET /api/properties/<id>` - Get specific property
+- `GET/PUT /api/properties/<id>/valuation` - Get/update property valuation
 - `POST /api/cashflows/calculate` - Ad-hoc DCF calculation
+- `POST /api/cashflows/irr` - Calculate IRR from cash flows
 
 ## 📁 Project Structure
 
@@ -59,11 +77,21 @@ real-estate-portfolio-manager/
 │   └── venv/               # Python virtual environment
 ├── frontend/               # Next.js frontend
 │   ├── app/                # Next.js app directory
+│   │   ├── config.ts       # Centralized configuration
+│   │   ├── Breadcrumbs.tsx # Dynamic breadcrumb component
+│   │   └── ...             # Other components
 │   ├── package.json        # Node.js dependencies
-│   └── ...
-├── dcf_calculations.db     # SQLite database
+│   └── types/              # TypeScript type definitions
 └── README.md
 ```
+
+## 🎯 Key Improvements
+
+- **No Hardcoded Values**: All API URLs and configuration use environment variables
+- **Dynamic Breadcrumbs**: Automatically generated from current route
+- **Type Safety**: Proper TypeScript typing throughout
+- **Consistent UI**: Modern, responsive design with proper spacing
+- **Scalable Architecture**: Easy to deploy to different environments
 
 ## 🧮 Mathematical Precision
 

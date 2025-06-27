@@ -10,6 +10,12 @@ from scipy.optimize import brentq
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dcf_calculations.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# CORS configuration with environment variables
+CORS(app, origins=[
+    os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+], supports_credentials=True)
+
 db = SQLAlchemy(app)
 
 # SQLAlchemy model for Property
@@ -215,7 +221,9 @@ def options_handler(val_id=None):
 
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    # Use environment variable for CORS origin
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Origin', frontend_url)
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')

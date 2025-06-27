@@ -2,11 +2,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CashFlowRow, DCFRow } from '../../../../types/dcf';
-import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, CheckIcon, XMarkIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import ValuationForm from '../../../ValuationForm';
+import Link from 'next/link';
+import Breadcrumbs from '../../../Breadcrumbs';
+import { config } from '../../../config';
 
 export default function ValuationDetailPage() {
   const { id } = useParams();
+  const propertyId = Array.isArray(id) ? id[0] : id;
   const [valuation, setValuation] = useState<DCFRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +39,7 @@ export default function ValuationDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:8000/api/properties/${id}/valuation`, {
+        const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation`, {
           credentials: "include",
         });
         if (!res.ok) {
@@ -68,12 +72,12 @@ export default function ValuationDetailPage() {
       }
       setLoading(false);
     }
-    if (id) fetchValuation();
-  }, [id]);
+    if (propertyId) fetchValuation();
+  }, [propertyId]);
 
   async function fetchCashFlows(valuationData: DCFRow) {
     try {
-      const cfRes = await fetch(`http://localhost:8000/api/cashflows/calculate`, {
+      const cfRes = await fetch(`${config.apiBaseUrl}/api/cashflows/calculate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(valuationData),
@@ -84,7 +88,7 @@ export default function ValuationDetailPage() {
         // Fetch IRR if cash flows are available
         if (cfJson.cashFlows && cfJson.cashFlows.length > 1) {
           const netCashFlows = (cfJson.cashFlows as CashFlowRow[]).map((row) => row.netCashFlow);
-          const irrRes = await fetch("http://localhost:8000/api/cashflows/irr", {
+          const irrRes = await fetch(`${config.apiBaseUrl}/api/cashflows/irr`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ cash_flows: netCashFlows }),
@@ -141,26 +145,25 @@ export default function ValuationDetailPage() {
   };
 
   const handleSave = async () => {
-    if (!valuation) return;
     setSaving(true);
     setFormError(null);
-    // Convert all values to numbers, default to 0 if empty
     const data = {
-      initial_investment: Number(form.initial_investment) || 0,
-      annual_rental_income: Number(form.annual_rental_income) || 0,
-      service_charge: Number(form.service_charge) || 0,
-      ground_rent: Number(form.ground_rent) || 0,
-      maintenance: Number(form.maintenance) || 0,
-      property_tax: Number(form.property_tax) || 0,
-      insurance: Number(form.insurance) || 0,
-      management_fees: Number(form.management_fees) || 0,
-      one_time_expenses: Number(form.one_time_expenses) || 0,
-      annual_rent_growth: Number(form.annual_rent_growth) || 0,
-      discount_rate: Number(form.discount_rate) || 0,
-      holding_period: Number(form.holding_period) || 0,
+      initial_investment: parseFloat(form.initial_investment) || 0,
+      annual_rental_income: parseFloat(form.annual_rental_income) || 0,
+      service_charge: parseFloat(form.service_charge) || 0,
+      ground_rent: parseFloat(form.ground_rent) || 0,
+      maintenance: parseFloat(form.maintenance) || 0,
+      property_tax: parseFloat(form.property_tax) || 0,
+      insurance: parseFloat(form.insurance) || 0,
+      management_fees: parseFloat(form.management_fees) || 0,
+      one_time_expenses: parseFloat(form.one_time_expenses) || 0,
+      annual_rent_growth: parseFloat(form.annual_rent_growth) || 0,
+      discount_rate: parseFloat(form.discount_rate) || 0,
+      holding_period: parseFloat(form.holding_period) || 0,
     };
+
     try {
-      const res = await fetch(`http://localhost:8000/api/properties/${id}/valuation`, {
+      const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -196,36 +199,46 @@ export default function ValuationDetailPage() {
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
+        <Breadcrumbs propertyId={propertyId} />
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Valuation Details</h1>
-          {!isEditing && (
-            <button
-              onClick={handleEdit}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          <div className="flex items-center space-x-2">
+            {!isEditing && (
+              <button
+                onClick={handleEdit}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <PencilIcon className="w-4 h-4 mr-2" />
+                Edit
+              </button>
+            )}
+            {isEditing && (
+              <>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                >
+                  <CheckIcon className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <XMarkIcon className="w-4 h-4 mr-2" />
+                  Cancel
+                </button>
+              </>
+            )}
+            <Link
+              href={`/properties/${propertyId}/valuation/compare`}
+              className="inline-flex items-center px-4 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-white hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 ml-2"
             >
-              <PencilIcon className="w-4 h-4 mr-2" />
-              Edit
-            </button>
-          )}
-          {isEditing && (
-            <div className="flex space-x-2">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-              >
-                <CheckIcon className="w-4 h-4 mr-2" />
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={handleCancel}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <XMarkIcon className="w-4 h-4 mr-2" />
-                Cancel
-              </button>
-            </div>
-          )}
+              <ChartBarIcon className="w-4 h-4 mr-2" />
+              Compare
+            </Link>
+          </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-8 mb-8">
           <ValuationForm
