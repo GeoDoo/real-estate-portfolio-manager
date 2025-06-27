@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { DCFRow } from '../../types/dcf';
-import { EyeIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PlusIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 export default function ValuationsListPage() {
   const [valuations, setValuations] = useState<DCFRow[]>([]);
@@ -34,10 +34,58 @@ export default function ValuationsListPage() {
     fetchData();
   }, []);
 
+  const createNewScenario = async (baseValuation: DCFRow) => {
+    try {
+      const newValuation = {
+        initial_investment: baseValuation.initial_investment,
+        annual_rental_income: baseValuation.annual_rental_income,
+        service_charge: baseValuation.service_charge,
+        ground_rent: baseValuation.ground_rent,
+        maintenance: baseValuation.maintenance,
+        property_tax: baseValuation.property_tax,
+        insurance: baseValuation.insurance,
+        management_fees: baseValuation.management_fees,
+        one_time_expenses: baseValuation.one_time_expenses,
+        cash_flow_growth_rate: baseValuation.cash_flow_growth_rate,
+        discount_rate: baseValuation.discount_rate,
+        holding_period: baseValuation.holding_period,
+      };
+
+      const res = await fetch('http://localhost:8000/api/valuations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(newValuation),
+      });
+
+      if (res.ok) {
+        const newValuationData = await res.json();
+        // Redirect to the new valuation for editing
+        window.location.href = `/valuations/${newValuationData.id}`;
+      } else {
+        setError('Failed to create new scenario');
+      }
+    } catch {
+      setError('Failed to create new scenario');
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Saved Valuations</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Saved Valuations</h1>
+          {valuations.length > 1 && (
+            <Link
+              href="/valuations/compare"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            >
+              <ChartBarIcon className="w-4 h-4 mr-2" />
+              Compare Valuations
+            </Link>
+          )}
+        </div>
+        
         {loading ? (
           <div className="text-center text-gray-500">Loading...</div>
         ) : error ? (
@@ -70,14 +118,24 @@ export default function ValuationsListPage() {
                 {valuations.map((row, idx) => (
                   <tr key={row.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}`}>
                     <td className="py-2 px-4 sticky left-0 z-10 bg-white border-r border-gray-200 text-center align-middle shadow-md">
-                      <Link
-                        href={`/valuations/${row.id}`}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-blue-200 hover:border-blue-400 hover:bg-blue-50 hover:shadow text-blue-600 transition"
-                        title="View details"
-                      >
-                        <EyeIcon className="w-4 h-4" aria-hidden="true" />
-                        <span className="sr-only">View</span>
-                      </Link>
+                      <div className="flex space-x-2 justify-center">
+                        <Link
+                          href={`/valuations/${row.id}`}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-blue-200 hover:border-blue-400 hover:bg-blue-50 hover:shadow text-blue-600 transition"
+                          title="View details"
+                        >
+                          <EyeIcon className="w-4 h-4" aria-hidden="true" />
+                          <span className="sr-only">View</span>
+                        </Link>
+                        <button
+                          onClick={() => createNewScenario(row)}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-green-200 hover:border-green-400 hover:bg-green-50 hover:shadow text-green-600 transition"
+                          title="Create new scenario"
+                        >
+                          <PlusIcon className="w-4 h-4" aria-hidden="true" />
+                          <span className="sr-only">New Scenario</span>
+                        </button>
+                      </div>
                     </td>
                     <td className="py-2 px-4 font-mono text-xs">{row.id.substring(0, 8)}...</td>
                     <td className="py-2 px-4">{row.created_at}</td>
