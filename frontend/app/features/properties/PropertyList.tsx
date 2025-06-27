@@ -87,9 +87,8 @@ export default function HomePage() {
               const formattedDate = date ? date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
               const ribbon = ribbons[property.id];
               return (
-                <Link
+                <div
                   key={property.id}
-                  href={`/properties/${property.id}/valuation`}
                   className="bg-white rounded-lg shadow-md p-8 min-h-[180px] hover:shadow-lg transition-shadow block focus:outline-none focus:ring-2 relative"
                   style={{ textDecoration: 'none', '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
                 >
@@ -105,12 +104,30 @@ export default function HomePage() {
                     </div>
                   )}
                   <div className="mb-6 mt-4">
-                    <p className="text-2xl font-bold text-gray-900 mb-2 break-words">{property.address}</p>
+                    <Link
+                      href={`/properties/${property.id}/valuation`}
+                      className="text-2xl font-bold text-gray-900 mb-2 break-words hover:underline"
+                      style={{ display: 'inline-block' }}
+                    >
+                      {property.address}
+                    </Link>
+                    {property.listing_link && (
+                      <a
+                        href={property.listing_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-blue-600 hover:underline text-sm break-all"
+                        style={{ wordBreak: 'break-all' }}
+                      >
+                        View Listing
+                        <svg xmlns="http://www.w3.org/2000/svg" className="ml-1 h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
+                      </a>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
                     {formattedDate && `Added: ${formattedDate}`}
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>

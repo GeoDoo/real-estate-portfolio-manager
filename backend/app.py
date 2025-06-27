@@ -27,12 +27,14 @@ class Property(db.Model):
     id = db.Column(db.String, primary_key=True)
     address = db.Column(db.String, unique=True, nullable=False)
     created_at = db.Column(db.String)
+    listing_link = db.Column(db.String, nullable=True)
 
     def to_dict(self):
         return {
             'id': self.id,
             'address': self.address,
-            'created_at': self.created_at
+            'created_at': self.created_at,
+            'listing_link': self.listing_link,
         }
 
 # SQLAlchemy model for Valuation
@@ -253,7 +255,7 @@ def properties_collection():
             return jsonify({'error': 'Property with this address already exists'}), 400
         prop_id = str(uuid.uuid4())
         now = datetime.utcnow().isoformat()
-        prop = Property(id=prop_id, address=address, created_at=now)
+        prop = Property(id=prop_id, address=address, created_at=now, listing_link=data.get('listing_link'))
         db.session.add(prop)
         db.session.commit()
         return jsonify(clean_for_json(prop.to_dict())), 201

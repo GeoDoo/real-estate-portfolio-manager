@@ -7,7 +7,8 @@ import Button from '@/components/Button';
 export default function NewPropertyPage() {
   const router = useRouter();
   const [form, setForm] = useState({
-    address: ''
+    address: '',
+    listing_link: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,22 @@ export default function NewPropertyPage() {
                 placeholder="e.g., 123 Main St, Apt 4B, New York, NY 10001"
                 required
                 disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Listing Link (optional)
+              </label>
+              <input
+                type="url"
+                name="listing_link"
+                value={form.listing_link}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
+                placeholder="e.g., https://www.rightmove.co.uk/properties/123456"
+                disabled={loading}
+                pattern="https?://.*"
               />
             </div>
 
