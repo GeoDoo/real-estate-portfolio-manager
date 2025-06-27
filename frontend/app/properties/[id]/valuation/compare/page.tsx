@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { DCFRow, CashFlowRow } from '../../../types/dcf';
+import { DCFRow, CashFlowRow } from '../../../../../types/dcf';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useParams } from 'next/navigation';
 
 export default function CompareValuationsPage() {
   const [valuations, setValuations] = useState<DCFRow[]>([]);
@@ -9,13 +10,14 @@ export default function CompareValuationsPage() {
   const [comparisonData, setComparisonData] = useState<{[key: string]: CashFlowRow[]}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { propertyId } = useParams();
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('http://localhost:8000/api/valuations', {
+        const res = await fetch(`http://localhost:8000/api/properties/${propertyId}/valuation`, {
           credentials: 'include'
         });
         if (!res.ok) {
@@ -33,7 +35,7 @@ export default function CompareValuationsPage() {
       setLoading(false);
     }
     fetchData();
-  }, []);
+  }, [propertyId]);
 
   useEffect(() => {
     async function fetchComparisonData() {
@@ -46,7 +48,7 @@ export default function CompareValuationsPage() {
       
       for (const valuationId of selectedValuations) {
         try {
-          const res = await fetch(`http://localhost:8000/api/valuations/${valuationId}/cashflows`, {
+          const res = await fetch(`http://localhost:8000/api/properties/${propertyId}/valuation/cashflows/${valuationId}`, {
             credentials: 'include'
           });
           if (res.ok) {
@@ -62,7 +64,7 @@ export default function CompareValuationsPage() {
     }
 
     fetchComparisonData();
-  }, [selectedValuations]);
+  }, [selectedValuations, propertyId]);
 
   const toggleValuationSelection = (valuationId: string) => {
     setSelectedValuations(prev => 

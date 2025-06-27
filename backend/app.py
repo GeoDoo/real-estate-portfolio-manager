@@ -12,9 +12,23 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirn
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# SQLAlchemy model for Property
+class Property(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    address = db.Column(db.String, unique=True, nullable=False)
+    created_at = db.Column(db.String)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'address': self.address,
+            'created_at': self.created_at
+        }
+
 # SQLAlchemy model for Valuation
 class Valuation(db.Model):
     id = db.Column(db.String, primary_key=True)
+    property_id = db.Column(db.String, db.ForeignKey('property.id'), unique=True, nullable=False)
     created_at = db.Column(db.String)
     initial_investment = db.Column(db.Float)
     annual_rental_income = db.Column(db.Float)
@@ -32,6 +46,7 @@ class Valuation(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'property_id': self.property_id,
             'created_at': self.created_at,
             'initial_investment': self.initial_investment,
             'annual_rental_income': self.annual_rental_income,
@@ -205,6 +220,78 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
+
+# --- Property Endpoints ---
+@app.route('/api/properties', methods=['GET', 'POST'])
+def properties_collection():
+    if request.method == 'GET':
+        props = Property.query.all()
+        return jsonify([p.to_dict() for p in props])
+    elif request.method == 'POST':
+        data = request.json
+        address = data.get('address')
+        if not address:
+            return jsonify({'error': 'Address is required'}), 400
+        if Property.query.filter_by(address=address).first():
+            return jsonify({'error': 'Property with this address already exists'}), 400
+        prop_id = str(uuid.uuid4())
+        now = datetime.utcnow().isoformat()
+        prop = Property(id=prop_id, address=address, created_at=now)
+        db.session.add(prop)
+        db.session.commit()
+        return jsonify(prop.to_dict()), 201
+
+@app.route('/api/properties/<prop_id>', methods=['GET'])
+def property_item(prop_id):
+    prop = Property.query.get(prop_id)
+    if not prop:
+        abort(404)
+    return jsonify(prop.to_dict())
+
+# --- Property Valuation Endpoints ---
+@app.route('/api/properties/<prop_id>/valuation', methods=['GET', 'POST'])
+def property_valuation(prop_id):
+    prop = Property.query.get(prop_id)
+    if not prop:
+        abort(404)
+    if request.method == 'GET':
+        val = Valuation.query.filter_by(property_id=prop_id).first()
+        if not val:
+            return jsonify({}), 200
+        return jsonify(val.to_dict())
+    elif request.method == 'POST':
+        data = request.json
+        val = Valuation.query.filter_by(property_id=prop_id).first()
+        now = datetime.utcnow().isoformat()
+        if val:
+            # Update existing valuation
+            for key, value in data.items():
+                if hasattr(val, key):
+                    setattr(val, key, value)
+            val.created_at = now
+        else:
+            # Create new valuation
+            val_id = str(uuid.uuid4())
+            val = Valuation(
+                id=val_id,
+                property_id=prop_id,
+                created_at=now,
+                initial_investment=data.get('initial_investment', 0),
+                annual_rental_income=data.get('annual_rental_income', 0),
+                service_charge=data.get('service_charge', 0),
+                ground_rent=data.get('ground_rent', 0),
+                maintenance=data.get('maintenance', 0),
+                property_tax=data.get('property_tax', 0),
+                insurance=data.get('insurance', 0),
+                management_fees=data.get('management_fees', 0),
+                one_time_expenses=data.get('one_time_expenses', 0),
+                annual_rent_growth=data.get('annual_rent_growth', 0),
+                discount_rate=data.get('discount_rate', 0),
+                holding_period=data.get('holding_period', 0)
+            )
+            db.session.add(val)
+        db.session.commit()
+        return jsonify(val.to_dict()), 201
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000) 

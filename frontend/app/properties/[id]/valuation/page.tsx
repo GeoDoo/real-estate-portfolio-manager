@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { CashFlowRow, DCFRow } from '../../../types/dcf';
+import { CashFlowRow, DCFRow } from '../../../../types/dcf';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import ValuationForm from '../../ValuationForm';
+import ValuationForm from '../../../ValuationForm';
 
 export default function ValuationDetailPage() {
   const { id } = useParams();
@@ -35,7 +35,7 @@ export default function ValuationDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:8000/api/valuations/${id}`, {
+        const res = await fetch(`http://localhost:8000/api/properties/${id}/valuation`, {
           credentials: "include",
         });
         if (!res.ok) {
@@ -160,7 +160,7 @@ export default function ValuationDetailPage() {
       holding_period: Number(form.holding_period) || 0,
     };
     try {
-      const res = await fetch(`http://localhost:8000/api/valuations/${valuation.id}`, {
+      const res = await fetch(`http://localhost:8000/api/properties/${id}/valuation`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

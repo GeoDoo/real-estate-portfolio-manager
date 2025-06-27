@@ -6,6 +6,7 @@ interface ValuationFormProps {
   onSubmit?: (e: React.FormEvent) => void;
   disabled?: boolean;
   error?: string | null;
+  submitLabel?: string;
 }
 
 export default function ValuationForm({ form, onChange, onSubmit, disabled = false, error }: ValuationFormProps) {

@@ -1,116 +1,89 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { DCFRow } from '../types/dcf';
-import { EyeIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { Property } from '../types/dcf';
+import { EyeIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export default function HomePage() {
-  const [valuations, setValuations] = useState<DCFRow[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('http://localhost:8000/api/valuations', {
+        const res = await fetch('http://localhost:8000/api/properties', {
           credentials: 'include'
         });
         if (!res.ok) {
-          setError('Failed to fetch valuations');
-          setValuations([]);
+          setError('Failed to fetch properties');
+          setProperties([]);
           setLoading(false);
           return;
         }
         const json = await res.json();
-        setValuations(Array.isArray(json) ? json : []);
+        setProperties(Array.isArray(json) ? json : []);
       } catch {
-        setError('Failed to fetch valuations');
-        setValuations([]);
+        setError('Failed to fetch properties');
+        setProperties([]);
       }
       setLoading(false);
     }
     fetchData();
   }, []);
 
+  // Handler for viewing valuation
+  const handleViewValuation = (propertyId: string) => {
+    router.push(`/properties/${propertyId}/valuation`);
+  };
+
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 text-left">Saved Valuations</h1>
-          {valuations.length > 1 && (
-            <Link
-              href="/valuations/compare"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-            >
-              <ChartBarIcon className="w-4 h-4 mr-2" />
-              Compare Valuations
-            </Link>
-          )}
+          <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
+          <Link
+            href="/properties/new"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add Property
+          </Link>
         </div>
         
         {loading ? (
           <div className="text-center text-gray-500">Loading...</div>
         ) : error ? (
           <div className="text-center text-red-600">{error}</div>
-        ) : valuations.length === 0 ? (
-          <div className="text-center text-gray-500">No valuations found.</div>
+        ) : properties.length === 0 ? (
+          <div className="text-center text-gray-500">No properties found.</div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="min-w-[1400px] w-full text-sm bg-white rounded-lg shadow-md">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-3 px-4 whitespace-nowrap sticky left-0 z-10 bg-white border-r border-gray-200 text-center align-middle shadow-md">Actions</th>
-                  <th className="py-3 px-4 whitespace-nowrap">ID</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Created At</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Initial Investment ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Annual Rental Income ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Service Charge ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Ground Rent ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Maintenance ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Property Tax ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Insurance ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Management Fees (%)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">One-time Expenses ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Annual Rent Growth (%)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Discount Rate (%)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Holding Period</th>
-                </tr>
-              </thead>
-              <tbody>
-                {valuations.map((row, idx) => (
-                  <tr key={row.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}`}>
-                    <td className="py-2 px-4 sticky left-0 z-10 bg-white border-r border-gray-200 text-center align-middle shadow-md">
-                      <div className="flex space-x-2 justify-center">
-                        <Link
-                          href={`/valuations/${row.id}`}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-blue-200 hover:border-blue-400 hover:bg-blue-50 hover:shadow text-blue-600 transition"
-                          title="View details"
-                        >
-                          <EyeIcon className="w-4 h-4" aria-hidden="true" />
-                          <span className="sr-only">View</span>
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="py-2 px-4 font-mono text-xs">{row.id.substring(0, 8)}...</td>
-                    <td className="py-2 px-4">{row.created_at}</td>
-                    <td className="py-2 px-4">{row.initial_investment}</td>
-                    <td className="py-2 px-4">{row.annual_rental_income}</td>
-                    <td className="py-2 px-4">{row.service_charge}</td>
-                    <td className="py-2 px-4">{row.ground_rent}</td>
-                    <td className="py-2 px-4">{row.maintenance}</td>
-                    <td className="py-2 px-4">{row.property_tax}</td>
-                    <td className="py-2 px-4">{row.insurance}</td>
-                    <td className="py-2 px-4">{row.management_fees}%</td>
-                    <td className="py-2 px-4">{row.one_time_expenses}</td>
-                    <td className="py-2 px-4">{row.annual_rent_growth}</td>
-                    <td className="py-2 px-4">{row.discount_rate}</td>
-                    <td className="py-2 px-4">{row.holding_period}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {properties.map((property) => (
+              <div key={property.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <p className="text-base font-semibold text-gray-900 mb-2">{property.address}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleViewValuation(property.id)}
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-blue-200 hover:border-blue-400 hover:bg-blue-50 hover:shadow text-blue-600 transition"
+                    title="View valuation"
+                  >
+                    <EyeIcon className="w-4 h-4" aria-hidden="true" />
+                    <span className="sr-only">View</span>
+                  </button>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Added: {property.created_at}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
