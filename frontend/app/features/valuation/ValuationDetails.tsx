@@ -106,7 +106,7 @@ export default function ValuationDetailPage() {
       const cashFlowsData = await valuationsAPI.calculateCashFlows(valuationData);
       setCashFlows(cashFlowsData);
       
-      // Fetch IRR if cash flows are available
+        // Fetch IRR if cash flows are available
       if (cashFlowsData && cashFlowsData.length > 1) {
         const netCashFlows = cashFlowsData.map((row) => row.netCashFlow);
         const irrValue = await valuationsAPI.calculateIRR(netCashFlows);
@@ -174,23 +174,23 @@ export default function ValuationDetailPage() {
 
     try {
       const updatedValuation = await valuationsAPI.save(propertyId, data);
-      setValuation(updatedValuation);
-      setIsEditing(false);
-      setForm({
-        initial_investment: String(updatedValuation.initial_investment ?? ''),
-        annual_rental_income: String(updatedValuation.annual_rental_income ?? ''),
-        service_charge: String(updatedValuation.service_charge ?? ''),
-        ground_rent: String(updatedValuation.ground_rent ?? ''),
-        maintenance: String(updatedValuation.maintenance ?? ''),
-        property_tax: String(updatedValuation.property_tax ?? ''),
-        insurance: String(updatedValuation.insurance ?? ''),
-        management_fees: String(updatedValuation.management_fees ?? ''),
-        transaction_costs: String(updatedValuation.transaction_costs ?? ''),
-        annual_rent_growth: String(updatedValuation.annual_rent_growth ?? ''),
-        discount_rate: String(updatedValuation.discount_rate ?? ''),
-        holding_period: String(updatedValuation.holding_period ?? ''),
-      });
-      await fetchCashFlows(updatedValuation);
+        setValuation(updatedValuation);
+        setIsEditing(false);
+        setForm({
+          initial_investment: String(updatedValuation.initial_investment ?? ''),
+          annual_rental_income: String(updatedValuation.annual_rental_income ?? ''),
+          service_charge: String(updatedValuation.service_charge ?? ''),
+          ground_rent: String(updatedValuation.ground_rent ?? ''),
+          maintenance: String(updatedValuation.maintenance ?? ''),
+          property_tax: String(updatedValuation.property_tax ?? ''),
+          insurance: String(updatedValuation.insurance ?? ''),
+          management_fees: String(updatedValuation.management_fees ?? ''),
+          transaction_costs: String(updatedValuation.transaction_costs ?? ''),
+          annual_rent_growth: String(updatedValuation.annual_rent_growth ?? ''),
+          discount_rate: String(updatedValuation.discount_rate ?? ''),
+          holding_period: String(updatedValuation.holding_period ?? ''),
+        });
+        await fetchCashFlows(updatedValuation);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save changes';
       setFormError(errorMessage);
@@ -284,50 +284,50 @@ export default function ValuationDetailPage() {
         ) : (
           <>
             {/* Header */}
-            <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Property Valuation</h1>
               <div className="flex space-x-3">
-                {!isEditing && (
+            {!isEditing && (
                   <Button
-                    onClick={handleEdit}
+                onClick={handleEdit}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
-                  >
-                    <PencilIcon className="w-4 h-4 mr-2" />
-                    Edit
+              >
+                <PencilIcon className="w-4 h-4 mr-2" />
+                Edit
                   </Button>
-                )}
-                {isEditing && (
-                  <>
+            )}
+            {isEditing && (
+              <>
                     <Button
-                      onClick={handleSave}
-                      disabled={saving}
+                  onClick={handleSave}
+                  disabled={saving}
                       className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
-                    >
-                      <CheckIcon className="w-4 h-4 mr-2" />
-                      {saving ? 'Saving...' : 'Save'}
+                >
+                  <CheckIcon className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save'}
                     </Button>
                     <Button
-                      onClick={handleCancel}
+                  onClick={handleCancel}
                       variant="secondary"
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md"
-                    >
-                      <XMarkIcon className="w-4 h-4 mr-2" />
-                      Cancel
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md"
+                >
+                  <XMarkIcon className="w-4 h-4 mr-2" />
+                  Cancel
                     </Button>
-                  </>
-                )}
-              </div>
-            </div>
+              </>
+            )}
+          </div>
+        </div>
 
             {/* Valuation Form */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <ValuationForm
-                form={form}
-                onChange={handleFormChange}
-                disabled={!isEditing}
-                error={formError}
-              />
-            </div>
+          <ValuationForm
+            form={form}
+            onChange={handleFormChange}
+            disabled={!isEditing}
+            error={formError}
+          />
+        </div>
 
             {/* Results */}
             {cashFlows.length > 0 && (
@@ -364,17 +364,17 @@ export default function ValuationDetailPage() {
                 {/* Cash Flow Table */}
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
-                    <thead>
+                  <thead>
                       <tr className="border-b border-gray-200">
                         <th className="py-2 px-4 text-left">Year</th>
-                        <th className="py-2 px-4 text-right">Revenue ($)</th>
+                      <th className="py-2 px-4 text-right">Revenue ($)</th>
                         <th className="py-2 px-4 text-right">Expenses ($)</th>
-                        <th className="py-2 px-4 text-right">Net Cash Flow ($)</th>
-                        <th className="py-2 px-4 text-right">Present Value ($)</th>
-                        <th className="py-2 px-4 text-right">Cumulative PV ($)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                      <th className="py-2 px-4 text-right">Net Cash Flow ($)</th>
+                      <th className="py-2 px-4 text-right">Present Value ($)</th>
+                      <th className="py-2 px-4 text-right">Cumulative PV ($)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                       {cashFlows.map((row, index) => (
                         <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           <td className="py-2 px-4">{row.year}</td>
@@ -413,10 +413,10 @@ export default function ValuationDetailPage() {
                               {row.cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                             </span>
                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
                 </div>
               </div>
             )}
@@ -624,10 +624,10 @@ export default function ValuationDetailPage() {
                           })()}
                         </div>
                       </div>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
+            )}
+          </div>
             )}
           </>
         )}

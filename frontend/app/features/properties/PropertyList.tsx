@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Property } from '@/types/dcf';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { propertiesAPI } from '@/lib/api/properties';
 import { valuationsAPI } from '@/lib/api/valuations';
 
 export default function HomePage() {
+  const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,10 @@ export default function HomePage() {
     fetchData();
   }, []);
 
+  const handleEditProperty = (property: Property) => {
+    router.push(`/properties/${property.id}/edit`);
+  };
+
   return (
     <main className="min-h-screen bg-gray-50 pt-[30px] px-4 pb-12">
       <div className="max-w-6xl mx-auto">
@@ -92,6 +98,15 @@ export default function HomePage() {
                   className="bg-white rounded-lg shadow-md p-8 min-h-[180px] hover:shadow-lg transition-shadow block focus:outline-none focus:ring-2 relative"
                   style={{ textDecoration: 'none', '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
                 >
+                  {/* Edit Button - top left */}
+                  <button
+                    onClick={() => handleEditProperty(property)}
+                    className="absolute top-0 left-0 m-2 p-1 text-gray-400 hover:text-gray-600 transition-colors z-30"
+                    title="Edit Property"
+                  >
+                    <PencilIcon className="w-5 h-5" />
+                  </button>
+                  
                   {/* Ribbon */}
                   {ribbon && ribbon.status !== 'none' && (
                     <div

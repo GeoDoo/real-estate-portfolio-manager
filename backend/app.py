@@ -260,12 +260,28 @@ def properties_collection():
         db.session.commit()
         return jsonify(clean_for_json(prop.to_dict())), 201
 
-@app.route('/api/properties/<prop_id>', methods=['GET'])
+@app.route('/api/properties/<prop_id>', methods=['GET', 'PUT'])
 def property_item(prop_id):
     prop = Property.query.get(prop_id)
     if not prop:
         abort(404)
-    return jsonify(clean_for_json(prop.to_dict()))
+    
+    if request.method == 'GET':
+        return jsonify(clean_for_json(prop.to_dict()))
+    elif request.method == 'PUT':
+        data = request.json
+        address = data.get('address')
+        if not address:
+            return jsonify({'error': 'Address is required'}), 400
+        
+        # Check if address is being changed and if it conflicts with existing property
+        if address != prop.address and Property.query.filter_by(address=address).first():
+            return jsonify({'error': 'Property with this address already exists'}), 400
+        
+        prop.address = address
+        prop.listing_link = data.get('listing_link')
+        db.session.commit()
+        return jsonify(clean_for_json(prop.to_dict()))
 
 # --- Property Valuation Endpoints ---
 @app.route('/api/properties/<prop_id>/valuation', methods=['GET', 'POST', 'PUT'])

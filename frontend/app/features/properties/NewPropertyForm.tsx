@@ -1,17 +1,33 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Property } from '@/types/dcf';
 import { propertiesAPI } from '@/lib/api/properties';
 import Button from '@/components/Button';
 
-export default function NewPropertyPage() {
+interface NewPropertyFormProps {
+  property?: Property; // Optional - if provided, we're editing
+}
+
+export default function NewPropertyForm({ property }: NewPropertyFormProps) {
   const router = useRouter();
+  const isEditing = !!property;
   const [form, setForm] = useState({
     address: '',
     listing_link: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize form with property data if editing
+  useEffect(() => {
+    if (property) {
+      setForm({
+        address: property.address,
+        listing_link: property.listing_link || '',
+      });
+    }
+  }, [property]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({
@@ -26,10 +42,18 @@ export default function NewPropertyPage() {
     setError(null);
 
     try {
-      const property = await propertiesAPI.create(form);
-      router.push(`/properties/${property.id}/valuation`);
+      if (isEditing && property) {
+        // Update existing property
+        await propertiesAPI.update(property.id, form);
+        router.push('/');
+      } else {
+        // Create new property
+        const newProperty = await propertiesAPI.create(form);
+        router.push(`/properties/${newProperty.id}/valuation`);
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create property';
+      const errorMessage = err instanceof Error ? err.message : 
+        isEditing ? 'Failed to update property' : 'Failed to create property';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -40,7 +64,9 @@ export default function NewPropertyPage() {
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Add New Property</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isEditing ? 'Edit Property' : 'Add New Property'}
+          </h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -87,7 +113,7 @@ export default function NewPropertyPage() {
               className="w-full mt-4"
               disabled={loading}
             >
-              {loading ? 'Adding...' : 'Add Property'}
+              {loading ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update Property' : 'Add Property')}
             </Button>
           </form>
         </div>

@@ -16,7 +16,7 @@ export const propertiesAPI = {
   },
 
   // Create a new property
-  create: async (data: { address: string }): Promise<Property> => {
+  create: async (data: { address: string; listing_link?: string }): Promise<Property> => {
     try {
       return await api.post<Property>('/api/properties', data);
     } catch (error) {
@@ -24,6 +24,18 @@ export const propertiesAPI = {
         throw error;
       }
       throw new APIError('Failed to create property');
+    }
+  },
+
+  // Update a property
+  update: async (id: string, data: { address: string; listing_link?: string }): Promise<Property> => {
+    try {
+      return await api.put<Property>(`/api/properties/${id}`, data);
+    } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new APIError('Failed to update property');
     }
   },
 
