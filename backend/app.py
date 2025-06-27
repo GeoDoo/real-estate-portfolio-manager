@@ -9,6 +9,7 @@ from scipy.optimize import brentq
 import numpy as np
 import json
 from urllib.parse import unquote
+import math
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dcf_calculations.db')
@@ -169,7 +170,7 @@ def valuations_collection():
         )
         db.session.add(valuation)
         db.session.commit()
-        return jsonify(valuation.to_dict()), 201
+        return jsonify(clean_for_json(valuation.to_dict())), 201
 
 # GET/PUT/DELETE /api/valuations/<id>
 @app.route('/api/valuations/<val_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -178,14 +179,14 @@ def valuation_item(val_id):
     if not valuation:
         abort(404)
     if request.method == 'GET':
-        return jsonify(valuation.to_dict())
+        return jsonify(clean_for_json(valuation.to_dict()))
     elif request.method == 'PUT':
         data = request.json
         for key, value in data.items():
             if hasattr(valuation, key):
                 setattr(valuation, key, value)
         db.session.commit()
-        return jsonify(valuation.to_dict())
+        return jsonify(clean_for_json(valuation.to_dict()))
     elif request.method == 'DELETE':
         db.session.delete(valuation)
         db.session.commit()
@@ -255,14 +256,14 @@ def properties_collection():
         prop = Property(id=prop_id, address=address, created_at=now)
         db.session.add(prop)
         db.session.commit()
-        return jsonify(prop.to_dict()), 201
+        return jsonify(clean_for_json(prop.to_dict())), 201
 
 @app.route('/api/properties/<prop_id>', methods=['GET'])
 def property_item(prop_id):
     prop = Property.query.get(prop_id)
     if not prop:
         abort(404)
-    return jsonify(prop.to_dict())
+    return jsonify(clean_for_json(prop.to_dict()))
 
 # --- Property Valuation Endpoints ---
 @app.route('/api/properties/<prop_id>/valuation', methods=['GET', 'POST', 'PUT'])
@@ -274,7 +275,7 @@ def property_valuation(prop_id):
         val = Valuation.query.filter_by(property_id=prop_id).first()
         if not val:
             return jsonify({}), 200
-        return jsonify(val.to_dict())
+        return jsonify(clean_for_json(val.to_dict()))
     elif request.method in ['POST', 'PUT']:
         data = request.json
         val = Valuation.query.filter_by(property_id=prop_id).first()
@@ -307,7 +308,7 @@ def property_valuation(prop_id):
             )
             db.session.add(val)
         db.session.commit()
-        return jsonify(val.to_dict()), 201
+        return jsonify(clean_for_json(val.to_dict())), 201
 
 @app.route('/api/valuations/monte-carlo', methods=['POST'])
 def monte_carlo_valuation():
@@ -355,6 +356,17 @@ def monte_carlo_valuation():
         'summary': summary
     })
 
+def clean_for_json(obj):
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    elif isinstance(obj, list):
+        return [clean_for_json(x) for x in obj]
+    elif isinstance(obj, dict):
+        return {k: clean_for_json(v) for k, v in obj.items()}
+    return obj
+
 @app.route('/api/valuations/monte-carlo-stream', methods=['GET'])
 def monte_carlo_stream():
     num_simulations = int(request.args.get('num_simulations', 5000))
@@ -399,7 +411,7 @@ def monte_carlo_stream():
                     'npvs': npvs[:],
                     'irrs': irrs[:],
                 }
-                yield f"data: {json.dumps(partial)}\n\n"
+                yield f"data: {json.dumps(clean_for_json(partial))}\n\n"
         # Final summary
         npvs_arr = np.array(npvs)
         irrs_arr = np.array(irrs)
@@ -412,7 +424,7 @@ def monte_carlo_stream():
             'irr_95th_percentile': float(np.nanpercentile(irrs_arr, 95)),
             'probability_npv_positive': float(np.mean(npvs_arr > 0)),
         }
-        yield f"data: {json.dumps({'done': True, 'summary': summary, 'npvs': npvs, 'irrs': irrs})}\n\n"
+        yield f"data: {json.dumps(clean_for_json({'done': True, 'summary': summary, 'npvs': npvs, 'irrs': irrs}))}\n\n"
 
     return Response(stream_with_context(event_stream()), mimetype='text/event-stream')
 
