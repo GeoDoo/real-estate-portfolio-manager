@@ -313,7 +313,7 @@ def property_valuation(prop_id):
 @app.route('/api/valuations/monte-carlo', methods=['POST'])
 def monte_carlo_valuation():
     data = request.json
-    num_simulations = max(5000, data.get('num_simulations', 1000))
+    num_simulations = max(10000, data.get('num_simulations', 1000))
     # Support normal distribution for annual_rent_growth and discount_rate
     rent_growth_dist = data.get('annual_rent_growth', {'distribution': 'normal', 'mean': 2, 'stddev': 1})
     discount_rate_dist = data.get('discount_rate', {'distribution': 'normal', 'mean': 15, 'stddev': 2})
@@ -369,7 +369,7 @@ def clean_for_json(obj):
 
 @app.route('/api/valuations/monte-carlo-stream', methods=['GET'])
 def monte_carlo_stream():
-    num_simulations = int(request.args.get('num_simulations', 5000))
+    num_simulations = max(10000, int(request.args.get('num_simulations', 10000)))
     rent_growth_dist = json.loads(unquote(request.args.get('annual_rent_growth', '%7B%7D')))
     discount_rate_dist = json.loads(unquote(request.args.get('discount_rate', '%7B%7D')))
     # All other fields as base_input

@@ -53,7 +53,7 @@ export default function ValuationDetailPage() {
   const [mcRentGrowthStd, setMcRentGrowthStd] = useState(1);
   const [mcDiscountMean, setMcDiscountMean] = useState(15);
   const [mcDiscountStd, setMcDiscountStd] = useState(2);
-  const [mcNumSim, setMcNumSim] = useState(5000);
+  const [mcNumSim, setMcNumSim] = useState(10000);
   const [mcResults, setMcResults] = useState<number[]>([]);
   const [mcSummary, setMcSummary] = useState<any>(null);
   const [mcProgress, setMcProgress] = useState(0);
@@ -444,7 +444,7 @@ export default function ValuationDetailPage() {
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-2">Simulation Settings</h3>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Simulations</label>
-                    <input type="number" value={mcNumSim} min={5000} onChange={e => setMcNumSim(Math.max(5000, Number(e.target.value)))} className="w-full p-2 border rounded" />
+                    <input type="number" value={mcNumSim} min={10000} onChange={e => setMcNumSim(Math.max(10000, Number(e.target.value)))} className="w-full p-2 border rounded" />
                     <Button
                       onClick={runMonteCarlo}
                       className="w-full mt-8 px-4 py-2"
