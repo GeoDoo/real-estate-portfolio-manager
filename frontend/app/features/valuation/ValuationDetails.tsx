@@ -246,44 +246,49 @@ export default function ValuationDetailPage() {
 
             {/* Results */}
             {cashFlows.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Valuation Results</h2>
-                
-                {/* Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      <span className={
-                        cashFlows[cashFlows.length - 1].cumulativePV > 0
-                          ? 'text-green-700'
-                          : cashFlows[cashFlows.length - 1].cumulativePV < 0
-                          ? 'text-red-600'
-                          : 'text-gray-900'
-                      }>
-                        ${cashFlows[cashFlows.length - 1].cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                      </span>
+              <div className="bg-white rounded-lg shadow-md p-6 relative">
+                {/* Recommendation Ribbon */}
+                {(() => {
+                  const npv = cashFlows[cashFlows.length - 1].cumulativePV;
+                  const irrValue = irr ?? 0;
+                  const isBuy = npv > 0 && irrValue > 0;
+                  return (
+                    <div
+                      className={`absolute top-0 right-0 px-6 py-2 rounded-bl-lg text-sm font-bold shadow-lg z-10 ${
+                        isBuy ? 'bg-green-500 text-white' : 'bg-red-600 text-white'
+                      }`}
+                      style={{ transform: 'translateY(-1px) translateX(1px)' }}
+                    >
+                      {isBuy ? 'BUY' : 'DO NOT BUY'}
                     </div>
+                  );
+                })()}
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Valuation Results</h2>
+                {/* Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="text-center">
+                    <span className={
+                      cashFlows[cashFlows.length - 1].cumulativePV > 0
+                        ? 'text-green-700'
+                        : cashFlows[cashFlows.length - 1].cumulativePV < 0
+                        ? 'text-red-600'
+                        : 'text-gray-900'
+                    }>
+                      ${cashFlows[cashFlows.length - 1].cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </span>
                     <div className="text-sm text-gray-600">Net Present Value</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      <span className={
-                        irr && irr > 0
-                          ? 'text-green-700'
-                          : irr && irr < 0
-                          ? 'text-red-600'
-                          : 'text-gray-900'
-                      }>
-                        {irr ? `${irr.toFixed(2)}%` : 'N/A'}
-                      </span>
-                    </div>
+                    <span className={
+                      irr && irr > 0
+                        ? 'text-green-700'
+                        : irr && irr < 0
+                        ? 'text-red-600'
+                        : 'text-gray-900'
+                    }>
+                      {irr ? `${irr.toFixed(2)}%` : 'N/A'}
+                    </span>
                     <div className="text-sm text-gray-600">Internal Rate of Return</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {valuation?.holding_period || 0} years
-                    </div>
-                    <div className="text-sm text-gray-600">Holding Period</div>
                   </div>
                 </div>
 
