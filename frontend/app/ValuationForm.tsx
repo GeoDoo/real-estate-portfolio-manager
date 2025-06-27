@@ -11,15 +11,13 @@ interface ValuationFormProps {
 
 export default function ValuationForm({ form, onChange, onSubmit, disabled = false, error }: ValuationFormProps) {
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
-      {/* Initial Costs (Year 0) */}
+    <form onSubmit={onSubmit} className="space-y-10">
+      {/* Initial Investment & One-off Costs */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Initial Investment</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Initial Investment & One-off Costs</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Purchase Price
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price ($)</label>
             <input
               type="text"
               name="initial_investment"
@@ -31,13 +29,23 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              One-time Expenses
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">One-time Expenses ($)</label>
             <input
               type="text"
               name="one_time_expenses"
               value={form.one_time_expenses}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Property Tax ($)</label>
+            <input
+              type="text"
+              name="property_tax"
+              value={form.property_tax}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="0"
@@ -49,12 +57,10 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
 
       {/* Annual Income */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Annual Income</h3>
+        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Annual Income</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Annual Rental Income
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Annual Rental Income ($)</label>
             <input
               type="text"
               name="annual_rental_income"
@@ -70,12 +76,10 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
 
       {/* Annual Expenses */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Annual Expenses</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Annual Expenses</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Service Charge
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service Charge ($)</label>
             <input
               type="text"
               name="service_charge"
@@ -87,9 +91,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ground Rent
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ground Rent ($)</label>
             <input
               type="text"
               name="ground_rent"
@@ -101,9 +103,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Maintenance
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Maintenance ($)</label>
             <input
               type="text"
               name="maintenance"
@@ -115,23 +115,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Property Tax
-            </label>
-            <input
-              type="text"
-              name="property_tax"
-              value={form.property_tax}
-              onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="0"
-              disabled={disabled}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Insurance
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Insurance ($)</label>
             <input
               type="text"
               name="insurance"
@@ -143,9 +127,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Management Fees
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Management Fees ($)</label>
             <input
               type="text"
               name="management_fees"
@@ -161,12 +143,10 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
 
       {/* Assumptions */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Assumptions</h3>
+        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Assumptions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Annual Rent Growth (%)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Annual Rent Growth (%)</label>
             <input
               type="text"
               name="annual_rent_growth"
@@ -178,9 +158,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Discount Rate (%)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Discount Rate (%)</label>
             <input
               type="text"
               name="discount_rate"
@@ -192,9 +170,7 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Holding Period (Years)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Holding Period (Years)</label>
             <input
               type="text"
               name="holding_period"
