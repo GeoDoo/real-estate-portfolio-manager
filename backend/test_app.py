@@ -2,6 +2,7 @@ import pytest
 from app import calculate_cash_flows, calculate_irr
 import math
 from app import clean_for_json
+import numpy as np
 
 def test_all_years_present_value():
     input_data = {
@@ -108,4 +109,80 @@ def test_clean_for_json_dict():
 
 def test_clean_for_json_nested():
     data = {'a': [1, float('nan'), {'b': float('inf'), 'c': [float('-inf'), 2]}]}
-    assert clean_for_json(data) == {'a': [1, None, {'b': None, 'c': [None, 2]}]} 
+    assert clean_for_json(data) == {'a': [1, None, {'b': None, 'c': [None, 2]}]}
+
+def run_mc_sim(base_input, rent_growth_mean, rent_growth_std, discount_mean, discount_std, num_sim=1000):
+    npvs = []
+    for _ in range(num_sim):
+        rent_growth = np.random.normal(rent_growth_mean, rent_growth_std)
+        discount_rate = np.random.normal(discount_mean, discount_std)
+        sim_input = base_input.copy()
+        sim_input['annual_rent_growth'] = rent_growth
+        sim_input['discount_rate'] = discount_rate
+        cash_flows = calculate_cash_flows(sim_input)
+        npv = cash_flows[-1]['cumulativePV']
+        npvs.append(npv)
+    return npvs
+
+def test_mc_sim_deterministic_matches_dcf():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': 15,
+        'holding_period': 25
+    }
+    # Deterministic DCF
+    dcf = calculate_cash_flows(base_input)
+    dcf_npv = dcf[-1]['cumulativePV']
+    # MC with stddev=0
+    npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=100)
+    assert all(abs(n - dcf_npv) < 1e-6 for n in npvs)
+    # MC mean matches DCF
+    assert abs(np.mean(npvs) - dcf_npv) < 1e-6
+
+def test_mc_sim_spread_increases_with_stddev():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': 15,
+        'holding_period': 25
+    }
+    npvs_low = run_mc_sim(base_input, 2, 0.01, 15, 0.01, num_sim=1000)
+    npvs_high = run_mc_sim(base_input, 2, 0.10, 15, 0.10, num_sim=1000)
+    assert np.std(npvs_high) > np.std(npvs_low)
+    # Mean should still be in the same ballpark
+    assert abs(np.mean(npvs_low) - np.mean(npvs_high)) < 10000
+
+def test_mc_sim_no_nan_inf():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': 15,
+        'holding_period': 25
+    }
+    npvs = run_mc_sim(base_input, 2, 0.10, 15, 0.10, num_sim=1000)
+    assert all(np.isfinite(n) for n in npvs) 
