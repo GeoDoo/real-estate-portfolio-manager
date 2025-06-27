@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { config } from '@/config';
+import { propertiesAPI } from '@/lib/api/properties';
 
 export default function NewPropertyPage() {
   const router = useRouter();
@@ -24,23 +24,11 @@ export default function NewPropertyPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${config.apiBaseUrl}/api/properties`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(form)
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to create property');
-      }
-
-      const property = await res.json();
+      const property = await propertiesAPI.create(form);
       router.push(`/properties/${property.id}/valuation`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create property');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create property';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Property } from '@/types/dcf';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { config } from '@/config';
+import { propertiesAPI } from '@/lib/api/properties';
 
 export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -16,19 +16,11 @@ export default function HomePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${config.apiBaseUrl}/api/properties`, {
-          credentials: 'include'
-        });
-        if (!res.ok) {
-          setError('Failed to fetch properties');
-          setProperties([]);
-          setLoading(false);
-          return;
-        }
-        const json = await res.json();
-        setProperties(Array.isArray(json) ? json : []);
-      } catch {
-        setError('Failed to fetch properties');
+        const data = await propertiesAPI.getAll();
+        setProperties(data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties';
+        setError(errorMessage);
         setProperties([]);
       }
       setLoading(false);

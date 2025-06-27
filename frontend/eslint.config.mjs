@@ -18,6 +18,10 @@ export default [
       globals: {
         React: true,
         fetch: true,
+        RequestInit: true,
+        Request: true,
+        Response: true,
+        Headers: true,
         module: true,
         HTMLInputElement: true,
         window: true,

@@ -4,7 +4,7 @@ import { DCFRow, CashFlowRow } from '@/types/dcf';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useParams } from 'next/navigation';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { config } from '@/config';
+import { valuationsAPI } from '@/lib/api/valuations';
 
 export default function CompareValuationsPage() {
   const [valuations, setValuations] = useState<DCFRow[]>([]);
@@ -17,26 +17,20 @@ export default function CompareValuationsPage() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!propertyId) return;
+      
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation`, {
-          credentials: 'include'
-        });
-        if (!res.ok) {
-          setError('Failed to fetch valuation');
-          setValuations([]);
-          setLoading(false);
-          return;
-        }
-        const json = await res.json();
+        const json = await valuationsAPI.getByPropertyId(propertyId);
         if (json && json.id) {
           setValuations([json]);
         } else {
           setValuations([]);
         }
-      } catch {
-        setError('Failed to fetch valuation');
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch valuation';
+        setError(errorMessage);
         setValuations([]);
       }
       setLoading(false);
@@ -46,7 +40,7 @@ export default function CompareValuationsPage() {
 
   useEffect(() => {
     async function fetchComparisonData() {
-      if (selectedValuations.length === 0) {
+      if (!propertyId || selectedValuations.length === 0) {
         setComparisonData({});
         return;
       }
@@ -55,13 +49,8 @@ export default function CompareValuationsPage() {
       
       for (const valuationId of selectedValuations) {
         try {
-          const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation/cashflows/${valuationId}`, {
-            credentials: 'include'
-          });
-          if (res.ok) {
-            const json = await res.json();
-            newComparisonData[valuationId] = json.cashFlows || [];
-          }
+          const cashFlows = await valuationsAPI.getCashFlows(propertyId, valuationId);
+          newComparisonData[valuationId] = cashFlows;
         } catch {
           console.error(`Failed to fetch cash flows for valuation ${valuationId}`);
         }
@@ -198,13 +187,13 @@ export default function CompareValuationsPage() {
                 {/* Detailed Cash Flow Comparison */}
                 <div className="overflow-x-auto">
                   <h3 className="text-lg font-bold mb-4">Cash Flow Comparison</h3>
-                  <table className="min-w-full text-xs">
+                  <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="py-2 px-2 text-center sticky left-0 bg-white z-10">Year</th>
+                        <th className="py-2 px-4 text-left">Year</th>
                         {selectedValuations.map((valuationId, index) => (
-                          <th key={valuationId} className="py-2 px-2 text-center">
-                            Scenario {index + 1} Cumulative PV ($)
+                          <th key={valuationId} className="py-2 px-4 text-right">
+                            Scenario {index + 1} NPV ($)
                           </th>
                         ))}
                       </tr>
@@ -212,18 +201,17 @@ export default function CompareValuationsPage() {
                     <tbody>
                       {Array.from({ length: getMaxYears() }, (_, yearIndex) => (
                         <tr key={yearIndex} className={yearIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="py-1 px-2 text-center font-medium sticky left-0 bg-white z-10">
-                            {yearIndex}
-                          </td>
+                          <td className="py-2 px-4 font-medium">{yearIndex + 1}</td>
                           {selectedValuations.map((valuationId) => {
                             const cashFlows = comparisonData[valuationId] || [];
-                            const cumulativePV = cashFlows[yearIndex]?.cumulativePV || 0;
+                            const yearData = cashFlows[yearIndex];
+                            const npv = yearData ? yearData.cumulativePV : 0;
                             
                             return (
-                              <td key={valuationId} className={`py-1 px-2 text-right ${
-                                cumulativePV < 0 ? 'text-red-600' : 'text-green-700'
+                              <td key={valuationId} className={`py-2 px-4 text-right ${
+                                npv < 0 ? 'text-red-600' : 'text-green-700'
                               }`}>
-                                ${formatCurrency(cumulativePV)}
+                                ${formatCurrency(npv)}
                               </td>
                             );
                           })}

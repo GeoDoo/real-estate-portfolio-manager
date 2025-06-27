@@ -6,7 +6,7 @@ import { PencilIcon, CheckIcon, XMarkIcon, ChartBarIcon } from '@heroicons/react
 import ValuationForm from '@/components/ValuationForm';
 import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { config } from '@/config';
+import { valuationsAPI } from '@/lib/api/valuations';
 
 export default function ValuationDetailPage() {
   const { id } = useParams();
@@ -36,17 +36,13 @@ export default function ValuationDetailPage() {
 
   useEffect(() => {
     async function fetchValuation() {
+      if (!propertyId) return;
+      
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation`, {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          setError("Valuation not found");
-          setValuation(null);
-        } else {
-          const json: DCFRow = await res.json();
+        const json = await valuationsAPI.getByPropertyId(propertyId);
+        if (json) {
           setValuation(json);
           setForm({
             initial_investment: String(json.initial_investment ?? ''),
@@ -63,47 +59,33 @@ export default function ValuationDetailPage() {
             holding_period: String(json.holding_period ?? ''),
           });
           await fetchCashFlows(json);
+        } else {
+          setError("Valuation not found");
+          setValuation(null);
         }
-      } catch {
-        setError("Failed to fetch valuation");
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch valuation';
+        setError(errorMessage);
         setValuation(null);
         setCashFlows([]);
         setIrr(null);
       }
       setLoading(false);
     }
-    if (propertyId) fetchValuation();
+    fetchValuation();
   }, [propertyId]);
 
   async function fetchCashFlows(valuationData: DCFRow) {
     try {
-      const cfRes = await fetch(`${config.apiBaseUrl}/api/cashflows/calculate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(valuationData),
-      });
-      if (cfRes.ok) {
-        const cfJson = await cfRes.json();
-        setCashFlows(cfJson.cashFlows as CashFlowRow[] || []);
-        // Fetch IRR if cash flows are available
-        if (cfJson.cashFlows && cfJson.cashFlows.length > 1) {
-          const netCashFlows = (cfJson.cashFlows as CashFlowRow[]).map((row) => row.netCashFlow);
-          const irrRes = await fetch(`${config.apiBaseUrl}/api/cashflows/irr`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cash_flows: netCashFlows }),
-          });
-          if (irrRes.ok) {
-            const irrJson = await irrRes.json();
-            setIrr(irrJson.irr);
-          } else {
-            setIrr(null);
-          }
-        } else {
-          setIrr(null);
-        }
+      const cashFlowsData = await valuationsAPI.calculateCashFlows(valuationData);
+      setCashFlows(cashFlowsData);
+      
+      // Fetch IRR if cash flows are available
+      if (cashFlowsData && cashFlowsData.length > 1) {
+        const netCashFlows = cashFlowsData.map((row) => row.netCashFlow);
+        const irrValue = await valuationsAPI.calculateIRR(netCashFlows);
+        setIrr(irrValue);
       } else {
-        setCashFlows([]);
         setIrr(null);
       }
     } catch {
@@ -145,6 +127,8 @@ export default function ValuationDetailPage() {
   };
 
   const handleSave = async () => {
+    if (!propertyId) return;
+    
     setSaving(true);
     setFormError(null);
     const data = {
@@ -163,35 +147,27 @@ export default function ValuationDetailPage() {
     };
 
     try {
-      const res = await fetch(`${config.apiBaseUrl}/api/properties/${propertyId}/valuation`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+      const updatedValuation = await valuationsAPI.save(propertyId, data);
+      setValuation(updatedValuation);
+      setIsEditing(false);
+      setForm({
+        initial_investment: String(updatedValuation.initial_investment ?? ''),
+        annual_rental_income: String(updatedValuation.annual_rental_income ?? ''),
+        service_charge: String(updatedValuation.service_charge ?? ''),
+        ground_rent: String(updatedValuation.ground_rent ?? ''),
+        maintenance: String(updatedValuation.maintenance ?? ''),
+        property_tax: String(updatedValuation.property_tax ?? ''),
+        insurance: String(updatedValuation.insurance ?? ''),
+        management_fees: String(updatedValuation.management_fees ?? ''),
+        transaction_costs: String(updatedValuation.transaction_costs ?? ''),
+        annual_rent_growth: String(updatedValuation.annual_rent_growth ?? ''),
+        discount_rate: String(updatedValuation.discount_rate ?? ''),
+        holding_period: String(updatedValuation.holding_period ?? ''),
       });
-      if (res.ok) {
-        const updatedValuation = await res.json();
-        setValuation(updatedValuation);
-        setIsEditing(false);
-        setForm({
-          initial_investment: String(updatedValuation.initial_investment ?? ''),
-          annual_rental_income: String(updatedValuation.annual_rental_income ?? ''),
-          service_charge: String(updatedValuation.service_charge ?? ''),
-          ground_rent: String(updatedValuation.ground_rent ?? ''),
-          maintenance: String(updatedValuation.maintenance ?? ''),
-          property_tax: String(updatedValuation.property_tax ?? ''),
-          insurance: String(updatedValuation.insurance ?? ''),
-          management_fees: String(updatedValuation.management_fees ?? ''),
-          transaction_costs: String(updatedValuation.transaction_costs ?? ''),
-          annual_rent_growth: String(updatedValuation.annual_rent_growth ?? ''),
-          discount_rate: String(updatedValuation.discount_rate ?? ''),
-          holding_period: String(updatedValuation.holding_period ?? ''),
-        });
-        await fetchCashFlows(updatedValuation);
-      } else {
-        setFormError("Failed to save changes");
-      }
-    } catch {
-      setFormError("Failed to save changes");
+      await fetchCashFlows(updatedValuation);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save changes';
+      setFormError(errorMessage);
     }
     setSaving(false);
   };
@@ -199,117 +175,179 @@ export default function ValuationDetailPage() {
   return (
     <main className="bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <Breadcrumbs propertyId={propertyId} />
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Valuation Details</h1>
-          <div className="flex items-center space-x-2">
-            {!isEditing && (
-              <button
-                onClick={handleEdit}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
-                style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
-                onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
-                onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
-              >
-                <PencilIcon className="w-4 h-4 mr-2" />
-                Edit
-              </button>
-            )}
-            {isEditing && (
-              <>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
-                  onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
-                  onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
-                >
-                  <CheckIcon className="w-4 h-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md"
-                  style={{ color: 'var(--primary-dark)', backgroundColor: '#fff' }}
-                  onMouseOver={e => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-                  onMouseOut={e => (e.currentTarget.style.backgroundColor = '#fff')}
-                >
-                  <XMarkIcon className="w-4 h-4 mr-2" />
-                  Cancel
-                </button>
-              </>
-            )}
-            <Link
-              href={`/properties/${propertyId}/valuation/compare`}
-              className="inline-flex items-center px-4 py-2 border border-[var(--primary)] text-sm font-medium rounded-md ml-2"
-              style={{ color: 'var(--primary)', backgroundColor: '#fff', borderColor: 'var(--primary)' }}
-              onMouseOver={e => (e.currentTarget.style.backgroundColor = '#e6fcf7')}
-              onMouseOut={e => (e.currentTarget.style.backgroundColor = '#fff')}
-            >
-              <ChartBarIcon className="w-4 h-4 mr-2" />
-              Compare
-            </Link>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <ValuationForm
-            form={form}
-            onChange={handleFormChange}
-            disabled={!isEditing}
-            error={formError}
-          />
-        </div>
+        <Breadcrumbs propertyId={propertyId} last="Valuation" />
+        
         {loading ? (
           <div className="text-center text-gray-500">Loading...</div>
         ) : error ? (
           <div className="text-center text-red-600">{error}</div>
-        ) : valuation ? (
-          <div className="bg-white rounded-lg shadow-md p-8">
-            {/* DCF Results Section */}
+        ) : (
+          <>
+            {/* Header */}
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">Property Valuation</h1>
+              <div className="flex space-x-3">
+                {!isEditing && (
+                  <button
+                    onClick={handleEdit}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
+                    style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
+                    onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
+                  >
+                    <PencilIcon className="w-4 h-4 mr-2" />
+                    Edit
+                  </button>
+                )}
+                {isEditing && (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
+                      style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                      onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00cfa6')}
+                      onMouseOut={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
+                    >
+                      <CheckIcon className="w-4 h-4 mr-2" />
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      <XMarkIcon className="w-4 h-4 mr-2" />
+                      Cancel
+                    </button>
+                  </>
+                )}
+                <Link
+                  href={`/properties/${propertyId}/valuation/compare`}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
+                  style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                  onMouseOver={e => (e.currentTarget.style.backgroundColor = 'var(--primary)', e.currentTarget.style.color = '#fff')}
+                  onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent', e.currentTarget.style.color = 'var(--primary)')}
+                >
+                  <ChartBarIcon className="w-4 h-4 mr-2" />
+                  Compare
+                </Link>
+              </div>
+            </div>
+
+            {/* Valuation Form */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <ValuationForm
+                form={form}
+                onChange={handleFormChange}
+                disabled={!isEditing}
+                error={formError}
+              />
+            </div>
+
+            {/* Results */}
             {cashFlows.length > 0 && (
-              <div className="overflow-x-auto mb-8">
-                <h2 className="text-xl font-bold mb-4">DCF / NPV Breakdown</h2>
-                <table className="min-w-full text-sm bg-white rounded-lg shadow-md">
-                  <thead>
-                    <tr>
-                      <th className="py-2 px-4 text-center">Year</th>
-                      <th className="py-2 px-4 text-right">Revenue ($)</th>
-                      <th className="py-2 px-4 text-right">Total Expenses ($)</th>
-                      <th className="py-2 px-4 text-right">Net Cash Flow ($)</th>
-                      <th className="py-2 px-4 text-right">Present Value ($)</th>
-                      <th className="py-2 px-4 text-right">Cumulative PV ($)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cashFlows.map((row, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}>
-                        <td className="py-2 px-4 text-center">{row.year}</td>
-                        <td className="py-2 px-4 text-right">{row.revenue.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
-                        <td className="py-2 px-4 text-right">{row.totalExpenses.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
-                        <td className={`py-2 px-4 text-right font-semibold ${row.netCashFlow < 0 ? 'text-red-600' : 'text-green-700'}`}>{row.netCashFlow.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
-                        <td className={`py-2 px-4 text-right font-semibold ${row.presentValue < 0 ? 'text-red-600' : 'text-green-700'}`}>{row.presentValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
-                        <td className={`py-2 px-4 text-right font-semibold ${row.cumulativePV < 0 ? 'text-red-600' : 'text-green-700'}`}>{row.cumulativePV.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Valuation Results</h2>
+                
+                {/* Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      <span className={
+                        cashFlows[cashFlows.length - 1].cumulativePV > 0
+                          ? 'text-green-700'
+                          : cashFlows[cashFlows.length - 1].cumulativePV < 0
+                          ? 'text-red-600'
+                          : 'text-gray-900'
+                      }>
+                        ${cashFlows[cashFlows.length - 1].cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600">Net Present Value</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      <span className={
+                        irr && irr > 0
+                          ? 'text-green-700'
+                          : irr && irr < 0
+                          ? 'text-red-600'
+                          : 'text-gray-900'
+                      }>
+                        {irr ? `${irr.toFixed(2)}%` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600">Internal Rate of Return</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {valuation?.holding_period || 0} years
+                    </div>
+                    <div className="text-sm text-gray-600">Holding Period</div>
+                  </div>
+                </div>
+
+                {/* Cash Flow Table */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="py-2 px-4 text-left">Year</th>
+                        <th className="py-2 px-4 text-right">Revenue ($)</th>
+                        <th className="py-2 px-4 text-right">Expenses ($)</th>
+                        <th className="py-2 px-4 text-right">Net Cash Flow ($)</th>
+                        <th className="py-2 px-4 text-right">Present Value ($)</th>
+                        <th className="py-2 px-4 text-right">Cumulative PV ($)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="mt-4 text-lg font-bold text-right">
-                  NPV: <span className={
-                    cashFlows.length > 0 && cashFlows[cashFlows.length - 1].cumulativePV < 0
-                      ? 'text-red-600'
-                      : 'text-green-700'
-                  }>
-                    {cashFlows.length > 0 ? cashFlows[cashFlows.length - 1].cumulativePV.toLocaleString(undefined, {maximumFractionDigits: 2}) : "-"}
-                  </span>
-                  {irr !== null && (
-                    <span className="ml-8">IRR: <span className={irr < 0 ? 'text-red-600' : 'text-green-700'}>{irr.toFixed(2)}%</span></span>
-                  )}
+                    </thead>
+                    <tbody>
+                      {cashFlows.map((row, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="py-2 px-4">{row.year}</td>
+                          <td className={`py-2 px-4 text-right`}>
+                            <span className={
+                              row.revenue > 0 ? 'text-green-700' : row.revenue < 0 ? 'text-red-600' : 'text-gray-900'
+                            }>
+                              {row.revenue.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className={`py-2 px-4 text-right`}>
+                            <span className={
+                              -row.totalExpenses < 0 ? 'text-red-600' : 'text-gray-900'
+                            }>
+                              {-row.totalExpenses !== 0 ? `-${row.totalExpenses.toLocaleString()}` : '0'}
+                            </span>
+                          </td>
+                          <td className={`py-2 px-4 text-right`}>
+                            <span className={
+                              row.netCashFlow > 0 ? 'text-green-700' : row.netCashFlow < 0 ? 'text-red-600' : 'text-gray-900'
+                            }>
+                              {row.netCashFlow.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className={`py-2 px-4 text-right`}>
+                            <span className={
+                              row.presentValue > 0 ? 'text-green-700' : row.presentValue < 0 ? 'text-red-600' : 'text-gray-900'
+                            }>
+                              {row.presentValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </span>
+                          </td>
+                          <td className={`py-2 px-4 text-right`}>
+                            <span className={
+                              row.cumulativePV > 0 ? 'text-green-700' : row.cumulativePV < 0 ? 'text-red-600' : 'text-gray-900'
+                            }>
+                              {row.cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
-          </div>
-        ) : null}
+          </>
+        )}
       </div>
     </main>
   );
