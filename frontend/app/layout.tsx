@@ -28,10 +28,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <nav className="bg-white shadow fixed top-0 left-0 right-0 z-50 h-16 flex items-center">
-          <div className="max-w-6xl mx-auto px-4 w-full">
+          <div className="max-w-6xl mx-auto w-full">
             <div className="flex justify-between h-16 items-center">
               <div>
-                <a href="/" className="text-xl font-bold text-blue-700">Home</a>
+                <a href="/" className="text-xl font-bold text-blue-700">Geoshan Properties Ltd</a>
               </div>
             </div>
           </div>
