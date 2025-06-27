@@ -70,8 +70,8 @@ export default function HomePage() {
                 <Link
                   key={property.id}
                   href={`/properties/${property.id}/valuation`}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{ textDecoration: 'none' }}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block focus:outline-none focus:ring-2"
+                  style={{ textDecoration: 'none', '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
                 >
                   <div className="mb-4">
                     <p className="text-xl font-bold text-gray-900 mb-2 break-words">{property.address}</p>

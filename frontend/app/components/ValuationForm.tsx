@@ -23,7 +23,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="initial_investment"
               value={form.initial_investment}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -35,7 +36,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="transaction_costs"
               value={form.transaction_costs}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -47,7 +49,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="property_tax"
               value={form.property_tax}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -66,7 +69,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="annual_rental_income"
               value={form.annual_rental_income}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -85,7 +89,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="service_charge"
               value={form.service_charge}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -97,7 +102,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="ground_rent"
               value={form.ground_rent}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -109,7 +115,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="maintenance"
               value={form.maintenance}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -121,7 +128,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="insurance"
               value={form.insurance}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -133,7 +141,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="management_fees"
               value={form.management_fees}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -152,7 +161,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="annual_rent_growth"
               value={form.annual_rent_growth}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -164,7 +174,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="discount_rate"
               value={form.discount_rate}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -176,7 +187,8 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
               name="holding_period"
               value={form.holding_period}
               onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
