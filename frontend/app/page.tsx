@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { DCFRow } from '../types/dcf';
-import { EyeIcon, PlusIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 export default function HomePage() {
   const [valuations, setValuations] = useState<DCFRow[]>([]);
@@ -33,42 +33,6 @@ export default function HomePage() {
     }
     fetchData();
   }, []);
-
-  const createNewScenario = async (baseValuation: DCFRow) => {
-    try {
-      const newValuation = {
-        initial_investment: baseValuation.initial_investment,
-        annual_rental_income: baseValuation.annual_rental_income,
-        service_charge: baseValuation.service_charge,
-        ground_rent: baseValuation.ground_rent,
-        maintenance: baseValuation.maintenance,
-        property_tax: baseValuation.property_tax,
-        insurance: baseValuation.insurance,
-        management_fees: baseValuation.management_fees,
-        one_time_expenses: baseValuation.one_time_expenses,
-        cash_flow_growth_rate: baseValuation.cash_flow_growth_rate,
-        discount_rate: baseValuation.discount_rate,
-        holding_period: baseValuation.holding_period,
-      };
-
-      const res = await fetch('http://localhost:8000/api/valuations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(newValuation),
-      });
-
-      if (res.ok) {
-        const newValuationData = await res.json();
-        // Redirect to the new valuation for editing
-        window.location.href = `/valuations/${newValuationData.id}`;
-      } else {
-        setError('Failed to create new scenario');
-      }
-    } catch {
-      setError('Failed to create new scenario');
-    }
-  };
 
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
@@ -127,14 +91,6 @@ export default function HomePage() {
                           <EyeIcon className="w-4 h-4" aria-hidden="true" />
                           <span className="sr-only">View</span>
                         </Link>
-                        <button
-                          onClick={() => createNewScenario(row)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-green-200 hover:border-green-400 hover:bg-green-50 hover:shadow text-green-600 transition"
-                          title="Create new scenario"
-                        >
-                          <PlusIcon className="w-4 h-4" aria-hidden="true" />
-                          <span className="sr-only">New Scenario</span>
-                        </button>
                       </div>
                     </td>
                     <td className="py-2 px-4 font-mono text-xs">{row.id.substring(0, 8)}...</td>
