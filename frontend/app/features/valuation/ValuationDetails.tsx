@@ -236,17 +236,27 @@ export default function ValuationDetailPage() {
   };
 
   function getHistogram(data: number[], bins: number) {
-    if (!data.length) return [];
+    if (!data || data.length === 0) return [];
     const min = Math.min(...data), max = Math.max(...data);
+    if (min === max) {
+      // All values are the same, put them in a single bin
+      return [{ count: data.length, range: [min, max], height: 100 }];
+    }
     const binSize = (max - min) / bins;
-    const hist = Array.from({ length: bins }, (_, i) => ({ count: 0, range: [min + i * binSize, min + (i + 1) * binSize], height: 0 }));
+    // Always create bins as objects
+    const hist = Array.from({ length: bins }, (_, i) => ({
+      count: 0,
+      range: [min + i * binSize, min + (i + 1) * binSize],
+      height: 0,
+    }));
     data.forEach(val => {
       let idx = Math.floor((val - min) / binSize);
-      if (idx === bins) idx--;
-      hist[idx].count++;
+      if (idx < 0) idx = 0;
+      if (idx >= bins) idx = bins - 1;
+      hist[idx].count += 1;
     });
     const maxCount = Math.max(...hist.map(b => b.count));
-    hist.forEach(b => { b.height = Math.round((b.count / maxCount) * 100); });
+    hist.forEach(b => { b.height = maxCount > 0 ? Math.round((b.count / maxCount) * 100) : 0; });
     return hist;
   }
 
@@ -515,7 +525,7 @@ export default function ValuationDetailPage() {
                         {/* Y-axis ticks */}
                         {(() => {
                           const hist = getHistogram(mcResults, 20);
-                          const maxCount = Math.max(...hist.map(b => b.count));
+                          const maxCount = hist.length > 0 ? Math.max(...hist.map(b => b.count)) : 0;
                           return [0, 0.25, 0.5, 0.75, 1].map((t, i) => (
                             <span
                               key={i}
@@ -529,8 +539,8 @@ export default function ValuationDetailPage() {
                         {/* X-axis ticks */}
                         {(() => {
                           const hist = getHistogram(mcResults, 20);
-                          const min = hist[0].range[0];
-                          const max = hist[hist.length - 1].range[1];
+                          const min = hist.length > 0 ? hist[0].range[0] : 0;
+                          const max = hist.length > 0 ? hist[hist.length - 1].range[1] : 0;
                           return [0, 0.25, 0.5, 0.75, 1].map((t, i) => (
                             <span
                               key={i}
@@ -571,41 +581,47 @@ export default function ValuationDetailPage() {
                           className="flex items-end h-full w-full"
                           style={{ paddingLeft: 60, paddingRight: 40, paddingTop: 96, paddingBottom: 80, gap: 8, overflow: 'visible' }}
                         >
-                          {getHistogram(mcResults, 20).map((bin, i) => (
-                            <div
-                              key={i}
-                              className="relative flex flex-col items-center group"
-                              style={{ width: 28 }}
-                            >
-                              <div
-                                style={{
-                                  width: 20,
-                                  height: bin.height * 3.2,
-                                  background: 'var(--primary)',
-                                  marginRight: 2,
-                                  borderRadius: 6,
-                                  transition: 'background 0.2s',
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                                  cursor: 'pointer',
-                                }}
-                                title={`$${formatXAxisTick(bin.range[0])} to $${formatXAxisTick(bin.range[1])}: ${bin.count} simulations`}
-                              />
-                              <span
-                                className="text-base text-gray-700 font-bold mt-2"
-                                style={{ minWidth: 20, textAlign: 'center', letterSpacing: 0, maxWidth: 40, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                              >
-                                {bin.count > 0 ? formatYAxisTick(bin.count) : ''}
-                              </span>
-                              {/* Tooltip on hover */}
-                              <span
-                                className="absolute z-20 px-2 py-1 rounded bg-gray-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                                style={{ bottom: 40, whiteSpace: 'nowrap' }}
-                              >
-                                ${formatXAxisTick(bin.range[0])} to ${formatXAxisTick(bin.range[1])}<br />
-                                {bin.count} simulations
-                              </span>
-                            </div>
-                          ))}
+                          {(() => {
+                            const hist = getHistogram(mcResults, 20);
+                            if (hist.length > 0) {
+                              return hist.map((bin, i) => (
+                                <div
+                                  key={i}
+                                  className="relative flex flex-col items-center group"
+                                  style={{ width: 28 }}
+                                >
+                                  <div
+                                    style={{
+                                      width: 20,
+                                      height: bin.height * 3.2,
+                                      background: 'var(--primary)',
+                                      marginRight: 2,
+                                      borderRadius: 6,
+                                      transition: 'background 0.2s',
+                                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                      cursor: 'pointer',
+                                    }}
+                                    title={`$${formatXAxisTick(bin.range[0])} to $${formatXAxisTick(bin.range[1])}: ${bin.count} simulations`}
+                                  />
+                                  <span
+                                    className="text-base text-gray-700 font-bold mt-2"
+                                    style={{ minWidth: 20, textAlign: 'center', letterSpacing: 0, maxWidth: 40, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                  >
+                                    {bin.count > 0 ? formatYAxisTick(bin.count) : ''}
+                                  </span>
+                                  {/* Tooltip on hover */}
+                                  <span
+                                    className="absolute z-20 px-2 py-1 rounded bg-gray-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                                    style={{ bottom: 40, whiteSpace: 'nowrap' }}
+                                  >
+                                    ${formatXAxisTick(bin.range[0])} to ${formatXAxisTick(bin.range[1])}<br />
+                                    {bin.count} simulations
+                                  </span>
+                                </div>
+                              ));
+                            }
+                            return null;
+                          })()}
                         </div>
                       </div>
                     </div>
