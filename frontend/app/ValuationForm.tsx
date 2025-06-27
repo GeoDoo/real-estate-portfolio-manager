@@ -174,12 +174,12 @@ export default function ValuationForm({ form, onChange, onSubmit, disabled = fal
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cash Flow Growth Rate (%)
+              Annual Rent Growth (%)
             </label>
             <input
               type="number"
-              name="cash_flow_growth_rate"
-              value={form.cash_flow_growth_rate}
+              name="annual_rent_growth"
+              value={form.annual_rent_growth}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="0"

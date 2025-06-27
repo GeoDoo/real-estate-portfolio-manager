@@ -23,7 +23,7 @@ export default function ValuationDetailPage() {
     insurance: '',
     management_fees: '',
     one_time_expenses: '',
-    cash_flow_growth_rate: '',
+    annual_rent_growth: '',
     discount_rate: '',
     holding_period: '',
   });
@@ -54,7 +54,7 @@ export default function ValuationDetailPage() {
             insurance: String(json.insurance),
             management_fees: String(json.management_fees),
             one_time_expenses: String(json.one_time_expenses),
-            cash_flow_growth_rate: String(json.cash_flow_growth_rate),
+            annual_rent_growth: String(json.annual_rent_growth),
             discount_rate: String(json.discount_rate),
             holding_period: String(json.holding_period),
           });
@@ -132,7 +132,7 @@ export default function ValuationDetailPage() {
       insurance: String(valuation.insurance),
       management_fees: String(valuation.management_fees),
       one_time_expenses: String(valuation.one_time_expenses),
-      cash_flow_growth_rate: String(valuation.cash_flow_growth_rate),
+      annual_rent_growth: String(valuation.annual_rent_growth),
       discount_rate: String(valuation.discount_rate),
       holding_period: String(valuation.holding_period),
     });
@@ -155,7 +155,7 @@ export default function ValuationDetailPage() {
       insurance: Number(form.insurance) || 0,
       management_fees: Number(form.management_fees) || 0,
       one_time_expenses: Number(form.one_time_expenses) || 0,
-      cash_flow_growth_rate: Number(form.cash_flow_growth_rate) || 0,
+      annual_rent_growth: Number(form.annual_rent_growth) || 0,
       discount_rate: Number(form.discount_rate) || 0,
       holding_period: Number(form.holding_period) || 0,
     };
@@ -179,7 +179,7 @@ export default function ValuationDetailPage() {
           insurance: String(updatedValuation.insurance),
           management_fees: String(updatedValuation.management_fees),
           one_time_expenses: String(updatedValuation.one_time_expenses),
-          cash_flow_growth_rate: String(updatedValuation.cash_flow_growth_rate),
+          annual_rent_growth: String(updatedValuation.annual_rent_growth),
           discount_rate: String(updatedValuation.discount_rate),
           holding_period: String(updatedValuation.holding_period),
         });

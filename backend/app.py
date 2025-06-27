@@ -25,7 +25,7 @@ class Valuation(db.Model):
     insurance = db.Column(db.Float)
     management_fees = db.Column(db.Float)
     one_time_expenses = db.Column(db.Float)
-    cash_flow_growth_rate = db.Column(db.Float)
+    annual_rent_growth = db.Column(db.Float)
     discount_rate = db.Column(db.Float)
     holding_period = db.Column(db.Integer)
 
@@ -42,7 +42,7 @@ class Valuation(db.Model):
             'insurance': self.insurance,
             'management_fees': self.management_fees,
             'one_time_expenses': self.one_time_expenses,
-            'cash_flow_growth_rate': self.cash_flow_growth_rate,
+            'annual_rent_growth': self.annual_rent_growth,
             'discount_rate': self.discount_rate,
             'holding_period': self.holding_period,
             'created_at': self.created_at
@@ -62,7 +62,7 @@ def calculate_cash_flows(input):
     insurance = Fraction(str(input['insurance']))
     management_fees = Fraction(str(input['management_fees']))
     one_time_expenses = Fraction(str(input['one_time_expenses']))
-    cash_flow_growth_rate = Fraction(str(input['cash_flow_growth_rate']))
+    annual_rent_growth = Fraction(str(input['annual_rent_growth']))
     discount_rate = Fraction(str(input['discount_rate']))
     holding_period = int(input['holding_period'])
 
@@ -85,7 +85,7 @@ def calculate_cash_flows(input):
     })
 
     for year in range(1, holding_period + 1):
-        revenue = annual_rental_income * (1 + cash_flow_growth_rate / 100) ** (year - 1)
+        revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
         management_fee = revenue * management_fees / 100
         total_expenses = service_charge + ground_rent + maintenance + insurance + management_fee
         net_cash_flow = revenue - total_expenses
@@ -124,7 +124,7 @@ def valuations_collection():
             insurance=data.get('insurance', 0),
             management_fees=data.get('management_fees', 0),
             one_time_expenses=data.get('one_time_expenses', 0),
-            cash_flow_growth_rate=data.get('cash_flow_growth_rate', 0),
+            annual_rent_growth=data.get('annual_rent_growth', 0),
             discount_rate=data.get('discount_rate', 0),
             holding_period=data.get('holding_period', 0)
         )

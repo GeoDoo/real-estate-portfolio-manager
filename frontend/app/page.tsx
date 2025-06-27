@@ -73,7 +73,7 @@ export default function HomePage() {
                   <th className="py-3 px-4 whitespace-nowrap">Insurance ($)</th>
                   <th className="py-3 px-4 whitespace-nowrap">Management Fees (%)</th>
                   <th className="py-3 px-4 whitespace-nowrap">One-time Expenses ($)</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Growth Rate (%)</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Annual Rent Growth (%)</th>
                   <th className="py-3 px-4 whitespace-nowrap">Discount Rate (%)</th>
                   <th className="py-3 px-4 whitespace-nowrap">Holding Period</th>
                 </tr>
@@ -104,7 +104,7 @@ export default function HomePage() {
                     <td className="py-2 px-4">{row.insurance}</td>
                     <td className="py-2 px-4">{row.management_fees}%</td>
                     <td className="py-2 px-4">{row.one_time_expenses}</td>
-                    <td className="py-2 px-4">{row.cash_flow_growth_rate}</td>
+                    <td className="py-2 px-4">{row.annual_rent_growth}</td>
                     <td className="py-2 px-4">{row.discount_rate}</td>
                     <td className="py-2 px-4">{row.holding_period}</td>
                   </tr>

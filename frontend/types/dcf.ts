@@ -8,7 +8,7 @@ export interface DCFInput {
   insurance: number;
   management_fees: number;
   one_time_expenses: number;
-  cash_flow_growth_rate: number;
+  annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
 }
@@ -25,7 +25,7 @@ export interface DCFRow {
   insurance: number;
   management_fees: number;
   one_time_expenses: number;
-  cash_flow_growth_rate: number;
+  annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
 }

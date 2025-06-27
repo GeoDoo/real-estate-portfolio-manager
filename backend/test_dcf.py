@@ -12,7 +12,7 @@ def test_all_years_present_value():
         'insurance': 300,
         'management_fees': 12,
         'one_time_expenses': 3000,
-        'cash_flow_growth_rate': 2,
+        'annual_rent_growth': 2,
         'discount_rate': 15,
         'holding_period': 25
     }
@@ -70,7 +70,7 @@ def test_irr_with_dcf_cashflows():
         'insurance': 300,
         'management_fees': 12,
         'one_time_expenses': 3000,
-        'cash_flow_growth_rate': 2,
+        'annual_rent_growth': 2,
         'discount_rate': 15,
         'holding_period': 25
     }
