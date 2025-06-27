@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { CashFlowRow, DCFRow } from '@/types/dcf';
+import { CashFlowRow, DCFRow } from '@/types/cashflow';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import ValuationForm from '@/components/ValuationForm';
 import Breadcrumbs from '@/components/Breadcrumbs';

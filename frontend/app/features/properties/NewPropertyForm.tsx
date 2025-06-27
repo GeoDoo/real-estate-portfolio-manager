@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Property } from '@/types/dcf';
+import { Property } from '@/types/property';
 import { propertiesAPI } from '@/lib/api/properties';
 import Button from '@/components/Button';
 

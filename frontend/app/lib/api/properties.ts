@@ -1,5 +1,5 @@
 import { api, APIError } from '@/lib/api';
-import { Property } from '@/types/dcf';
+import { Property } from '@/types/property';
 
 // Property API functions
 export const propertiesAPI = {

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Property } from '@/types/dcf';
+import { Property } from '@/types/property';
 import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { propertiesAPI } from '@/lib/api/properties';

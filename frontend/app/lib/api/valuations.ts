@@ -1,5 +1,6 @@
 import { api, APIError } from '@/lib/api';
-import { DCFRow, CashFlowRow } from '@/types/dcf';
+import { DCFRow } from '@/types/cashflow';
+import { CashFlowRow } from '@/types/cashflow';
 
 // Valuation API functions
 export const valuationsAPI = {
