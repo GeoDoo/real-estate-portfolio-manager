@@ -185,4 +185,135 @@ def test_mc_sim_no_nan_inf():
         'holding_period': 25
     }
     npvs = run_mc_sim(base_input, 2, 0.10, 15, 0.10, num_sim=1000)
+    assert all(np.isfinite(n) for n in npvs)
+
+def test_mc_sim_negative_rent_growth():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': -2,
+        'discount_rate': 15,
+        'holding_period': 25
+    }
+    npvs = run_mc_sim(base_input, -2, 0, 15, 0, num_sim=100)
+    assert all(n < 0 for n in npvs)
+
+def test_mc_sim_negative_discount_rate():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': -5,
+        'holding_period': 25
+    }
+    npvs = run_mc_sim(base_input, 2, 0, -5, 0, num_sim=100)
+    assert all(np.isfinite(n) for n in npvs)
+    assert all(n > 0 for n in npvs)
+
+def test_mc_sim_zero_discount_rate():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': 0,
+        'holding_period': 25
+    }
+    npvs = run_mc_sim(base_input, 2, 0, 0, 0, num_sim=100)
+    assert all(np.isfinite(n) for n in npvs)
+    assert all(n > 0 for n in npvs)
+
+def test_mc_sim_high_discount_rate():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': 100,
+        'holding_period': 25
+    }
+    npvs = run_mc_sim(base_input, 2, 0, 100, 0, num_sim=100)
+    assert all(np.isfinite(n) for n in npvs)
+    assert all(n < 0 for n in npvs)
+
+def test_mc_sim_zero_holding_period():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': 15,
+        'holding_period': 0
+    }
+    npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=10)
+    assert all(np.isfinite(n) for n in npvs)
+    assert all(abs(n + 209000) < 1e-2 for n in npvs)
+
+def test_mc_sim_all_zero_cash_flows():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 0,
+        'service_charge': 0,
+        'ground_rent': 0,
+        'maintenance': 0,
+        'property_tax': 0,
+        'insurance': 0,
+        'management_fees': 0,
+        'transaction_costs': 0,
+        'annual_rent_growth': 0,
+        'discount_rate': 15,
+        'holding_period': 25
+    }
+    npvs = run_mc_sim(base_input, 0, 0, 15, 0, num_sim=10)
+    assert all(np.isfinite(n) for n in npvs)
+    assert all(abs(n + 200000) < 1e-2 for n in npvs)
+
+def test_mc_sim_extreme_stddev():
+    base_input = {
+        'initial_investment': 200000,
+        'annual_rental_income': 24000,
+        'service_charge': 3000,
+        'ground_rent': 500,
+        'maintenance': 1000,
+        'property_tax': 6000,
+        'insurance': 300,
+        'management_fees': 12,
+        'transaction_costs': 3000,
+        'annual_rent_growth': 2,
+        'discount_rate': 15,
+        'holding_period': 25
+    }
+    npvs = run_mc_sim(base_input, 2, 100, 15, 100, num_sim=1000)
     assert all(np.isfinite(n) for n in npvs) 
