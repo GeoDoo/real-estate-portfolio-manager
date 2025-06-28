@@ -67,14 +67,6 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
 
   return (
     <PageContainer>
-      <div className="mb-8">
-        <h1
-          className="text-3xl font-bold"
-          style={{ color: "var(--foreground)" }}
-        >
-          {isEditing ? "Edit Property" : "Add New Property"}
-        </h1>
-      </div>
       <div className="card p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

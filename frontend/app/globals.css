@@ -87,6 +87,14 @@ body {
   outline-offset: 2px;
 }
 
+/* Remove focus outline for mouse users on links and buttons, but keep for keyboard users */
+a:focus,
+button:focus,
+svg:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Card styles */
 .card {
   background: var(--card);
