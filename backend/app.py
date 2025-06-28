@@ -27,12 +27,19 @@ CORS(
 db = SQLAlchemy(app)
 
 
+# SQLAlchemy model for Portfolio (ultra-KISS)
+class Portfolio(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+
+
 # SQLAlchemy model for Property
 class Property(db.Model):
     id = db.Column(db.String, primary_key=True)
     address = db.Column(db.String, unique=True, nullable=False)
     created_at = db.Column(db.String)
     listing_link = db.Column(db.String, nullable=True)
+    portfolio_id = db.Column(db.String, db.ForeignKey("portfolio.id"), nullable=True)
 
     def to_dict(self):
         return {
@@ -40,6 +47,7 @@ class Property(db.Model):
             "address": self.address,
             "created_at": self.created_at,
             "listing_link": self.listing_link,
+            "portfolio_id": self.portfolio_id,
         }
 
 
@@ -501,6 +509,33 @@ def monte_carlo_stream():
         yield f"data: {json.dumps(clean_for_json({'done': True, 'summary': summary, 'npvs': npvs, 'irrs': irrs}))}\n\n"
 
     return Response(event_stream(), mimetype="text/event-stream")
+
+
+# Minimal Portfolio CRUD endpoints (KISS, DRY, YAGNI)
+@app.route("/api/portfolios", methods=["GET", "POST"])
+def portfolios_collection():
+    if request.method == "GET":
+        portfolios = Portfolio.query.all()
+        return jsonify([{"id": p.id, "name": p.name} for p in portfolios])
+    elif request.method == "POST":
+        data = request.json
+        portfolio = Portfolio(id=str(uuid.uuid4()), name=data["name"])
+        db.session.add(portfolio)
+        db.session.commit()
+        return jsonify({"id": portfolio.id, "name": portfolio.name}), 201
+
+
+@app.route("/api/portfolios/<portfolio_id>", methods=["DELETE"])
+def delete_portfolio(portfolio_id):
+    portfolio = Portfolio.query.get(portfolio_id)
+    if not portfolio:
+        abort(404)
+    # Set properties' portfolio_id to None (YAGNI: no cascade delete)
+    for prop in Property.query.filter_by(portfolio_id=portfolio_id):
+        prop.portfolio_id = None
+    db.session.delete(portfolio)
+    db.session.commit()
+    return "", 204
 
 
 if __name__ == "__main__":
