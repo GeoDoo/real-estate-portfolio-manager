@@ -67,11 +67,13 @@ export default function PortfoliosPage() {
       ) : portfolios.length === 0 ? (
         <div className="text-gray-500">No portfolios found.</div>
       ) : (
-        <ul className="space-y-4">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {portfolios.map((p) => (
             <li key={p.id}>
-              <Link href={`/portfolios/${p.id}`} className="block bg-white rounded-lg shadow-md px-6 py-5 text-lg font-medium text-gray-900 hover:shadow-lg hover:bg-gray-50 transition-all border border-gray-200">
-                {p.name}
+              <Link href={`/portfolios/${p.id}`}
+                className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-5 text-lg font-medium text-gray-900 hover:shadow-md hover:bg-gray-50 transition-all group">
+                <span>{p.name}</span>
+                <span className="text-gray-300 group-hover:text-blue-500 transition-colors">→</span>
               </Link>
             </li>
           ))}
