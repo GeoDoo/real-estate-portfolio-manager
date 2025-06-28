@@ -345,7 +345,15 @@ export default function ValuationDetailPage() {
                     }>
                       ${cashFlows[cashFlows.length - 1].cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </span>
-                    <div className="text-sm text-gray-600">Net Present Value</div>
+                    <div className="text-base font-semibold text-gray-600 flex items-center justify-center gap-1">
+                      Net Present Value
+                      <span className="relative group ml-1 cursor-pointer">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="inline-block align-middle text-gray-400 group-hover:text-gray-700"><circle cx="12" cy="12" r="10" strokeWidth="2"/><text x="12" y="16" textAnchor="middle" fontSize="12" fill="currentColor">i</text></svg>
+                        <span className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-gray-900 text-white text-sm rounded-lg px-5 py-3 shadow-xl max-w-2xl min-w-[300px]" style={{top: '100%'}}>
+                          NPV is the total value of all future cash flows (income minus expenses), discounted to today's value. A positive NPV means the investment is expected to be profitable.
+                        </span>
+                      </span>
+                    </div>
                   </div>
                   <div className="text-center">
                     <span className={
@@ -357,7 +365,15 @@ export default function ValuationDetailPage() {
                     }>
                       {irr ? `${irr.toFixed(2)}%` : 'N/A'}
                     </span>
-                    <div className="text-sm text-gray-600">Internal Rate of Return</div>
+                    <div className="text-base font-semibold text-gray-600 flex items-center justify-center gap-1">
+                      Internal Rate of Return
+                      <span className="relative group ml-1 cursor-pointer">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="inline-block align-middle text-gray-400 group-hover:text-gray-700"><circle cx="12" cy="12" r="10" strokeWidth="2"/><text x="12" y="16" textAnchor="middle" fontSize="12" fill="currentColor">i</text></svg>
+                        <span className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-gray-900 text-white text-sm rounded-lg px-5 py-3 shadow-xl max-w-2xl min-w-[300px]" style={{top: '100%'}}>
+                          IRR is the annualized rate of return that makes the net present value of all cash flows equal to zero. A higher IRR means a better return on investment.
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </div>
 
