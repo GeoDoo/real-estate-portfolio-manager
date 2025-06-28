@@ -7,6 +7,7 @@ import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { propertiesAPI } from '@/lib/api/properties';
 import { valuationsAPI } from '@/lib/api/valuations';
+import { portfoliosAPI, Portfolio } from '@/lib/api/portfolios';
 import PageContainer from '@/components/PageContainer';
 
 type RibbonStatus = 'loading' | 'buy' | 'no-buy' | 'none';
@@ -23,6 +24,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ribbons, setRibbons] = useState<Record<string, RibbonData>>({});
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -56,6 +58,9 @@ export default function HomePage() {
           }
         }));
         setRibbons(ribbonsObj);
+        // Fetch portfolios
+        const portfoliosData = await portfoliosAPI.getAll();
+        setPortfolios(portfoliosData);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties';
         setError(errorMessage);
@@ -200,6 +205,33 @@ export default function HomePage() {
                   </div>
                   <div className="text-sm text-gray-500">
                     {formattedDate && `Added: ${formattedDate}`}
+                  </div>
+                  {/* Add to Portfolio - simple inline */}
+                  <div className="mt-6 flex items-center gap-2">
+                    <span className="text-gray-700 text-base">Add to portfolio:</span>
+                    <select
+                      className="border border-gray-300 rounded px-3 py-1 text-base text-gray-900 focus:ring-2 focus:border-transparent"
+                      defaultValue=""
+                      onChange={async e => {
+                        const portfolioId = e.target.value;
+                        if (portfolioId) {
+                          await propertiesAPI.assignToPortfolio(property.id, portfolioId);
+                          router.push(`/portfolios/${portfolioId}`);
+                        }
+                      }}
+                    >
+                      <option value="" disabled>Select...</option>
+                      {portfolios.length > 0 ? (
+                        portfolios.map(portfolio => (
+                          <option key={portfolio.id} value={portfolio.id}>{portfolio.name}</option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No portfolios. Create one first.</option>
+                      )}
+                    </select>
+                    {portfolios.length === 0 && (
+                      <Link href="/portfolios" className="text-blue-600 underline ml-2">Create one</Link>
+                    )}
                   </div>
                 </div>
               );

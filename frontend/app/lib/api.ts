@@ -90,6 +90,12 @@ export const api = {
       body: data ? JSON.stringify(data) : undefined 
     }),
     
+  patch: <T>(endpoint: string, data?: unknown): Promise<T> => 
+    apiFetch<T>(endpoint, { 
+      method: 'PATCH', 
+      body: data ? JSON.stringify(data) : undefined 
+    }),
+    
   delete: <T>(endpoint: string): Promise<T> => 
     apiFetch<T>(endpoint, { method: 'DELETE' }),
 }; 

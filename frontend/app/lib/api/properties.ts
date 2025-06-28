@@ -62,4 +62,8 @@ export const propertiesAPI = {
       throw new APIError('Failed to delete property');
     }
   },
+
+  assignToPortfolio: async (propertyId: string, portfolioId: string) => {
+    return await api.patch(`/api/properties/${propertyId}`, { portfolio_id: portfolioId });
+  },
 }; 

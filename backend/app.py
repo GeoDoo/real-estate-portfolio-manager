@@ -301,7 +301,7 @@ def properties_collection():
         return jsonify(clean_for_json(prop.to_dict())), 201
 
 
-@app.route("/api/properties/<prop_id>", methods=["GET", "PUT"])
+@app.route("/api/properties/<prop_id>", methods=["GET", "PUT", "PATCH"])
 def property_item(prop_id):
     prop = Property.query.get(prop_id)
     if not prop:
@@ -324,6 +324,33 @@ def property_item(prop_id):
 
         prop.address = address
         prop.listing_link = data.get("listing_link")
+        db.session.commit()
+        return jsonify(clean_for_json(prop.to_dict()))
+    elif request.method == "PATCH":
+        data = request.json
+        
+        # Handle address updates (with validation)
+        if "address" in data:
+            address = data["address"]
+            if not address:
+                return jsonify({"error": "Address is required"}), 400
+            
+            # Check if address is being changed and if it conflicts with existing property
+            if (
+                address != prop.address
+                and Property.query.filter_by(address=address).first()
+            ):
+                return jsonify({"error": "Property with this address already exists"}), 400
+            
+            prop.address = address
+        
+        # Handle other field updates
+        if "listing_link" in data:
+            prop.listing_link = data["listing_link"]
+        
+        if "portfolio_id" in data:
+            prop.portfolio_id = data["portfolio_id"]
+        
         db.session.commit()
         return jsonify(clean_for_json(prop.to_dict()))
 
@@ -536,6 +563,20 @@ def delete_portfolio(portfolio_id):
     db.session.delete(portfolio)
     db.session.commit()
     return "", 204
+
+
+@app.route("/api/portfolios/<portfolio_id>", methods=["GET"])
+def get_portfolio(portfolio_id):
+    portfolio = Portfolio.query.get(portfolio_id)
+    if not portfolio:
+        abort(404)
+    return jsonify({"id": portfolio.id, "name": portfolio.name})
+
+
+@app.route("/api/portfolios/<portfolio_id>/properties", methods=["GET"])
+def get_portfolio_properties(portfolio_id):
+    properties = Property.query.filter_by(portfolio_id=portfolio_id).all()
+    return jsonify([p.to_dict() for p in properties])
 
 
 if __name__ == "__main__":
