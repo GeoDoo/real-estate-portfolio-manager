@@ -8,12 +8,20 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { propertiesAPI } from '@/lib/api/properties';
 import { valuationsAPI } from '@/lib/api/valuations';
 
+type RibbonStatus = 'loading' | 'buy' | 'no-buy' | 'none';
+
+interface RibbonData {
+  status: RibbonStatus;
+  npv?: number;
+  irr?: number;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ribbons, setRibbons] = useState<Record<string, { status: 'loading' | 'buy' | 'no-buy' | 'none' }>>({});
+  const [ribbons, setRibbons] = useState<Record<string, RibbonData>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -23,7 +31,7 @@ export default function HomePage() {
         const data = await propertiesAPI.getAll();
         setProperties(data);
         // For each property, fetch valuation and cash flows
-        const ribbonsObj: Record<string, { status: 'loading' | 'buy' | 'no-buy' | 'none' }> = {};
+        const ribbonsObj: Record<string, RibbonData> = {};
         await Promise.all(data.map(async (property) => {
           ribbonsObj[property.id] = { status: 'loading' };
           const valuation = await valuationsAPI.getByPropertyId(property.id);
@@ -41,9 +49,9 @@ export default function HomePage() {
             irr = null;
           }
           if (npv > 0 && irr && irr > 0) {
-            ribbonsObj[property.id] = { status: 'buy' };
+            ribbonsObj[property.id] = { status: 'buy', npv, irr: irr || undefined };
           } else {
-            ribbonsObj[property.id] = { status: 'no-buy' };
+            ribbonsObj[property.id] = { status: 'no-buy', npv, irr: irr || undefined };
           }
         }));
         setRibbons(ribbonsObj);
@@ -59,6 +67,47 @@ export default function HomePage() {
 
   const handleEditProperty = (property: Property) => {
     router.push(`/properties/${property.id}/edit`);
+  };
+
+  const renderRecommendationTooltip = (ribbon: RibbonData) => {
+    if (ribbon.status === 'loading') return <span>Calculating...</span>;
+    if (ribbon.status === 'none') return <span>No valuation data available</span>;
+
+    const npv = ribbon.npv ?? 0;
+    const irr = ribbon.irr ?? 0;
+    const npvStatus = npv > 0 ? 'positive' : npv < 0 ? 'negative' : 'zero';
+    const irrStatus = irr > 0 ? 'positive' : irr < 0 ? 'negative' : 'zero';
+
+    if (ribbon.status === 'buy') {
+      return (
+        <div>
+          <div className="font-semibold mb-2">BUY Recommendation</div>
+          <ul className="mb-2 list-disc list-inside space-y-1">
+            <li>NPV: <span className="font-mono">${npv.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> <span className="text-green-400">({npvStatus})</span></li>
+            <li>IRR: <span className="font-mono">{irr.toFixed(2)}%</span> <span className="text-green-400">({irrStatus})</span></li>
+          </ul>
+          <div>This property is recommended because both NPV and IRR are positive, indicating a profitable investment under your assumptions.</div>
+        </div>
+      );
+    } else {
+      const reasons = [];
+      if (npv <= 0) {
+        reasons.push(<li key="npv">NPV: <span className="font-mono">${npv.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> <span className="text-red-400">({npvStatus}, not profitable)</span></li>);
+      }
+      if (irr <= 0) {
+        reasons.push(<li key="irr">IRR: <span className="font-mono">{irr.toFixed(2)}%</span> <span className="text-red-400">({irrStatus}, below required return)</span></li>);
+      }
+      if (reasons.length === 0) {
+        reasons.push(<li key="other">Does not meet investment criteria</li>);
+      }
+      return (
+        <div>
+          <div className="font-semibold mb-2">DO NOT BUY Recommendation</div>
+          <ul className="mb-2 list-disc list-inside space-y-1">{reasons}</ul>
+          <div>This property is not recommended because one or both key metrics are not positive.<br/>Consider adjusting your assumptions or looking for other opportunities.</div>
+        </div>
+      );
+    }
   };
 
   return (
@@ -109,13 +158,22 @@ export default function HomePage() {
                   
                   {/* Ribbon */}
                   {ribbon && ribbon.status !== 'none' && (
-                    <div
-                      className={`absolute top-0 right-0 px-6 py-2 rounded-tr-2xl rounded-bl-2xl text-base font-bold shadow-lg z-20 ${
-                        ribbon.status === 'buy' ? 'bg-green-500 text-white' : ribbon.status === 'no-buy' ? 'bg-red-600 text-white' : 'bg-gray-300 text-gray-700'
-                      }`}
-                      style={{ minWidth: 120, textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}
-                    >
-                      {ribbon.status === 'loading' ? '...' : ribbon.status === 'buy' ? 'BUY' : 'DO NOT BUY'}
+                    <div className="absolute top-0 right-0 z-30 group" style={{ minWidth: 120 }}>
+                      <div
+                        className={`px-6 py-2 rounded-tr-2xl rounded-bl-2xl text-base font-bold shadow-lg cursor-help ${
+                          ribbon.status === 'buy' ? 'bg-green-500 text-white' : ribbon.status === 'no-buy' ? 'bg-red-600 text-white' : 'bg-gray-300 text-gray-700'
+                        }`}
+                        style={{ textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}
+                      >
+                        {ribbon.status === 'loading' ? '...' : ribbon.status === 'buy' ? 'BUY' : 'DO NOT BUY'}
+                      </div>
+                      {/* Tooltip */}
+                      <div className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" style={{top: '100%'}}>
+                        <div className="bg-gray-900 text-white text-[15px] leading-snug rounded-lg px-4 py-3 shadow-2xl max-w-xs min-w-[200px] border border-gray-700 relative animate-fadein whitespace-normal">
+                          {renderRecommendationTooltip(ribbon)}
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-l border-t border-gray-700 transform rotate-45 shadow-sm"></div>
+                        </div>
+                      </div>
                     </div>
                   )}
                   <div className="mb-6 mt-4">
@@ -148,6 +206,15 @@ export default function HomePage() {
           </div>
         )}
       </div>
+      <style jsx global>{`
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadein {
+  animation: fadein 0.25s ease;
+}
+`}</style>
     </main>
   );
 } 
