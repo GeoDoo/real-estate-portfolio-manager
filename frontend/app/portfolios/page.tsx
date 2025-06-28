@@ -4,6 +4,7 @@ import Link from "next/link";
 import { portfoliosAPI, Portfolio } from "@/lib/api/portfolios";
 import Button from "@/components/Button";
 import PageContainer from "@/components/PageContainer";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export default function PortfoliosPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -45,6 +46,7 @@ export default function PortfoliosPage() {
 
   return (
     <PageContainer>
+      <Breadcrumbs last="Portfolios" />
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Portfolios</h1>
       <form onSubmit={handleAdd} className="flex gap-2 mb-8">
         <input

@@ -5,6 +5,7 @@ import { Property } from '@/types/property';
 import { propertiesAPI } from '@/lib/api/properties';
 import NewPropertyForm from '@/features/properties/NewPropertyForm';
 import PageContainer from '@/components/PageContainer';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function EditPropertyPage() {
   const params = useParams();
@@ -34,6 +35,7 @@ export default function EditPropertyPage() {
   if (loading) {
     return (
       <PageContainer>
+        <Breadcrumbs last="Edit Property" />
         <div className="text-center text-gray-500">Loading...</div>
       </PageContainer>
     );
@@ -42,10 +44,16 @@ export default function EditPropertyPage() {
   if (error || !property) {
     return (
       <PageContainer>
+        <Breadcrumbs last="Edit Property" />
         <div className="text-center text-red-600">{error || 'Property not found'}</div>
       </PageContainer>
     );
   }
 
-  return <NewPropertyForm property={property} />;
+  return (
+    <PageContainer>
+      <Breadcrumbs last="Edit Property" propertyId={propertyId} />
+      <NewPropertyForm property={property} />
+    </PageContainer>
+  );
 } 
