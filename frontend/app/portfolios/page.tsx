@@ -67,10 +67,10 @@ export default function PortfoliosPage() {
       ) : portfolios.length === 0 ? (
         <div className="text-gray-500">No portfolios found.</div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {portfolios.map((p) => (
             <li key={p.id}>
-              <Link href={`/portfolios/${p.id}`} className="text-lg text-blue-700 hover:underline">
+              <Link href={`/portfolios/${p.id}`} className="block bg-white rounded-lg shadow-md px-6 py-5 text-lg font-medium text-gray-900 hover:shadow-lg hover:bg-gray-50 transition-all border border-gray-200">
                 {p.name}
               </Link>
             </li>
