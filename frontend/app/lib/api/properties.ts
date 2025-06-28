@@ -63,7 +63,7 @@ export const propertiesAPI = {
     }
   },
 
-  assignToPortfolio: async (propertyId: string, portfolioId: string) => {
+  assignToPortfolio: async (propertyId: string, portfolioId: string | null) => {
     return await api.patch(`/api/properties/${propertyId}`, { portfolio_id: portfolioId });
   },
 }; 

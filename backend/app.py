@@ -349,7 +349,11 @@ def property_item(prop_id):
             prop.listing_link = data["listing_link"]
         
         if "portfolio_id" in data:
-            prop.portfolio_id = data["portfolio_id"]
+            # Allow removing from portfolio by setting to None if null is sent
+            if data["portfolio_id"] is None:
+                prop.portfolio_id = None
+            else:
+                prop.portfolio_id = data["portfolio_id"]
         
         db.session.commit()
         return jsonify(clean_for_json(prop.to_dict()))

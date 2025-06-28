@@ -208,29 +208,47 @@ export default function HomePage() {
                   </div>
                   {/* Add to Portfolio - simple inline */}
                   <div className="mt-6 flex items-center gap-2">
-                    <span className="text-gray-700 text-base">Add to portfolio:</span>
-                    <select
-                      className="border border-gray-300 rounded px-3 py-1 text-base text-gray-900 focus:ring-2 focus:border-transparent"
-                      defaultValue=""
-                      onChange={async e => {
-                        const portfolioId = e.target.value;
-                        if (portfolioId) {
-                          await propertiesAPI.assignToPortfolio(property.id, portfolioId);
-                          router.push(`/portfolios/${portfolioId}`);
-                        }
-                      }}
-                    >
-                      <option value="" disabled>Select...</option>
-                      {portfolios.length > 0 ? (
-                        portfolios.map(portfolio => (
-                          <option key={portfolio.id} value={portfolio.id}>{portfolio.name}</option>
-                        ))
-                      ) : (
-                        <option value="" disabled>No portfolios. Create one first.</option>
-                      )}
-                    </select>
-                    {portfolios.length === 0 && (
-                      <Link href="/portfolios" className="text-blue-600 underline ml-2">Create one</Link>
+                    {property.portfolio_id ? (
+                      <>
+                        <span className="text-gray-700 text-base">In portfolio:</span>
+                        <span className="font-semibold text-blue-700">
+                          {portfolios.find(p => p.id === property.portfolio_id)?.name || 'Unknown'}
+                        </span>
+                        <button
+                          className="ml-2 px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium border border-red-200"
+                          onClick={async () => {
+                            await propertiesAPI.assignToPortfolio(property.id, null);
+                            setProperties(prev => prev.map(p => p.id === property.id ? { ...p, portfolio_id: undefined } : p));
+                          }}
+                        >Remove</button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-gray-700 text-base">Add to portfolio:</span>
+                        <select
+                          className="border border-gray-300 rounded px-3 py-1 text-base text-gray-900 focus:ring-2 focus:border-transparent"
+                          value=""
+                          onChange={async e => {
+                            const portfolioId = e.target.value;
+                            if (portfolioId) {
+                              await propertiesAPI.assignToPortfolio(property.id, portfolioId);
+                              router.push(`/portfolios/${portfolioId}`);
+                            }
+                          }}
+                        >
+                          <option value="" disabled>Select...</option>
+                          {portfolios.length > 0 ? (
+                            portfolios.map(portfolio => (
+                              <option key={portfolio.id} value={portfolio.id}>{portfolio.name}</option>
+                            ))
+                          ) : (
+                            <option value="" disabled>No portfolios. Create one first.</option>
+                          )}
+                        </select>
+                        {portfolios.length === 0 && (
+                          <Link href="/portfolios" className="text-blue-600 underline ml-2">Create one</Link>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
