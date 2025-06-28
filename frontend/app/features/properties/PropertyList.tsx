@@ -7,6 +7,7 @@ import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { propertiesAPI } from '@/lib/api/properties';
 import { valuationsAPI } from '@/lib/api/valuations';
+import PageContainer from '@/components/PageContainer';
 
 type RibbonStatus = 'loading' | 'buy' | 'no-buy' | 'none';
 
@@ -111,8 +112,8 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 pt-[30px] px-4 pb-12">
-      <div className="max-w-6xl mx-auto">
+    <>
+      <PageContainer>
         <Breadcrumbs last="Properties" propertyId="" />
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
@@ -205,7 +206,7 @@ export default function HomePage() {
             })}
           </div>
         )}
-      </div>
+      </PageContainer>
       <style jsx global>{`
 @keyframes fadein {
   from { opacity: 0; transform: translateY(8px); }
@@ -215,6 +216,6 @@ export default function HomePage() {
   animation: fadein 0.25s ease;
 }
 `}</style>
-    </main>
+    </>
   );
 } 

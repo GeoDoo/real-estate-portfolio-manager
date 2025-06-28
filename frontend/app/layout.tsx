@@ -24,20 +24,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <nav className="bg-white shadow fixed top-0 left-0 right-0 z-50 h-16 flex items-center">
-          <div className="max-w-6xl mx-auto w-full">
-            <div className="flex justify-between h-16 items-center">
-              <div>
-                <a href="/" className="text-xl font-bold" style={{ color: 'var(--primary)' }}>Geoshan Properties Ltd</a>
-              </div>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <nav className="bg-white shadow h-16 flex items-center w-full mb-8 fixed top-0 left-0 right-0 z-50">
+          <div className="max-w-6xl mx-auto px-4 w-full flex justify-between h-16 items-center">
+            <div className="flex items-center gap-8">
+              <a href="/" className="text-xl font-bold" style={{ color: 'var(--primary)' }}>Geoshan Properties Ltd</a>
+              <a href="/portfolios" className="text-base font-medium text-gray-700 hover:text-[var(--primary)] transition-colors">Portfolios</a>
             </div>
           </div>
         </nav>
-        <div className="pt-16">
-          {children}
+        <div className="max-w-6xl mx-auto px-4 pt-20">
+          <main>
+            {children}
+          </main>
         </div>
       </body>
     </html>

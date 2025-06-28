@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Property } from '@/types/dcf';
+import { Property } from '@/types/property';
 import { propertiesAPI } from '@/lib/api/properties';
 import NewPropertyForm from '@/features/properties/NewPropertyForm';
+import PageContainer from '@/components/PageContainer';
 
 export default function EditPropertyPage() {
   const params = useParams();
@@ -32,21 +33,17 @@ export default function EditPropertyPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center text-gray-500">Loading...</div>
-        </div>
-      </main>
+      <PageContainer>
+        <div className="text-center text-gray-500">Loading...</div>
+      </PageContainer>
     );
   }
 
   if (error || !property) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center text-red-600">{error || 'Property not found'}</div>
-        </div>
-      </main>
+      <PageContainer>
+        <div className="text-center text-red-600">{error || 'Property not found'}</div>
+      </PageContainer>
     );
   }
 
