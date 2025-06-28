@@ -13,9 +13,9 @@ export default function Breadcrumbs({ propertyId, last }: BreadcrumbsProps) {
   // Only homepage
   if (pathname === '/' || pathname === '') {
     return (
-      <nav className="text-sm text-gray-500 mb-8" aria-label="Breadcrumb">
+      <nav className="text-sm" aria-label="Breadcrumb" style={{ color: 'var(--text-muted)' }}>
         <ol className="list-reset flex">
-          <li><span className="text-gray-700">Home</span></li>
+          <li><span style={{ color: 'var(--foreground)' }}>Home</span></li>
         </ol>
       </nav>
     );
@@ -36,15 +36,23 @@ export default function Breadcrumbs({ propertyId, last }: BreadcrumbsProps) {
   }
 
   return (
-    <nav className="text-sm text-gray-500 mb-8" aria-label="Breadcrumb">
-      <ol className="list-reset flex">
+    <nav className="text-sm mb-4" aria-label="Breadcrumb" style={{ color: 'var(--text-muted)' }}>
+      <ol className="list-reset flex items-center">
         {crumbs.map((crumb, idx) => (
           <li key={idx} className="flex items-center">
-            {idx > 0 && <span className="mx-2">/</span>}
+            {idx > 0 && (
+              <span className="mx-3 text-gray-400">/</span>
+            )}
             {crumb.href ? (
-              <Link href={crumb.href} className="hover:underline" style={{ color: 'var(--primary)' }}>{crumb.name}</Link>
+              <Link 
+                href={crumb.href} 
+                className="hover:underline transition-colors"
+                style={{ color: 'var(--primary)' }}
+              >
+                {crumb.name}
+              </Link>
             ) : (
-              <span className="text-gray-700">{crumb.name}</span>
+              <span style={{ color: 'var(--foreground)' }}>{crumb.name}</span>
             )}
           </li>
         ))}

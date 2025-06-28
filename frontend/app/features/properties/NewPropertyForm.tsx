@@ -64,14 +64,14 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
   return (
     <PageContainer>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
           {isEditing ? 'Edit Property' : 'Add New Property'}
         </h1>
       </div>
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="card p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
               Address
             </label>
             <input
@@ -79,15 +79,14 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
               name="address"
               value={form.address}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
+              className="input"
               placeholder="e.g., 123 Main St, Apt 4B, New York, NY 10001"
               required
               disabled={loading}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
               Listing Link (optional)
             </label>
             <input
@@ -95,15 +94,14 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
               name="listing_link"
               value={form.listing_link}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
+              className="input"
               placeholder="e.g., https://www.rightmove.co.uk/properties/123456"
               disabled={loading}
               pattern="https?://.*"
             />
           </div>
           {error && (
-            <div className="text-red-600 text-sm">{error}</div>
+            <div className="text-sm" style={{ color: 'var(--error)' }}>{error}</div>
           )}
           <Button
             type="submit"

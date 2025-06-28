@@ -6,8 +6,10 @@ interface PageContainerProps {
 }
 
 const PageContainer: React.FC<PageContainerProps> = ({ children, className = '' }) => (
-  <div className={`pt-4 pb-12 ${className}`}>
-    {children}
+  <div className={` ${className}`} style={{ background: 'var(--background)' }}>
+    <div className="max-w-6xl mx-auto">
+      {children}
+    </div>
   </div>
 );
 

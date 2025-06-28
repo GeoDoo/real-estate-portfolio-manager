@@ -5,12 +5,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { portfoliosAPI } from '@/lib/api/portfolios';
 import { valuationsAPI } from '@/lib/api/valuations';
 import { CashFlowRow } from '@/types/cashflow';
-
-function getNumberColorClass(n: number) {
-  if (n > 0) return 'text-green-700 font-bold';
-  if (n < 0) return 'text-red-600 font-bold';
-  return 'text-gray-500 font-bold';
-}
+import { getNumberColor, formatCurrency } from '@/lib/utils';
 
 export default function PortfolioDetailsPage({ params }: { params: any }) {
   const { id } = use(params) as { id: string };
@@ -112,75 +107,89 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
   return (
     <PageContainer>
       <Breadcrumbs last={portfolioName} />
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">{portfolioName}</h1>
+      <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--foreground)' }}>{portfolioName}</h1>
       {/* Target Net Worth Section */}
       <div className="mb-10">
-        <div className="flex flex-col md:flex-row md:items-center gap-6 p-6 bg-white rounded-2xl shadow-lg border-l-8 border-[#00cfa6] min-w-0">
-          <div className="flex-1 min-w-[260px]">
-            <div className="text-base font-semibold text-gray-700 mb-2 tracking-wide">Target Net Worth</div>
-            <div className="flex items-end gap-2 min-w-0">
-              <span className="text-3xl font-extrabold text-[#00cfa6]">£</span>
-              <input
-                ref={netWorthInputRef}
-                type="number"
-                className="text-3xl font-extrabold text-[#00cfa6] bg-gray-50 border border-gray-200 focus:border-[#00cfa6] focus:ring-2 focus:ring-[#00cfa6]/30 px-4 py-2 rounded-lg transition-all outline-none shadow-sm text-center"
-                value={targetNetWorth}
-                min={0}
-                step={10000}
-                onChange={e => setTargetNetWorth(Number(e.target.value))}
-                style={{ width: 'auto', minWidth: 60, maxWidth: 220, display: 'inline-block' }}
-              />
-              {/* Hidden span for measuring width */}
-              <span ref={netWorthSpanRef} className="invisible absolute text-3xl font-extrabold px-4" style={{ whiteSpace: 'pre' }}>{targetNetWorth || 0}</span>
-              <span className="text-base text-gray-500 ml-2">in</span>
-              <input
-                ref={yearInputRef}
-                type="number"
-                className="text-2xl font-bold text-[#00cfa6] bg-gray-50 border border-gray-200 focus:border-[#00cfa6] focus:ring-2 focus:ring-[#00cfa6]/30 px-2 py-1 rounded-lg ml-2 outline-none shadow-sm text-center"
-                value={targetYear}
-                min={1}
-                max={100}
-                onChange={e => setTargetYear(Number(e.target.value))}
-                style={{ width: 'auto', minWidth: 36, maxWidth: 80, display: 'inline-block' }}
-              />
-              {/* Hidden span for measuring width */}
-              <span ref={yearSpanRef} className="invisible absolute text-2xl font-bold px-2" style={{ whiteSpace: 'pre' }}>{targetYear || 0}</span>
-              <span className="text-base text-gray-500 ml-1">years</span>
+        <div className="card p-6 border-l-8" style={{ borderLeftColor: 'var(--primary)' }}>
+          <div className="flex flex-col md:flex-row md:items-center gap-6 min-w-0">
+            <div className="flex-1 min-w-[260px]">
+              <div className="text-base font-semibold mb-2 tracking-wide" style={{ color: 'var(--text-muted)' }}>Target Net Worth</div>
+              <div className="flex items-end gap-2 min-w-0">
+                <span className="text-3xl font-extrabold" style={{ color: 'var(--primary)' }}>£</span>
+                <input
+                  ref={netWorthInputRef}
+                  type="number"
+                  className="text-3xl font-extrabold bg-gray-50 border border-gray-200 focus:border-[#00cfa6] focus:ring-2 focus:ring-[#00cfa6]/30 px-4 py-2 rounded-lg transition-all outline-none shadow-sm text-center"
+                  value={targetNetWorth}
+                  min={0}
+                  step={10000}
+                  onChange={e => setTargetNetWorth(Number(e.target.value))}
+                  style={{ 
+                    width: 'auto', 
+                    minWidth: 60, 
+                    maxWidth: 220, 
+                    display: 'inline-block',
+                    color: 'var(--primary)'
+                  }}
+                />
+                {/* Hidden span for measuring width */}
+                <span ref={netWorthSpanRef} className="invisible absolute text-3xl font-extrabold px-4" style={{ whiteSpace: 'pre' }}>{targetNetWorth || 0}</span>
+                <span className="text-base ml-2" style={{ color: 'var(--text-muted)' }}>in</span>
+                <input
+                  ref={yearInputRef}
+                  type="number"
+                  className="text-2xl font-bold bg-gray-50 border border-gray-200 focus:border-[#00cfa6] focus:ring-2 focus:ring-[#00cfa6]/30 px-2 py-1 rounded-lg ml-2 outline-none shadow-sm text-center"
+                  value={targetYear}
+                  min={1}
+                  max={100}
+                  onChange={e => setTargetYear(Number(e.target.value))}
+                  style={{ 
+                    width: 'auto', 
+                    minWidth: 36, 
+                    maxWidth: 80, 
+                    display: 'inline-block',
+                    color: 'var(--primary)'
+                  }}
+                />
+                {/* Hidden span for measuring width */}
+                <span ref={yearSpanRef} className="invisible absolute text-2xl font-bold px-2" style={{ whiteSpace: 'pre' }}>{targetYear || 0}</span>
+                <span className="text-base ml-1" style={{ color: 'var(--text-muted)' }}>years</span>
+              </div>
             </div>
-          </div>
-          <div className="flex-1 min-w-[260px]">
-            <div className="text-base font-semibold text-gray-700 mb-2 tracking-wide">Projected Net Worth</div>
-            <div className={`text-3xl font-extrabold ${projectedNetWorth >= targetNetWorth ? 'text-green-600' : 'text-red-600'}`}>£{projectedNetWorth.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-            <div className="text-base text-gray-700 mt-1">Gap: <span className={gap > 0 ? 'text-red-600' : 'text-green-700'}>£{gap.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div>
+            <div className="flex-1 min-w-[260px]">
+              <div className="text-base font-semibold mb-2 tracking-wide" style={{ color: 'var(--text-muted)' }}>Projected Net Worth</div>
+              <div className={`text-3xl font-extrabold ${projectedNetWorth >= targetNetWorth ? 'text-green-600' : 'text-red-600'}`}>£{formatCurrency(projectedNetWorth, '')}</div>
+              <div className="text-base mt-1" style={{ color: 'var(--text-muted)' }}>Gap: <span className={gap > 0 ? 'text-red-600' : 'text-green-700'}>£{formatCurrency(gap, '')}</span></div>
+            </div>
           </div>
         </div>
       </div>
       {loading ? (
-        <div className="mt-4 text-gray-500">Loading...</div>
+        <div className="mt-4" style={{ color: 'var(--text-muted)' }}>Loading...</div>
       ) : properties.length === 0 ? (
-        <div className="mt-4 text-gray-500">You have not added any properties yet.</div>
+        <div className="mt-4" style={{ color: 'var(--text-muted)' }}>You have not added any properties yet.</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-[700px] w-full bg-white rounded-xl shadow-sm border border-gray-200">
+          <table className="table">
             <thead>
               <tr>
-                <th className="px-4 py-2 text-left">Year</th>
-                <th className="px-4 py-2 text-right">Revenue ($)</th>
-                <th className="px-4 py-2 text-right">Expenses ($)</th>
-                <th className="px-4 py-2 text-right">Net Cash Flow ($)</th>
-                <th className="px-4 py-2 text-right">Present Value ($)</th>
-                <th className="px-4 py-2 text-right">Cumulative PV ($)</th>
+                <th className="text-left">Year</th>
+                <th className="text-right">Revenue ($)</th>
+                <th className="text-right">Expenses ($)</th>
+                <th className="text-right">Net Cash Flow ($)</th>
+                <th className="text-right">Present Value ($)</th>
+                <th className="text-right">Cumulative PV ($)</th>
               </tr>
             </thead>
             <tbody>
               {aggregateRows.map((row) => (
                 <tr key={row.year}>
-                  <td className="px-4 py-2 text-gray-900">{row.year}</td>
-                  <td className={`px-4 py-2 text-right ${getNumberColorClass(row.revenue)}`}>{row.revenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td className={`px-4 py-2 text-right ${getNumberColorClass(row.totalExpenses)}`}>{row.totalExpenses.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td className={`px-4 py-2 text-right ${getNumberColorClass(row.netCashFlow)}`}>{row.netCashFlow.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td className={`px-4 py-2 text-right ${getNumberColorClass(row.presentValue)}`}>{row.presentValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td className={`px-4 py-2 text-right ${getNumberColorClass(row.cumulativePV)}`}>{row.cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td style={{ color: 'var(--foreground)' }}>{row.year}</td>
+                  <td className="text-right font-bold" style={{ color: getNumberColor(row.revenue) }}>{formatCurrency(row.revenue)}</td>
+                  <td className="text-right font-bold" style={{ color: getNumberColor(row.totalExpenses) }}>{formatCurrency(row.totalExpenses)}</td>
+                  <td className="text-right font-bold" style={{ color: getNumberColor(row.netCashFlow) }}>{formatCurrency(row.netCashFlow)}</td>
+                  <td className="text-right font-bold" style={{ color: getNumberColor(row.presentValue) }}>{formatCurrency(row.presentValue)}</td>
+                  <td className="text-right font-bold" style={{ color: getNumberColor(row.cumulativePV) }}>{formatCurrency(row.cumulativePV)}</td>
                 </tr>
               ))}
             </tbody>

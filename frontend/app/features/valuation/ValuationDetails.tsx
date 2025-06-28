@@ -9,6 +9,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { valuationsAPI } from '@/lib/api/valuations';
 import Button from '@/components/Button';
 import PageContainer from '@/components/PageContainer';
+import { getNumberColor } from '@/lib/utils';
 
 interface MonteCarloSummary {
   npv_mean: number;
@@ -16,12 +17,6 @@ interface MonteCarloSummary {
   npv_95th_percentile: number;
   irr_mean: number;
   probability_npv_positive: number;
-}
-
-function getNumberColorClass(n: number) {
-  if (n > 0) return 'text-green-700 font-bold';
-  if (n < 0) return 'text-red-600 font-bold';
-  return 'text-gray-500 font-bold';
 }
 
 function getChanceLabel(prob: number) {
@@ -403,38 +398,28 @@ export default function ValuationDetailPage() {
                     {cashFlows.map((row, index) => (
                       <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="py-2 px-4">{row.year}</td>
-                        <td className={`py-2 px-4 text-right`}>
-                          <span className={
-                            row.revenue > 0 ? 'text-green-700' : row.revenue < 0 ? 'text-red-600' : 'text-gray-900'
-                          }>
+                        <td className="py-2 px-4 text-right">
+                          <span className="font-bold" style={{ color: getNumberColor(row.revenue) }}>
                             {row.revenue.toLocaleString()}
                           </span>
                         </td>
-                        <td className={`py-2 px-4 text-right`}>
-                          <span className={
-                            -row.totalExpenses < 0 ? 'text-red-600' : 'text-gray-900'
-                          }>
+                        <td className="py-2 px-4 text-right">
+                          <span className="font-bold" style={{ color: getNumberColor(-row.totalExpenses) }}>
                             {-row.totalExpenses !== 0 ? `-${row.totalExpenses.toLocaleString()}` : '0'}
                           </span>
                         </td>
-                        <td className={`py-2 px-4 text-right`}>
-                          <span className={
-                            row.netCashFlow > 0 ? 'text-green-700' : row.netCashFlow < 0 ? 'text-red-600' : 'text-gray-900'
-                          }>
+                        <td className="py-2 px-4 text-right">
+                          <span className="font-bold" style={{ color: getNumberColor(row.netCashFlow) }}>
                             {row.netCashFlow.toLocaleString()}
                           </span>
                         </td>
-                        <td className={`py-2 px-4 text-right`}>
-                          <span className={
-                            row.presentValue > 0 ? 'text-green-700' : row.presentValue < 0 ? 'text-red-600' : 'text-gray-900'
-                          }>
+                        <td className="py-2 px-4 text-right">
+                          <span className="font-bold" style={{ color: getNumberColor(row.presentValue) }}>
                             {row.presentValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                           </span>
                         </td>
-                        <td className={`py-2 px-4 text-right`}>
-                          <span className={
-                            row.cumulativePV > 0 ? 'text-green-700' : row.cumulativePV < 0 ? 'text-red-600' : 'text-gray-900'
-                          }>
+                        <td className="py-2 px-4 text-right">
+                          <span className="font-bold" style={{ color: getNumberColor(row.cumulativePV) }}>
                             {row.cumulativePV.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                           </span>
                         </td>
@@ -494,20 +479,20 @@ export default function ValuationDetailPage() {
                     <table className="min-w-max w-auto text-base border-separate border-spacing-y-2">
                       <tbody>
                         <tr>
-                          <td className="font-bold text-right pr-4 text-[var(--color-dark)]">NPV Mean:</td>
-                          <td><span className={getNumberColorClass(mcSummary.npv_mean)}>{mcSummary.npv_mean > 0 ? '+' : ''}${mcSummary.npv_mean.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
+                          <td className="font-bold text-right pr-4" style={{ color: 'var(--foreground)' }}>NPV Mean:</td>
+                          <td><span className="font-bold" style={{ color: getNumberColor(mcSummary.npv_mean) }}>{mcSummary.npv_mean > 0 ? '+' : ''}${mcSummary.npv_mean.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
                         </tr>
                         <tr>
-                          <td className="font-bold text-right pr-4 text-[var(--color-dark)]">NPV 5th Percentile:</td>
-                          <td><span className={getNumberColorClass(mcSummary.npv_5th_percentile)}>${mcSummary.npv_5th_percentile.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
+                          <td className="font-bold text-right pr-4" style={{ color: 'var(--foreground)' }}>NPV 5th Percentile:</td>
+                          <td><span className="font-bold" style={{ color: getNumberColor(mcSummary.npv_5th_percentile) }}>${mcSummary.npv_5th_percentile.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
                         </tr>
                         <tr>
-                          <td className="font-bold text-right pr-4 text-[var(--color-dark)]">NPV 95th Percentile:</td>
-                          <td><span className={getNumberColorClass(mcSummary.npv_95th_percentile)}>${mcSummary.npv_95th_percentile.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
+                          <td className="font-bold text-right pr-4" style={{ color: 'var(--foreground)' }}>NPV 95th Percentile:</td>
+                          <td><span className="font-bold" style={{ color: getNumberColor(mcSummary.npv_95th_percentile) }}>${mcSummary.npv_95th_percentile.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></td>
                         </tr>
                         <tr>
-                          <td className="font-bold text-right pr-4 text-[var(--color-dark)]">IRR Mean:</td>
-                          <td><span className={getNumberColorClass(mcSummary.irr_mean)}>{(mcSummary.irr_mean * 100).toFixed(2)}%</span></td>
+                          <td className="font-bold text-right pr-4" style={{ color: 'var(--foreground)' }}>IRR Mean:</td>
+                          <td><span className="font-bold" style={{ color: getNumberColor(mcSummary.irr_mean) }}>{(mcSummary.irr_mean * 100).toFixed(2)}%</span></td>
                         </tr>
                         <tr>
                           <td className="font-bold text-right pr-4 text-[var(--color-dark)]">Chance of Positive NPV:</td>

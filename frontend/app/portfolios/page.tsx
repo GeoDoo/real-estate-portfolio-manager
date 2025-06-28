@@ -47,33 +47,33 @@ export default function PortfoliosPage() {
   return (
     <PageContainer>
       <Breadcrumbs last="Portfolios" />
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Portfolios</h1>
-      <form onSubmit={handleAdd} className="flex gap-2 mb-8">
+      <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--foreground)' }}>Portfolios</h1>
+      <form onSubmit={handleAdd} className="flex gap-3 mb-8">
         <input
           type="text"
           value={newName}
           onChange={e => setNewName(e.target.value)}
           placeholder="Portfolio name"
-          className="flex-1 p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+          className="input flex-1"
           disabled={loading}
         />
         <Button type="submit" disabled={loading || !newName.trim()}>
           Add
         </Button>
       </form>
-      {error && <div className="text-red-600 mb-4">{error}</div>}
+      {error && <div style={{ color: 'var(--error)' }} className="mb-4">{error}</div>}
       {loading && portfolios.length === 0 ? (
-        <div className="text-gray-500">Loading...</div>
+        <div style={{ color: 'var(--text-muted)' }}>Loading...</div>
       ) : portfolios.length === 0 ? (
-        <div className="text-gray-500">No portfolios found.</div>
+        <div style={{ color: 'var(--text-muted)' }}>No portfolios found.</div>
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {portfolios.map((p) => (
             <li key={p.id}>
               <Link href={`/portfolios/${p.id}`}
-                className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-5 text-lg font-medium text-gray-900 hover:shadow-md hover:bg-gray-50 transition-all group">
-                <span>{p.name}</span>
-                <span className="text-gray-300 group-hover:text-blue-500 transition-colors">→</span>
+                className="card flex items-center justify-between px-6 py-5 text-lg font-medium hover:shadow-md transition-all group">
+                <span style={{ color: 'var(--foreground)' }}>{p.name}</span>
+                <span className="transition-colors" style={{ color: 'var(--text-muted)' }}>→</span>
               </Link>
             </li>
           ))}
