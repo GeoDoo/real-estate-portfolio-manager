@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api } from "@/lib/api";
 
 export interface Portfolio {
   id: string;
@@ -8,12 +8,12 @@ export interface Portfolio {
 export const portfoliosAPI = {
   // List all portfolios
   getAll: async (): Promise<Portfolio[]> => {
-    return await api.get<Portfolio[]>('/api/portfolios');
+    return await api.get<Portfolio[]>("/api/portfolios");
   },
 
   // Create a new portfolio
   create: async (name: string): Promise<Portfolio> => {
-    return await api.post<Portfolio>('/api/portfolios', { name });
+    return await api.post<Portfolio>("/api/portfolios", { name });
   },
 
   // Get a portfolio by id
@@ -25,4 +25,4 @@ export const portfoliosAPI = {
   getProperties: async (id: string) => {
     return await api.get(`/api/portfolios/${id}/properties`);
   },
-}; 
+};

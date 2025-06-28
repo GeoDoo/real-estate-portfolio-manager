@@ -1,17 +1,17 @@
 "use client";
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Property } from '@/types/property';
-import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import { propertiesAPI } from '@/lib/api/properties';
-import { valuationsAPI } from '@/lib/api/valuations';
-import { portfoliosAPI, Portfolio } from '@/lib/api/portfolios';
-import PageContainer from '@/components/PageContainer';
-import Button from '@/components/Button';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Property } from "@/types/property";
+import { PlusIcon, PencilIcon } from "@heroicons/react/24/outline";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { propertiesAPI } from "@/lib/api/properties";
+import { valuationsAPI } from "@/lib/api/valuations";
+import { portfoliosAPI, Portfolio } from "@/lib/api/portfolios";
+import PageContainer from "@/components/PageContainer";
+import Button from "@/components/Button";
 
-type RibbonStatus = 'loading' | 'buy' | 'no-buy' | 'none';
+type RibbonStatus = "loading" | "buy" | "no-buy" | "none";
 
 interface RibbonData {
   status: RibbonStatus;
@@ -36,34 +36,45 @@ export default function HomePage() {
         setProperties(data);
         // For each property, fetch valuation and cash flows
         const ribbonsObj: Record<string, RibbonData> = {};
-        await Promise.all(data.map(async (property) => {
-          ribbonsObj[property.id] = { status: 'loading' };
-          const valuation = await valuationsAPI.getByPropertyId(property.id);
-          if (!valuation) {
-            ribbonsObj[property.id] = { status: 'none' };
-            return;
-          }
-          const cashFlows = await valuationsAPI.calculateCashFlows(valuation);
-          const npv = cashFlows[cashFlows.length - 1]?.cumulativePV;
-          const netCashFlows = cashFlows.map(row => row.netCashFlow);
-          let irr: number | null = null;
-          try {
-            irr = await valuationsAPI.calculateIRR(netCashFlows);
-          } catch {
-            irr = null;
-          }
-          if (npv > 0 && irr && irr > 0) {
-            ribbonsObj[property.id] = { status: 'buy', npv, irr: irr || undefined };
-          } else {
-            ribbonsObj[property.id] = { status: 'no-buy', npv, irr: irr || undefined };
-          }
-        }));
+        await Promise.all(
+          data.map(async (property) => {
+            ribbonsObj[property.id] = { status: "loading" };
+            const valuation = await valuationsAPI.getByPropertyId(property.id);
+            if (!valuation) {
+              ribbonsObj[property.id] = { status: "none" };
+              return;
+            }
+            const cashFlows = await valuationsAPI.calculateCashFlows(valuation);
+            const npv = cashFlows[cashFlows.length - 1]?.cumulativePV;
+            const netCashFlows = cashFlows.map((row) => row.netCashFlow);
+            let irr: number | null = null;
+            try {
+              irr = await valuationsAPI.calculateIRR(netCashFlows);
+            } catch {
+              irr = null;
+            }
+            if (npv > 0 && irr && irr > 0) {
+              ribbonsObj[property.id] = {
+                status: "buy",
+                npv,
+                irr: irr || undefined,
+              };
+            } else {
+              ribbonsObj[property.id] = {
+                status: "no-buy",
+                npv,
+                irr: irr || undefined,
+              };
+            }
+          }),
+        );
         setRibbons(ribbonsObj);
         // Fetch portfolios
         const portfoliosData = await portfoliosAPI.getAll();
         setPortfolios(portfoliosData);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties';
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch properties";
         setError(errorMessage);
         setProperties([]);
       }
@@ -81,7 +92,12 @@ export default function HomePage() {
       <PageContainer>
         <Breadcrumbs last="Properties" propertyId="" />
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Properties</h1>
+          <h1
+            className="text-3xl font-bold"
+            style={{ color: "var(--foreground)" }}
+          >
+            Properties
+          </h1>
           <Link href="/properties/new">
             <Button size="lg">
               <PlusIcon className="w-4 h-4 mr-2" />
@@ -89,50 +105,71 @@ export default function HomePage() {
             </Button>
           </Link>
         </div>
-        
+
         {loading ? (
-          <div className="text-center" style={{ color: 'var(--text-muted)' }}>Loading...</div>
+          <div className="text-center" style={{ color: "var(--text-muted)" }}>
+            Loading...
+          </div>
         ) : error ? (
-          <div className="text-center" style={{ color: 'var(--error)' }}>{error}</div>
+          <div className="text-center" style={{ color: "var(--error)" }}>
+            {error}
+          </div>
         ) : properties.length === 0 ? (
-          <div className="text-center" style={{ color: 'var(--text-muted)' }}>No properties found.</div>
+          <div className="text-center" style={{ color: "var(--text-muted)" }}>
+            No properties found.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
             {properties.map((property) => {
               // Format the date
-              const date = property.created_at ? new Date(property.created_at) : null;
-              const formattedDate = date ? date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+              const date = property.created_at
+                ? new Date(property.created_at)
+                : null;
+              const formattedDate = date
+                ? date.toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "";
               const ribbon = ribbons[property.id];
               return (
                 <div
                   key={property.id}
                   className="card p-6 min-h-[180px] h-full relative group transition-all duration-200 hover:shadow-lg hover:-translate-y-1 flex flex-col"
-                  style={{ borderRadius: 20, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.06)' }}
+                  style={{
+                    borderRadius: 20,
+                    boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
+                  }}
                 >
                   {/* Edit Button - top left */}
                   <button
                     onClick={() => handleEditProperty(property)}
                     className="absolute top-4 left-4 p-1 transition-colors z-30"
-                    style={{ color: 'var(--text-muted)' }}
+                    style={{ color: "var(--text-muted)" }}
                     title="Edit Property"
                   >
                     <PencilIcon className="w-5 h-5" />
                   </button>
-                  
+
                   {/* BUY Ribbon */}
-                  {ribbon && ribbon.status !== 'none' && (
+                  {ribbon && ribbon.status !== "none" && (
                     <div className="absolute top-4 right-4 z-30">
                       <div
                         className="badge badge-success shadow text-xs font-semibold px-4 py-1"
                         style={{
-                          background: 'var(--primary)',
-                          color: 'white',
+                          background: "var(--primary)",
+                          color: "white",
                           borderRadius: 9999,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
                           letterSpacing: 1,
                         }}
                       >
-                        {ribbon.status === 'loading' ? '...' : ribbon.status === 'buy' ? 'BUY' : 'DO NOT BUY'}
+                        {ribbon.status === "loading"
+                          ? "..."
+                          : ribbon.status === "buy"
+                            ? "BUY"
+                            : "DO NOT BUY"}
                       </div>
                     </div>
                   )}
@@ -141,7 +178,7 @@ export default function HomePage() {
                       <Link
                         href={`/properties/${property.id}/valuation`}
                         className="text-2xl font-bold break-words hover:underline transition-colors block"
-                        style={{ color: 'var(--foreground)' }}
+                        style={{ color: "var(--foreground)" }}
                       >
                         {property.address}
                       </Link>
@@ -152,14 +189,35 @@ export default function HomePage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center hover:underline text-sm break-all transition-colors mt-3"
-                        style={{ color: '#3777e3', opacity: 0.85, fontWeight: 500 }}
+                        style={{
+                          color: "#3777e3",
+                          opacity: 0.85,
+                          fontWeight: 500,
+                        }}
                       >
-                        View Listing →
+                        View Listing
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="ml-1 h-4 w-4 inline"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7"
+                          />
+                        </svg>
                       </a>
                     )}
                   </div>
                   <div>
-                    <div className="flex justify-between items-center text-xs mb-2" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                    <div
+                      className="flex justify-between items-center text-xs mb-2"
+                      style={{ color: "var(--text-muted)", fontWeight: 500 }}
+                    >
                       <span>Created:</span>
                       <span>{formattedDate}</span>
                     </div>
@@ -167,25 +225,41 @@ export default function HomePage() {
                     <div className="w-full">
                       <select
                         className="input w-full"
-                        value={property.portfolio_id || ''}
+                        value={property.portfolio_id || ""}
                         onChange={async (e) => {
                           const portfolioId = e.target.value || null;
                           try {
-                            await propertiesAPI.assignToPortfolio(property.id, portfolioId);
-                            setProperties(prev => prev.map(p => 
-                              p.id === property.id ? { ...p, portfolio_id: portfolioId || undefined } : p
-                            ));
+                            await propertiesAPI.assignToPortfolio(
+                              property.id,
+                              portfolioId,
+                            );
+                            setProperties((prev) =>
+                              prev.map((p) =>
+                                p.id === property.id
+                                  ? {
+                                      ...p,
+                                      portfolio_id: portfolioId || undefined,
+                                    }
+                                  : p,
+                              ),
+                            );
                             if (portfolioId) {
                               router.push(`/portfolios/${portfolioId}`);
                             }
                           } catch (error) {
-                            console.error('Failed to update property:', error);
+                            console.error("Failed to update property:", error);
                           }
                         }}
-                        style={{ width: '100%', borderRadius: 12, fontWeight: 500, fontSize: '1rem', lineHeight: '1.5' }}
+                        style={{
+                          width: "100%",
+                          borderRadius: 12,
+                          fontWeight: 500,
+                          fontSize: "1rem",
+                          lineHeight: "1.5",
+                        }}
                       >
                         <option value="">No Portfolio</option>
-                        {portfolios.map(portfolio => (
+                        {portfolios.map((portfolio) => (
                           <option key={portfolio.id} value={portfolio.id}>
                             {portfolio.name}
                           </option>
@@ -201,4 +275,4 @@ export default function HomePage() {
       </PageContainer>
     </>
   );
-} 
+}

@@ -52,7 +52,13 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   line-height: 1.6;
 }
 
@@ -86,13 +92,17 @@ body {
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease-in-out;
   padding: 1.5rem 1.25rem;
 }
 
 .card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
 }
 
@@ -143,7 +153,8 @@ body {
   transition: background 0.15s;
 }
 
-.btn-danger:hover, .btn-danger:focus {
+.btn-danger:hover,
+.btn-danger:focus {
   background: #ef4444;
 }
 
@@ -204,7 +215,7 @@ body {
 .badge-success {
   background: rgba(16, 185, 129, 0.1);
   color: var(--success);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .badge-error {
@@ -218,7 +229,8 @@ body {
 }
 
 /* Custom select arrow */
-.input[type='select'], select.input {
+.input[type="select"],
+select.input {
   appearance: none;
   background-image: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%2364748b" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>');
   background-repeat: no-repeat;
@@ -227,7 +239,8 @@ body {
   padding-right: 2.5rem;
 }
 
-.input:focus, .btn:focus {
+.input:focus,
+.btn:focus {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--primary-light);
@@ -236,11 +249,11 @@ body {
 .card {
   padding: 1.5rem 1.25rem;
   border-radius: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
 }
 
 .badge-success {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 640px) {

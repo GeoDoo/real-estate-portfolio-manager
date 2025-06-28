@@ -1,5 +1,5 @@
-import PropertyList from '@/features/properties/PropertyList';
+import PropertyList from "@/features/properties/PropertyList";
 
 export default function HomePage() {
   return <PropertyList />;
-} 
+}

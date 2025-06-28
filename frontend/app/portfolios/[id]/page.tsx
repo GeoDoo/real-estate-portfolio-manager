@@ -1,15 +1,15 @@
 "use client";
-import React, { use, useEffect, useState, useRef } from 'react';
-import PageContainer from '@/components/PageContainer';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import { portfoliosAPI } from '@/lib/api/portfolios';
-import { valuationsAPI } from '@/lib/api/valuations';
-import { CashFlowRow } from '@/types/cashflow';
-import { getNumberColor, formatCurrency } from '@/lib/utils';
+import React, { use, useEffect, useState, useRef } from "react";
+import PageContainer from "@/components/PageContainer";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { portfoliosAPI } from "@/lib/api/portfolios";
+import { valuationsAPI } from "@/lib/api/valuations";
+import { CashFlowRow } from "@/types/cashflow";
+import { getNumberColor, formatCurrency } from "@/lib/utils";
 
 export default function PortfolioDetailsPage({ params }: { params: any }) {
   const { id } = use(params) as { id: string };
-  const [portfolioName, setPortfolioName] = useState('');
+  const [portfolioName, setPortfolioName] = useState("");
   const [properties, setProperties] = useState<any[]>([]);
   const [aggregateRows, setAggregateRows] = useState<CashFlowRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,22 +26,22 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
 
   // Load from localStorage on mount (client only)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedNetWorth = window.localStorage.getItem('targetNetWorth');
+    if (typeof window !== "undefined") {
+      const savedNetWorth = window.localStorage.getItem("targetNetWorth");
       if (savedNetWorth) setTargetNetWorth(parseFloat(savedNetWorth));
-      const savedYear = window.localStorage.getItem('targetYear');
+      const savedYear = window.localStorage.getItem("targetYear");
       if (savedYear) setTargetYear(parseInt(savedYear));
     }
   }, []);
   // Save to localStorage on change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('targetNetWorth', String(targetNetWorth));
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("targetNetWorth", String(targetNetWorth));
     }
   }, [targetNetWorth]);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('targetYear', String(targetYear));
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("targetYear", String(targetYear));
     }
   }, [targetYear]);
 
@@ -63,7 +63,7 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
       try {
         const portfolio = await portfoliosAPI.getById(id);
         setPortfolioName(portfolio.name);
-        const props: any[] = await portfoliosAPI.getProperties(id) as any[];
+        const props: any[] = (await portfoliosAPI.getProperties(id)) as any[];
         setProperties(props);
         // Fetch all cash flows for properties
         const allCashFlows: CashFlowRow[][] = await Promise.all(
@@ -71,7 +71,7 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
             const valuation = await valuationsAPI.getByPropertyId(prop.id);
             if (!valuation) return [];
             return await valuationsAPI.calculateCashFlows(valuation);
-          })
+          }),
         );
         // Aggregate cash flows by year
         const yearMap: Map<number, CashFlowRow> = new Map();
@@ -89,9 +89,11 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
             }
           }
         }
-        setAggregateRows(Array.from(yearMap.values()).sort((a, b) => a.year - b.year));
+        setAggregateRows(
+          Array.from(yearMap.values()).sort((a, b) => a.year - b.year),
+        );
       } catch {
-        setPortfolioName('Portfolio Not Found');
+        setPortfolioName("Portfolio Not Found");
         setProperties([]);
         setAggregateRows([]);
       }
@@ -100,22 +102,40 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
     fetchData();
   }, [id]);
 
-  const projectedRow = aggregateRows.find(r => r.year === targetYear);
+  const projectedRow = aggregateRows.find((r) => r.year === targetYear);
   const projectedNetWorth = projectedRow ? projectedRow.cumulativePV : 0;
   const gap = targetNetWorth - projectedNetWorth;
 
   return (
     <PageContainer>
       <Breadcrumbs last={portfolioName} />
-      <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--foreground)' }}>{portfolioName}</h1>
+      <h1
+        className="text-3xl font-bold mb-8"
+        style={{ color: "var(--foreground)" }}
+      >
+        {portfolioName}
+      </h1>
       {/* Target Net Worth Section */}
       <div className="mb-10">
-        <div className="card p-6 border-l-8" style={{ borderLeftColor: 'var(--primary)' }}>
+        <div
+          className="card p-6 border-l-8"
+          style={{ borderLeftColor: "var(--primary)" }}
+        >
           <div className="flex flex-col md:flex-row md:items-center gap-6 min-w-0">
             <div className="flex-1 min-w-[260px]">
-              <div className="text-base font-semibold mb-2 tracking-wide" style={{ color: 'var(--text-muted)' }}>Target Net Worth</div>
+              <div
+                className="text-base font-semibold mb-2 tracking-wide"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Target Net Worth
+              </div>
               <div className="flex items-end gap-2 min-w-0">
-                <span className="text-3xl font-extrabold" style={{ color: 'var(--primary)' }}>£</span>
+                <span
+                  className="text-3xl font-extrabold"
+                  style={{ color: "var(--primary)" }}
+                >
+                  £
+                </span>
                 <input
                   ref={netWorthInputRef}
                   type="number"
@@ -123,18 +143,29 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
                   value={targetNetWorth}
                   min={0}
                   step={10000}
-                  onChange={e => setTargetNetWorth(Number(e.target.value))}
-                  style={{ 
-                    width: 'auto', 
-                    minWidth: 60, 
-                    maxWidth: 220, 
-                    display: 'inline-block',
-                    color: 'var(--primary)'
+                  onChange={(e) => setTargetNetWorth(Number(e.target.value))}
+                  style={{
+                    width: "auto",
+                    minWidth: 60,
+                    maxWidth: 220,
+                    display: "inline-block",
+                    color: "var(--primary)",
                   }}
                 />
                 {/* Hidden span for measuring width */}
-                <span ref={netWorthSpanRef} className="invisible absolute text-3xl font-extrabold px-4" style={{ whiteSpace: 'pre' }}>{targetNetWorth || 0}</span>
-                <span className="text-base ml-2" style={{ color: 'var(--text-muted)' }}>in</span>
+                <span
+                  ref={netWorthSpanRef}
+                  className="invisible absolute text-3xl font-extrabold px-4"
+                  style={{ whiteSpace: "pre" }}
+                >
+                  {targetNetWorth || 0}
+                </span>
+                <span
+                  className="text-base ml-2"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  in
+                </span>
                 <input
                   ref={yearInputRef}
                   type="number"
@@ -142,32 +173,64 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
                   value={targetYear}
                   min={1}
                   max={100}
-                  onChange={e => setTargetYear(Number(e.target.value))}
-                  style={{ 
-                    width: 'auto', 
-                    minWidth: 36, 
-                    maxWidth: 80, 
-                    display: 'inline-block',
-                    color: 'var(--primary)'
+                  onChange={(e) => setTargetYear(Number(e.target.value))}
+                  style={{
+                    width: "auto",
+                    minWidth: 36,
+                    maxWidth: 80,
+                    display: "inline-block",
+                    color: "var(--primary)",
                   }}
                 />
                 {/* Hidden span for measuring width */}
-                <span ref={yearSpanRef} className="invisible absolute text-2xl font-bold px-2" style={{ whiteSpace: 'pre' }}>{targetYear || 0}</span>
-                <span className="text-base ml-1" style={{ color: 'var(--text-muted)' }}>years</span>
+                <span
+                  ref={yearSpanRef}
+                  className="invisible absolute text-2xl font-bold px-2"
+                  style={{ whiteSpace: "pre" }}
+                >
+                  {targetYear || 0}
+                </span>
+                <span
+                  className="text-base ml-1"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  years
+                </span>
               </div>
             </div>
             <div className="flex-1 min-w-[260px]">
-              <div className="text-base font-semibold mb-2 tracking-wide" style={{ color: 'var(--text-muted)' }}>Projected Net Worth</div>
-              <div className={`text-3xl font-extrabold ${projectedNetWorth >= targetNetWorth ? 'text-green-600' : 'text-red-600'}`}>£{formatCurrency(projectedNetWorth, '')}</div>
-              <div className="text-base mt-1" style={{ color: 'var(--text-muted)' }}>Gap: <span className={gap > 0 ? 'text-red-600' : 'text-green-700'}>£{formatCurrency(gap, '')}</span></div>
+              <div
+                className="text-base font-semibold mb-2 tracking-wide"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Projected Net Worth
+              </div>
+              <div
+                className={`text-3xl font-extrabold ${projectedNetWorth >= targetNetWorth ? "text-green-600" : "text-red-600"}`}
+              >
+                £{formatCurrency(projectedNetWorth, "")}
+              </div>
+              <div
+                className="text-base mt-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Gap:{" "}
+                <span className={gap > 0 ? "text-red-600" : "text-green-700"}>
+                  £{formatCurrency(gap, "")}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
       {loading ? (
-        <div className="mt-4" style={{ color: 'var(--text-muted)' }}>Loading...</div>
+        <div className="mt-4" style={{ color: "var(--text-muted)" }}>
+          Loading...
+        </div>
       ) : properties.length === 0 ? (
-        <div className="mt-4" style={{ color: 'var(--text-muted)' }}>You have not added any properties yet.</div>
+        <div className="mt-4" style={{ color: "var(--text-muted)" }}>
+          You have not added any properties yet.
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="table">
@@ -184,12 +247,37 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
             <tbody>
               {aggregateRows.map((row) => (
                 <tr key={row.year}>
-                  <td style={{ color: 'var(--foreground)' }}>{row.year}</td>
-                  <td className="text-right font-bold" style={{ color: getNumberColor(row.revenue) }}>{formatCurrency(row.revenue)}</td>
-                  <td className="text-right font-bold" style={{ color: getNumberColor(row.totalExpenses) }}>{formatCurrency(row.totalExpenses)}</td>
-                  <td className="text-right font-bold" style={{ color: getNumberColor(row.netCashFlow) }}>{formatCurrency(row.netCashFlow)}</td>
-                  <td className="text-right font-bold" style={{ color: getNumberColor(row.presentValue) }}>{formatCurrency(row.presentValue)}</td>
-                  <td className="text-right font-bold" style={{ color: getNumberColor(row.cumulativePV) }}>{formatCurrency(row.cumulativePV)}</td>
+                  <td style={{ color: "var(--foreground)" }}>{row.year}</td>
+                  <td
+                    className="text-right font-bold"
+                    style={{ color: getNumberColor(row.revenue) }}
+                  >
+                    {formatCurrency(row.revenue)}
+                  </td>
+                  <td
+                    className="text-right font-bold"
+                    style={{ color: getNumberColor(row.totalExpenses) }}
+                  >
+                    {formatCurrency(row.totalExpenses)}
+                  </td>
+                  <td
+                    className="text-right font-bold"
+                    style={{ color: getNumberColor(row.netCashFlow) }}
+                  >
+                    {formatCurrency(row.netCashFlow)}
+                  </td>
+                  <td
+                    className="text-right font-bold"
+                    style={{ color: getNumberColor(row.presentValue) }}
+                  >
+                    {formatCurrency(row.presentValue)}
+                  </td>
+                  <td
+                    className="text-right font-bold"
+                    style={{ color: getNumberColor(row.cumulativePV) }}
+                  >
+                    {formatCurrency(row.cumulativePV)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -198,4 +286,4 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
       )}
     </PageContainer>
   );
-} 
+}

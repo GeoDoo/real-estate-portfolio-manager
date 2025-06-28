@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Property } from '@/types/property';
-import { propertiesAPI } from '@/lib/api/properties';
-import Button from '@/components/Button';
-import PageContainer from '@/components/PageContainer';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Property } from "@/types/property";
+import { propertiesAPI } from "@/lib/api/properties";
+import Button from "@/components/Button";
+import PageContainer from "@/components/PageContainer";
 
 interface NewPropertyFormProps {
   property?: Property; // Optional - if provided, we're editing
@@ -14,8 +14,8 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
   const router = useRouter();
   const isEditing = !!property;
   const [form, setForm] = useState({
-    address: '',
-    listing_link: '',
+    address: "",
+    listing_link: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,15 +25,15 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
     if (property) {
       setForm({
         address: property.address,
-        listing_link: property.listing_link || '',
+        listing_link: property.listing_link || "",
       });
     }
   }, [property]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
@@ -46,15 +46,19 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
       if (isEditing && property) {
         // Update existing property
         await propertiesAPI.update(property.id, form);
-        router.push('/');
+        router.push("/");
       } else {
         // Create new property
         const newProperty = await propertiesAPI.create(form);
         router.push(`/properties/${newProperty.id}/valuation`);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 
-        isEditing ? 'Failed to update property' : 'Failed to create property';
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : isEditing
+            ? "Failed to update property"
+            : "Failed to create property";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -64,14 +68,20 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
   return (
     <PageContainer>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
-          {isEditing ? 'Edit Property' : 'Add New Property'}
+        <h1
+          className="text-3xl font-bold"
+          style={{ color: "var(--foreground)" }}
+        >
+          {isEditing ? "Edit Property" : "Add New Property"}
         </h1>
       </div>
       <div className="card p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "var(--foreground)" }}
+            >
               Address
             </label>
             <input
@@ -86,7 +96,10 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "var(--foreground)" }}
+            >
               Listing Link (optional)
             </label>
             <input
@@ -101,17 +114,21 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
             />
           </div>
           {error && (
-            <div className="text-sm" style={{ color: 'var(--error)' }}>{error}</div>
+            <div className="text-sm" style={{ color: "var(--error)" }}>
+              {error}
+            </div>
           )}
-          <Button
-            type="submit"
-            className="w-full mt-4"
-            disabled={loading}
-          >
-            {loading ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update Property' : 'Add Property')}
+          <Button type="submit" className="w-full mt-4" disabled={loading}>
+            {loading
+              ? isEditing
+                ? "Updating..."
+                : "Adding..."
+              : isEditing
+                ? "Update Property"
+                : "Add Property"}
           </Button>
         </form>
       </div>
     </PageContainer>
   );
-} 
+}

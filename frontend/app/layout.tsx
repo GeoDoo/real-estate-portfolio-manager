@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Real Estate Portfolio Manager",
-  description: "Professional real estate investment analysis and portfolio management",
+  description:
+    "Professional real estate investment analysis and portfolio management",
 };
 
 export default function RootLayout({
@@ -24,19 +25,34 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <nav className="shadow h-16 flex items-center w-full mb-8 fixed top-0 left-0 right-0 z-50" style={{ background: 'var(--card)' }}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <nav
+          className="shadow h-16 flex items-center w-full mb-8 fixed top-0 left-0 right-0 z-50"
+          style={{ background: "var(--card)" }}
+        >
           <div className="max-w-6xl mx-auto w-full flex justify-between h-16 items-center">
             <div className="flex items-center gap-8">
-              <a href="/" className="text-xl font-bold" style={{ color: 'var(--primary)' }}>Geoshan Properties Ltd</a>
-              <a href="/portfolios" className="text-base font-medium transition-colors hover:underline" style={{ color: 'var(--text-muted)' }}>Portfolios</a>
+              <a
+                href="/"
+                className="text-xl font-bold"
+                style={{ color: "var(--primary)" }}
+              >
+                Geoshan Properties Ltd
+              </a>
+              <a
+                href="/portfolios"
+                className="text-base font-medium transition-colors hover:underline"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Portfolios
+              </a>
             </div>
           </div>
         </nav>
         <div className="pt-20">
-          <main>
-            {children}
-          </main>
+          <main>{children}</main>
         </div>
       </body>
     </html>

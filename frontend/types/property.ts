@@ -4,4 +4,4 @@ export interface Property {
   created_at: string;
   listing_link?: string;
   portfolio_id?: string;
-} 
+}

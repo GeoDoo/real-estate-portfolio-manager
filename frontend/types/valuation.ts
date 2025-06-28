@@ -27,4 +27,4 @@ export interface DCFInput {
   annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
-} 
+}

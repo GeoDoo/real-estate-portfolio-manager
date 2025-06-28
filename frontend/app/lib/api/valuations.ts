@@ -1,6 +1,6 @@
-import { api, APIError } from '@/lib/api';
-import { DCFRow } from '@/types/cashflow';
-import { CashFlowRow } from '@/types/cashflow';
+import { api, APIError } from "@/lib/api";
+import { DCFRow } from "@/types/cashflow";
+import { CashFlowRow } from "@/types/cashflow";
 
 // Valuation API functions
 export const valuationsAPI = {
@@ -15,58 +15,71 @@ export const valuationsAPI = {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to fetch valuation');
+      throw new APIError("Failed to fetch valuation");
     }
   },
 
   // Create or update valuation for a property
   save: async (propertyId: string, data: Partial<DCFRow>): Promise<DCFRow> => {
     try {
-      return await api.put<DCFRow>(`/api/properties/${propertyId}/valuation`, data);
+      return await api.put<DCFRow>(
+        `/api/properties/${propertyId}/valuation`,
+        data,
+      );
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to save valuation');
+      throw new APIError("Failed to save valuation");
     }
   },
 
   // Calculate cash flows for a valuation
   calculateCashFlows: async (valuationData: DCFRow): Promise<CashFlowRow[]> => {
     try {
-      const response = await api.post<{ cashFlows: CashFlowRow[] }>('/api/cashflows/calculate', valuationData);
+      const response = await api.post<{ cashFlows: CashFlowRow[] }>(
+        "/api/cashflows/calculate",
+        valuationData,
+      );
       return response.cashFlows || [];
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to calculate cash flows');
+      throw new APIError("Failed to calculate cash flows");
     }
   },
 
   // Calculate IRR for cash flows
   calculateIRR: async (cashFlows: number[]): Promise<number> => {
     try {
-      const response = await api.post<{ irr: number }>('/api/cashflows/irr', { cash_flows: cashFlows });
+      const response = await api.post<{ irr: number }>("/api/cashflows/irr", {
+        cash_flows: cashFlows,
+      });
       return response.irr;
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to calculate IRR');
+      throw new APIError("Failed to calculate IRR");
     }
   },
 
   // Get cash flows for a specific valuation
-  getCashFlows: async (propertyId: string, valuationId: string): Promise<CashFlowRow[]> => {
+  getCashFlows: async (
+    propertyId: string,
+    valuationId: string,
+  ): Promise<CashFlowRow[]> => {
     try {
-      const response = await api.get<{ cashFlows: CashFlowRow[] }>(`/api/properties/${propertyId}/valuation/cashflows/${valuationId}`);
+      const response = await api.get<{ cashFlows: CashFlowRow[] }>(
+        `/api/properties/${propertyId}/valuation/cashflows/${valuationId}`,
+      );
       return response.cashFlows || [];
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to fetch cash flows');
+      throw new APIError("Failed to fetch cash flows");
     }
   },
-}; 
+};

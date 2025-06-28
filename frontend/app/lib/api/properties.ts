@@ -1,41 +1,47 @@
-import { api, APIError } from '@/lib/api';
-import { Property } from '@/types/property';
+import { api, APIError } from "@/lib/api";
+import { Property } from "@/types/property";
 
 // Property API functions
 export const propertiesAPI = {
   // Get all properties
   getAll: async (): Promise<Property[]> => {
     try {
-      return await api.get<Property[]>('/api/properties');
+      return await api.get<Property[]>("/api/properties");
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to fetch properties');
+      throw new APIError("Failed to fetch properties");
     }
   },
 
   // Create a new property
-  create: async (data: { address: string; listing_link?: string }): Promise<Property> => {
+  create: async (data: {
+    address: string;
+    listing_link?: string;
+  }): Promise<Property> => {
     try {
-      return await api.post<Property>('/api/properties', data);
+      return await api.post<Property>("/api/properties", data);
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to create property');
+      throw new APIError("Failed to create property");
     }
   },
 
   // Update a property
-  update: async (id: string, data: { address: string; listing_link?: string }): Promise<Property> => {
+  update: async (
+    id: string,
+    data: { address: string; listing_link?: string },
+  ): Promise<Property> => {
     try {
       return await api.put<Property>(`/api/properties/${id}`, data);
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to update property');
+      throw new APIError("Failed to update property");
     }
   },
 
@@ -47,7 +53,7 @@ export const propertiesAPI = {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to fetch property');
+      throw new APIError("Failed to fetch property");
     }
   },
 
@@ -59,11 +65,13 @@ export const propertiesAPI = {
       if (error instanceof APIError) {
         throw error;
       }
-      throw new APIError('Failed to delete property');
+      throw new APIError("Failed to delete property");
     }
   },
 
   assignToPortfolio: async (propertyId: string, portfolioId: string | null) => {
-    return await api.patch(`/api/properties/${propertyId}`, { portfolio_id: portfolioId });
+    return await api.patch(`/api/properties/${propertyId}`, {
+      portfolio_id: portfolioId,
+    });
   },
-}; 
+};

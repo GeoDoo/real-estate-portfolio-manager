@@ -22,4 +22,4 @@ export interface CashFlowRow {
   netCashFlow: number;
   presentValue: number;
   cumulativePV: number;
-} 
+}

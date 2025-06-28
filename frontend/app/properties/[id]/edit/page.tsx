@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { Property } from '@/types/property';
-import { propertiesAPI } from '@/lib/api/properties';
-import NewPropertyForm from '@/features/properties/NewPropertyForm';
-import PageContainer from '@/components/PageContainer';
-import Breadcrumbs from '@/components/Breadcrumbs';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Property } from "@/types/property";
+import { propertiesAPI } from "@/lib/api/properties";
+import NewPropertyForm from "@/features/properties/NewPropertyForm";
+import PageContainer from "@/components/PageContainer";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export default function EditPropertyPage() {
   const params = useParams();
@@ -20,7 +20,8 @@ export default function EditPropertyPage() {
         const data = await propertiesAPI.getById(propertyId);
         setProperty(data);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch property';
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch property";
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -45,7 +46,9 @@ export default function EditPropertyPage() {
     return (
       <PageContainer>
         <Breadcrumbs last="Edit Property" />
-        <div className="text-center text-red-600">{error || 'Property not found'}</div>
+        <div className="text-center text-red-600">
+          {error || "Property not found"}
+        </div>
       </PageContainer>
     );
   }
@@ -56,4 +59,4 @@ export default function EditPropertyPage() {
       <NewPropertyForm property={property} />
     </PageContainer>
   );
-} 
+}
