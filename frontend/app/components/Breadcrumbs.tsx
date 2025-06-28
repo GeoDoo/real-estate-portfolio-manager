@@ -13,7 +13,7 @@ export default function Breadcrumbs({ propertyId, last }: BreadcrumbsProps) {
   // Only homepage
   if (pathname === '/' || pathname === '') {
     return (
-      <nav className="text-sm" aria-label="Breadcrumb" style={{ color: 'var(--text-muted)' }}>
+      <nav className="text-sm mb-4" aria-label="Breadcrumb" style={{ color: 'var(--text-muted)' }}>
         <ol className="list-reset flex">
           <li><span style={{ color: 'var(--foreground)' }}>Home</span></li>
         </ol>
