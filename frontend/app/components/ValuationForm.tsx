@@ -277,23 +277,25 @@ export default function ValuationForm({
               disabled={disabled}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Interest Rate (%)
-            </label>
-            <input
-              type="text"
-              name="interest_rate"
-              value={form.interest_rate ?? ""}
-              onChange={onChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{
-                "--tw-ring-color": "var(--primary)",
-              } as React.CSSProperties}
-              placeholder="e.g. 5"
-              disabled={disabled}
-            />
-          </div>
+          {parseFloat(form.ltv) > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Interest Rate (%)
+              </label>
+              <input
+                type="text"
+                name="interest_rate"
+                value={form.interest_rate ?? ""}
+                onChange={onChange}
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+                style={{
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties}
+                placeholder="e.g. 5"
+                disabled={disabled}
+              />
+            </div>
+          )}
         </div>
       </div>
 

@@ -239,7 +239,7 @@ export default function ValuationDetailPage() {
     setMcTotal(mcNumSim);
     setMcResults([]);
     setMcSummary(null);
-    const params = new URLSearchParams({
+    const paramsObj: Record<string, string> = {
       ...Object.fromEntries(
         Object.entries(valuation).map(([k, v]) => [k, String(v)]),
       ),
@@ -257,15 +257,27 @@ export default function ValuationDetailPage() {
           stddev: mcDiscountStd,
         }),
       ),
-      interest_rate: encodeURIComponent(
+      num_simulations: String(mcNumSim),
+    };
+    if (parseFloat(String(valuation.ltv ?? "")) > 0) {
+      paramsObj.interest_rate = encodeURIComponent(
         JSON.stringify({
           distribution: "normal",
           mean: mcInterestMean,
           stddev: mcInterestStd,
-        }),
-      ),
-      num_simulations: String(mcNumSim),
-    });
+        })
+      );
+    } else {
+      // If no mortgage, set interest_rate to 0
+      paramsObj.interest_rate = encodeURIComponent(
+        JSON.stringify({
+          distribution: "normal",
+          mean: 0,
+          stddev: 0,
+        })
+      );
+    }
+    const params = new URLSearchParams(paramsObj);
     const url = `${config.apiBaseUrl}/api/valuations/monte-carlo-stream?${params.toString()}`;
     const es = new window.EventSource(url);
     let allNPVs: number[] = [];
@@ -636,27 +648,32 @@ export default function ValuationDetailPage() {
                   />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-800 mb-2">
-                    Interest Rate
-                  </h3>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mean (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={mcInterestMean}
-                    onChange={(e) => setMcInterestMean(Number(e.target.value))}
-                    className="w-full p-2 border rounded mb-2"
-                  />
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stddev (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={mcInterestStd}
-                    onChange={(e) => setMcInterestStd(Number(e.target.value))}
-                    className="w-full p-2 border rounded"
-                  />
+                  {/* Interest Rate (only if LTV > 0) */}
+                  {parseFloat(String(valuation?.ltv ?? "")) > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2">
+                        Interest Rate
+                      </h3>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mean (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={mcInterestMean}
+                        onChange={(e) => setMcInterestMean(Number(e.target.value))}
+                        className="w-full p-2 border rounded mb-2"
+                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Stddev (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={mcInterestStd}
+                        onChange={(e) => setMcInterestStd(Number(e.target.value))}
+                        className="w-full p-2 border rounded"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-2">
@@ -677,13 +694,13 @@ export default function ValuationDetailPage() {
                   <Button
                     onClick={runMonteCarlo}
                     className="w-full mt-8 px-4 py-3"
-                    disabled={mcRunning || !hasValidValuation(valuation)}
+                    disabled={mcRunning || !hasValidValuation(valuation as any)}
                   >
                     {mcRunning
                       ? `Running... (${mcProgress}/${mcTotal})`
                       : "Run Simulation"}
                   </Button>
-                  {!hasValidValuation(valuation) && (
+                  {!hasValidValuation(valuation as any) && (
                     <div className="text-xs text-red-500 mt-2 text-center">
                       Please enter and save a valid valuation before running the simulation.
                     </div>
