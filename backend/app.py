@@ -583,5 +583,44 @@ def get_portfolio_properties(portfolio_id):
     return jsonify([p.to_dict() for p in properties])
 
 
+@app.route("/api/portfolios/<portfolio_id>/irr", methods=["GET"])
+def portfolio_irr(portfolio_id):
+    # Get all properties in the portfolio
+    properties = Property.query.filter_by(portfolio_id=portfolio_id).all()
+    if not properties:
+        return jsonify({"error": "No properties found for this portfolio"}), 404
+
+    # For each property, get valuation and cash flows
+    all_cash_flows = []
+    max_years = 0
+    for prop in properties:
+        valuation = Valuation.query.filter_by(property_id=prop.id).first()
+        if not valuation:
+            continue  # skip properties without valuation
+        cash_flows = calculate_cash_flows(valuation.to_dict())
+        net_cash_flows = [row["netCashFlow"] for row in cash_flows]
+        all_cash_flows.append(net_cash_flows)
+        max_years = max(max_years, len(net_cash_flows))
+
+    if not all_cash_flows:
+        return jsonify({"error": "No valuations found for properties"}), 404
+
+    # Aggregate by year
+    portfolio_cash_flows = []
+    for year in range(max_years):
+        year_sum = 0
+        for cf in all_cash_flows:
+            if year < len(cf):
+                year_sum += cf[year]
+        portfolio_cash_flows.append(year_sum)
+
+    # Calculate IRR
+    irr = calculate_irr(portfolio_cash_flows)
+    if irr is None:
+        return jsonify({"error": "IRR could not be calculated"}), 400
+
+    return jsonify({"irr": irr * 100})
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=8000)

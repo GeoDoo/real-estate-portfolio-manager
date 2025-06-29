@@ -13,6 +13,7 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
   const [properties, setProperties] = useState<any[]>([]);
   const [aggregateRows, setAggregateRows] = useState<CashFlowRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [portfolioIRR, setPortfolioIRR] = useState<number | null>(null);
 
   // Interactive target state (with localStorage persistence)
   const [targetNetWorth, setTargetNetWorth] = useState(10000000);
@@ -92,10 +93,14 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
         setAggregateRows(
           Array.from(yearMap.values()).sort((a, b) => a.year - b.year),
         );
+        // Fetch IRR
+        const irr = await portfoliosAPI.getPortfolioIRR(id);
+        setPortfolioIRR(irr);
       } catch {
         setPortfolioName("Portfolio Not Found");
         setProperties([]);
         setAggregateRows([]);
+        setPortfolioIRR(null);
       }
       setLoading(false);
     }
@@ -121,8 +126,8 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
           className="card p-6 border-l-8"
           style={{ borderLeftColor: "var(--primary)" }}
         >
-          <div className="flex flex-col md:flex-row md:items-center gap-6 min-w-0">
-            <div className="flex-1 min-w-[260px]">
+          <div className="flex flex-col md:flex-row md:items-start gap-6 min-w-0">
+            <div className="basis-full md:basis-1/2 min-w-[260px] flex flex-col">
               <div
                 className="text-base font-semibold mb-2 tracking-wide"
                 style={{ color: "var(--text-muted)" }}
@@ -198,27 +203,53 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
                 </span>
               </div>
             </div>
-            <div className="flex-1 min-w-[260px]">
+            <div className="basis-full md:basis-1/4 min-w-[180px] flex flex-col">
               <div
                 className="text-base font-semibold mb-2 tracking-wide"
                 style={{ color: "var(--text-muted)" }}
               >
-                Net Gain/Loss at Present
+                Total NPV
               </div>
-              <div
-                className={`text-3xl font-extrabold ${projectedNetWorth >= targetNetWorth ? "text-green-600" : "text-red-600"}`}
+              <span
+                className={`text-3xl font-extrabold ${
+                  projectedNetWorth > 0
+                    ? "text-green-600"
+                    : projectedNetWorth < 0
+                    ? "text-red-600"
+                    : "text-gray-900"
+                }`}
               >
                 £{formatCurrency(projectedNetWorth, "")}
-              </div>
+              </span>
               <div
                 className="text-base mt-1"
                 style={{ color: "var(--text-muted)" }}
               >
-                Gap:{" "}
+                Gap: {" "}
                 <span className={gap > 0 ? "text-red-600" : "text-green-700"}>
                   £{formatCurrency(gap, "")}
                 </span>
               </div>
+            </div>
+            <div className="basis-full md:basis-1/4 min-w-[180px] flex flex-col">
+              <div
+                className="text-base font-semibold mb-2 tracking-wide"
+                style={{ color: "var(--text-muted)" }}
+              >
+                IRR
+              </div>
+              <span
+                className={`text-3xl font-extrabold align-middle ${
+                  portfolioIRR !== null && portfolioIRR >= 8
+                    ? "text-green-600"
+                    : portfolioIRR !== null && portfolioIRR >= 4
+                    ? "text-orange-500"
+                    : "text-red-600"
+                }`}
+                style={{ minWidth: 80, display: "inline-block" }}
+              >
+                {portfolioIRR !== null ? `${portfolioIRR.toFixed(2)}%` : "-"}
+              </span>
             </div>
           </div>
         </div>

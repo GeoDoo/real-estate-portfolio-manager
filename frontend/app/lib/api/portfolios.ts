@@ -25,4 +25,14 @@ export const portfoliosAPI = {
   getProperties: async (id: string) => {
     return await api.get(`/api/portfolios/${id}/properties`);
   },
+
+  // Get IRR for a portfolio (use shared api.get for consistency)
+  getPortfolioIRR: async (id: string): Promise<number | null> => {
+    try {
+      const data = await api.get<{ irr: number }>(`/api/portfolios/${id}/irr`);
+      return typeof data.irr === "number" ? data.irr : null;
+    } catch {
+      return null;
+    }
+  },
 };
