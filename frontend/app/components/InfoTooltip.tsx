@@ -1,8 +1,6 @@
+/// <reference lib="dom" />
 import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-
-// @ts-ignore: If you see a type error for 'react-dom', run: npm install --save-dev @types/react-dom
-// @ts-ignore: If you see a type error for HTMLSpanElement, ensure your tsconfig includes DOM lib
 
 interface InfoTooltipProps {
   label: React.ReactNode;
@@ -15,7 +13,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
   tooltip,
   className = "",
 }) => {
-  const labelRef = useRef(null);
+  const labelRef = useRef<any>(null);
   const [show, setShow] = useState(false);
   const [coords, setCoords] = useState<{ left: number; top: number; width: number } | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -26,7 +24,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
   useEffect(() => {
     if (show && labelRef.current) {
-      const rect = (labelRef.current as HTMLSpanElement).getBoundingClientRect();
+      const rect = labelRef.current.getBoundingClientRect();
       setCoords({
         left: rect.left + rect.width / 2,
         top: rect.bottom,
