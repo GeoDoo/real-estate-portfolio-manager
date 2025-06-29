@@ -66,6 +66,8 @@ class Valuation(db.Model):
     annual_rent_growth = db.Column(db.Float)
     discount_rate = db.Column(db.Float)
     holding_period = db.Column(db.Integer)
+    ltv = db.Column(db.Float)  # Loan-to-Value percentage
+    interest_rate = db.Column(db.Float)  # Annual interest rate percentage
 
     def to_dict(self):
         return {
@@ -84,6 +86,8 @@ class Valuation(db.Model):
             "annual_rent_growth": self.annual_rent_growth,
             "discount_rate": self.discount_rate,
             "holding_period": self.holding_period,
+            "ltv": self.ltv,
+            "interest_rate": self.interest_rate,
         }
 
 
@@ -107,6 +111,8 @@ def calculate_cash_flows(input):
         "annual_rent_growth": input.get("annual_rent_growth", 0),
         "discount_rate": input.get("discount_rate", 0),
         "holding_period": input.get("holding_period", 0),
+        "ltv": input.get("ltv", 0),
+        "interest_rate": input.get("interest_rate", 0),
     }
     initial_investment = Fraction(str(input["initial_investment"]))
     annual_rental_income = Fraction(str(input["annual_rental_income"]))
@@ -120,6 +126,24 @@ def calculate_cash_flows(input):
     annual_rent_growth = Fraction(str(input["annual_rent_growth"]))
     discount_rate = Fraction(str(input["discount_rate"]))
     holding_period = int(input["holding_period"])
+    ltv = Fraction(str(input["ltv"]))
+    interest_rate = Fraction(str(input["interest_rate"]))
+
+    # Calculate mortgage payment if LTV > 0
+    monthly_mortgage_payment = Fraction(0)
+    if ltv > 0 and interest_rate > 0:
+        mortgage_amount = initial_investment * (ltv / 100)
+        monthly_rate = interest_rate / 100 / 12
+        num_payments = holding_period * 12
+        
+        if monthly_rate > 0:
+            # Standard mortgage payment formula
+            monthly_mortgage_payment = mortgage_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
+        else:
+            # Simple interest-free loan
+            monthly_mortgage_payment = mortgage_amount / num_payments
+    
+    annual_mortgage_payment = monthly_mortgage_payment * 12
 
     rows = []
     cumulative_pv = Fraction(0)
@@ -145,7 +169,7 @@ def calculate_cash_flows(input):
         revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
         management_fee = revenue * management_fees / 100
         total_expenses = (
-            service_charge + ground_rent + maintenance + insurance + management_fee
+            service_charge + ground_rent + maintenance + insurance + management_fee + annual_mortgage_payment
         )
         net_cash_flow = revenue - total_expenses
         denominator = (1 + discount_rate / 100) ** year
@@ -189,6 +213,8 @@ def valuations_collection():
             annual_rent_growth=data.get("annual_rent_growth", 0),
             discount_rate=data.get("discount_rate", 0),
             holding_period=data.get("holding_period", 0),
+            ltv=data.get("ltv", 0),
+            interest_rate=data.get("interest_rate", 0),
         )
         db.session.add(valuation)
         db.session.commit()
@@ -373,7 +399,7 @@ def property_valuation(prop_id):
             "initial_investment", "annual_rental_income", "maintenance", "property_tax",
             "management_fees", "transaction_costs", "annual_rent_growth", "discount_rate", "holding_period"
         ]
-        optional_fields = ["service_charge", "ground_rent", "insurance"]
+        optional_fields = ["service_charge", "ground_rent", "insurance", "ltv", "interest_rate"]
         for field in required_fields:
             value = data.get(field)
             if value is None or not isinstance(value, (int, float)) or value <= 0:
@@ -409,6 +435,8 @@ def property_valuation(prop_id):
                 annual_rent_growth=data.get("annual_rent_growth", 0),
                 discount_rate=data.get("discount_rate", 0),
                 holding_period=data.get("holding_period", 0),
+                ltv=data.get("ltv", 0),
+                interest_rate=data.get("interest_rate", 0),
             )
             db.session.add(val)
         db.session.commit()

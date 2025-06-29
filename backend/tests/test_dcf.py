@@ -271,4 +271,42 @@ def test_mc_sim_extreme_stddev():
         "holding_period": 25,
     }
     npvs = run_mc_sim(base_input, 2, 100, 15, 100, num_sim=1000)
-    assert all(np.isfinite(n) for n in npvs) 
+    assert all(np.isfinite(n) for n in npvs)
+
+def test_cash_flows_with_mortgage():
+    input_data = {
+        "initial_investment": 100000,
+        "annual_rental_income": 12000,
+        "service_charge": 1000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 600,
+        "insurance": 300,
+        "management_fees": 10,
+        "transaction_costs": 2000,
+        "annual_rent_growth": 0,
+        "discount_rate": 5,
+        "holding_period": 5,
+        "ltv": 80,  # 80% LTV
+        "interest_rate": 6,  # 6% interest
+    }
+    cash_flows = calculate_cash_flows(input_data)
+    # Mortgage amount = 100000 * 0.8 = 80000
+    # Monthly rate = 0.06 / 12 = 0.005
+    # Num payments = 5*12 = 60
+    # Monthly payment = 80000 * (0.005 * (1+0.005)**60) / ((1+0.005)**60 - 1)
+    # Calculate expected annual mortgage payment
+    mortgage_amount = 80000
+    monthly_rate = 0.06 / 12
+    num_payments = 60
+    monthly_payment = mortgage_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
+    annual_payment = monthly_payment * 12
+    # The first year's total expenses should include the annual mortgage payment
+    year1 = cash_flows[1]
+    assert abs(year1["totalExpenses"] - (1000 + 500 + 1000 + 300 + (12000 * 10 / 100) + annual_payment)) < 1 \
+        , f"Expected total expenses to include mortgage payment. Got {year1['totalExpenses']}"
+    # If ltv=0 or interest_rate=0, mortgage payment should be zero
+    input_data["ltv"] = 0
+    cash_flows_no_mortgage = calculate_cash_flows(input_data)
+    year1_no_mortgage = cash_flows_no_mortgage[1]
+    assert year1_no_mortgage["totalExpenses"] < year1["totalExpenses"], "Expenses should be lower without mortgage payment" 

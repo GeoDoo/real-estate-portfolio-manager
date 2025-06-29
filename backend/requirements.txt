@@ -4,3 +4,4 @@ flask-cors
 scipy
 numpy
 pytest
+alembic

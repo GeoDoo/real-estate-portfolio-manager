@@ -11,6 +11,8 @@ export interface ValuationBase {
   annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
+  ltv?: number;
+  interest_rate?: number;
 }
 
 export interface PropertyValuation extends ValuationBase {

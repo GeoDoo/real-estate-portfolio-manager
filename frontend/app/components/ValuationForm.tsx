@@ -219,9 +219,9 @@ export default function ValuationForm({
               value={form.annual_rent_growth}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={
-                { "--tw-ring-color": "var(--primary)" } as React.CSSProperties
-              }
+              style={{
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -236,9 +236,9 @@ export default function ValuationForm({
               value={form.discount_rate}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={
-                { "--tw-ring-color": "var(--primary)" } as React.CSSProperties
-              }
+              style={{
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
               placeholder="0"
               disabled={disabled}
             />
@@ -253,10 +253,44 @@ export default function ValuationForm({
               value={form.holding_period}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={
-                { "--tw-ring-color": "var(--primary)" } as React.CSSProperties
-              }
+              style={{
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
               placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              LTV (%)
+            </label>
+            <input
+              type="text"
+              name="ltv"
+              value={form.ltv ?? ""}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
+              placeholder="e.g. 80"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Interest Rate (%)
+            </label>
+            <input
+              type="text"
+              name="interest_rate"
+              value={form.interest_rate ?? ""}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
+              placeholder="e.g. 5"
               disabled={disabled}
             />
           </div>

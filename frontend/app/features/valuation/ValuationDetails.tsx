@@ -54,6 +54,8 @@ export default function ValuationDetailPage() {
     annual_rent_growth: "",
     discount_rate: "",
     holding_period: "",
+    ltv: "",
+    interest_rate: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -91,6 +93,8 @@ export default function ValuationDetailPage() {
             annual_rent_growth: String(json.annual_rent_growth ?? ""),
             discount_rate: String(json.discount_rate ?? ""),
             holding_period: String(json.holding_period ?? ""),
+            ltv: String(json.ltv ?? ""),
+            interest_rate: String(json.interest_rate ?? ""),
           });
           await fetchCashFlows(json);
         } else {
@@ -157,6 +161,8 @@ export default function ValuationDetailPage() {
       annual_rent_growth: String(valuation.annual_rent_growth ?? ""),
       discount_rate: String(valuation.discount_rate ?? ""),
       holding_period: String(valuation.holding_period ?? ""),
+      ltv: String(valuation.ltv ?? ""),
+      interest_rate: String(valuation.interest_rate ?? ""),
     });
     setIsEditing(false);
     setFormError(null);
@@ -189,6 +195,8 @@ export default function ValuationDetailPage() {
       annual_rent_growth: parseFloat(form.annual_rent_growth) || 0,
       discount_rate: parseFloat(form.discount_rate) || 0,
       holding_period: parseFloat(form.holding_period) || 0,
+      ltv: form.ltv !== "" ? parseFloat(form.ltv) : 0,
+      interest_rate: form.interest_rate !== "" ? parseFloat(form.interest_rate) : 0,
     };
 
     try {
@@ -210,6 +218,8 @@ export default function ValuationDetailPage() {
         annual_rent_growth: String(updatedValuation.annual_rent_growth ?? ""),
         discount_rate: String(updatedValuation.discount_rate ?? ""),
         holding_period: String(updatedValuation.holding_period ?? ""),
+        ltv: String(updatedValuation.ltv ?? ""),
+        interest_rate: String(updatedValuation.interest_rate ?? ""),
       });
       await fetchCashFlows(updatedValuation);
     } catch (err) {
