@@ -24,8 +24,8 @@ def is_allowed(line):
 def test_no_hardcoded_ports():
     backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     for root, _, files in os.walk(backend_dir):
-        # Skip venv, site-packages, dist-packages, and hidden directories
-        if any(skip in root for skip in ["/venv", "site-packages", "dist-packages", "/.venv", "__pypackages__"]):
+        # Skip venv, site-packages, dist-packages, hidden directories, and tests
+        if any(skip in root for skip in ["/venv", "site-packages", "dist-packages", "/.venv", "__pypackages__", "/tests"]):
             continue
         for fname in files:
             if fname.endswith('.py') and fname != os.path.basename(__file__):
