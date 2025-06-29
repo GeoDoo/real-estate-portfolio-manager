@@ -163,14 +163,16 @@ export default function HomePage() {
                   }}
                 >
                   {/* Edit Button - top left */}
-                  <button
+                  <Button
                     onClick={() => handleEditProperty(property)}
                     className="absolute top-4 left-4 p-1 transition-colors z-30"
                     style={{ color: "var(--text-muted)" }}
                     title="Edit Property"
+                    variant="secondary"
+                    size="sm"
                   >
                     <PencilIcon className="w-5 h-5" />
-                  </button>
+                  </Button>
 
                   {/* BUY Ribbon */}
                   {ribbon && (ribbon.status === "buy" || ribbon.status === "no-buy") && (
