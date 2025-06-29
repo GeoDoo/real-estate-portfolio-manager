@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import React from "react";
 
-type ButtonProps = React.ButtonHTMLAttributes<any> & {
+type ButtonProps = React.ButtonHTMLAttributes<React.ElementRef<'button'>> & {
   children: React.ReactNode;
   className?: string;
   variant?: "primary" | "secondary" | "danger";

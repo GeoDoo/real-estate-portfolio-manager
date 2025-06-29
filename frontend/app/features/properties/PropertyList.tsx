@@ -47,9 +47,12 @@ export default function HomePage() {
             ];
             const optionalFields = ['service_charge', 'ground_rent', 'insurance'];
             if (!valuation ||
-              !requiredFields.every(f => typeof (valuation as Record<string, any>)[f] === 'number' && (valuation as Record<string, any>)[f] > 0) ||
+              !requiredFields.every(f => {
+                const val = (valuation as unknown as Record<string, number | undefined | null>)[f];
+                return typeof val === 'number' && val > 0;
+              }) ||
               !optionalFields.every(f => {
-                const v = (valuation as Record<string, any>)[f];
+                const v = (valuation as unknown as Record<string, number | undefined | null>)[f];
                 return v === undefined || v === null || (typeof v === 'number' && v >= 0);
               })
             ) {

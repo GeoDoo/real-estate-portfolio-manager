@@ -1,15 +1,19 @@
 // Mock config import for Jest environment
 jest.mock("@/config", () => ({ config: {} }));
 
-declare var global: any;
-
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { apiRequest, APIError } from "./api";
 
+// Mock fetch globally for tests
+const mockFetch = jest.fn();
+Object.defineProperty(globalThis, 'fetch', {
+  value: mockFetch,
+  writable: true,
+});
+
 describe("apiRequest", () => {
   beforeEach(() => {
-    // @ts-expect-error: mocking global.fetch for test
-    global.fetch = jest.fn();
+    mockFetch.mockClear();
   });
 
   afterEach(() => {
@@ -18,8 +22,7 @@ describe("apiRequest", () => {
 
   it("should return data for a successful request", async () => {
     const mockData = { foo: "bar" };
-    // @ts-expect-error: mocking global.fetch for test
-    global.fetch.mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => mockData,
@@ -29,8 +32,7 @@ describe("apiRequest", () => {
   });
 
   it("should throw APIError for a failed request", async () => {
-    // @ts-expect-error: mocking global.fetch for test
-    global.fetch.mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: false,
       status: 404,
       statusText: "Not Found",
@@ -41,8 +43,7 @@ describe("apiRequest", () => {
   });
 
   it("should return null for 204 No Content", async () => {
-    // @ts-expect-error: mocking global.fetch for test
-    global.fetch.mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 204,
       json: async () => undefined,

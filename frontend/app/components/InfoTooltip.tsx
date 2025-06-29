@@ -13,7 +13,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
   tooltip,
   className = "",
 }) => {
-  const labelRef = useRef<any>(null);
+  const labelRef = useRef<React.ElementRef<'span'>>(null);
   const [show, setShow] = useState(false);
   const [coords, setCoords] = useState<{ left: number; top: number; width: number } | null>(null);
   const [mounted, setMounted] = useState(false);

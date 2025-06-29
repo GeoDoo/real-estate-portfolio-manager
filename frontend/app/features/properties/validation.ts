@@ -1,4 +1,4 @@
-export function hasValidValuation(valuation: Record<string, any> | null | undefined): boolean {
+export function hasValidValuation(valuation: Record<string, number | undefined | null> | null | undefined): boolean {
   const requiredFields = [
     'initial_investment', 'annual_rental_income', 'maintenance', 'property_tax',
     'management_fees', 'transaction_costs', 'annual_rent_growth', 'discount_rate', 'holding_period'
@@ -15,7 +15,7 @@ export function hasValidValuation(valuation: Record<string, any> | null | undefi
 export function isValidValuationForm(form: Record<string, string> | null | undefined): boolean {
   if (!form) return false;
   // Convert all fields to numbers or undefined
-  const valuation: Record<string, any> = {};
+  const valuation: Record<string, number | undefined> = {};
   for (const key in form) {
     const v = form[key];
     valuation[key] = v === "" ? undefined : Number(v);

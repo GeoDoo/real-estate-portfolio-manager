@@ -6,11 +6,12 @@ import { portfoliosAPI } from "@/lib/api/portfolios";
 import { valuationsAPI } from "@/lib/api/valuations";
 import { CashFlowRow } from "@/types/cashflow";
 import { getNumberColor, formatCurrency } from "@/lib/utils";
+import { Property } from "@/types/property";
 
-export default function PortfolioDetailsPage({ params }: { params: any }) {
+export default function PortfolioDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params) as { id: string };
   const [portfolioName, setPortfolioName] = useState("");
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [aggregateRows, setAggregateRows] = useState<CashFlowRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [portfolioIRR, setPortfolioIRR] = useState<number | null>(null);
@@ -21,9 +22,9 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
 
   // Dynamic width refs for inputs
   const netWorthInputRef = useRef<HTMLInputElement>(null);
-  const netWorthSpanRef = useRef<any>(null);
+  const netWorthSpanRef = useRef<React.ElementRef<'span'>>(null);
   const yearInputRef = useRef<HTMLInputElement>(null);
-  const yearSpanRef = useRef<any>(null);
+  const yearSpanRef = useRef<React.ElementRef<'span'>>(null);
 
   // Load from localStorage on mount (client only)
   useEffect(() => {
@@ -64,11 +65,11 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
       try {
         const portfolio = await portfoliosAPI.getById(id);
         setPortfolioName(portfolio.name);
-        const props: any[] = (await portfoliosAPI.getProperties(id)) as any[];
+        const props: Property[] = (await portfoliosAPI.getProperties(id)) as Property[];
         setProperties(props);
         // Fetch all cash flows for properties
         const allCashFlows: CashFlowRow[][] = await Promise.all(
-          props.map(async (prop: any) => {
+          props.map(async (prop: Property) => {
             const valuation = await valuationsAPI.getByPropertyId(prop.id);
             if (!valuation) return [];
             return await valuationsAPI.calculateCashFlows(valuation);

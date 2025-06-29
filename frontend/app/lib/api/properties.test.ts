@@ -13,6 +13,7 @@ describe('propertiesAPI', () => {
   });
 
   it('getAll fetches all properties', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (apiRequest as any).mockResolvedValue([{ id: '1', address: 'A' }]);
     const result = await propertiesAPI.getAll();
     expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties');
@@ -20,6 +21,7 @@ describe('propertiesAPI', () => {
   });
 
   it('create posts new property', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (apiRequest as any).mockResolvedValue({ id: '2', address: 'B' });
     const data = { address: 'B', listing_link: 'link' };
     const result = await propertiesAPI.create(data);
@@ -28,6 +30,7 @@ describe('propertiesAPI', () => {
   });
 
   it('update puts property', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (apiRequest as any).mockResolvedValue({ id: '3', address: 'C' });
     const result = await propertiesAPI.update('3', { address: 'C' });
     expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/3', expect.objectContaining({ method: 'PUT' }));
@@ -35,6 +38,7 @@ describe('propertiesAPI', () => {
   });
 
   it('getById fetches property by id', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (apiRequest as any).mockResolvedValue({ id: '4', address: 'D' });
     const result = await propertiesAPI.getById('4');
     expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/4');
@@ -42,18 +46,21 @@ describe('propertiesAPI', () => {
   });
 
   it('delete calls delete endpoint', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (apiRequest as any).mockResolvedValue(undefined);
     await propertiesAPI.delete('5');
     expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/5', expect.objectContaining({ method: 'DELETE' }));
   });
 
   it('assignToPortfolio patches property', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (apiRequest as any).mockResolvedValue({});
     await propertiesAPI.assignToPortfolio('6', '7');
     expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/6', expect.objectContaining({ method: 'PATCH' }));
   });
 
   it('handles errors from apiRequest', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (apiRequest as any).mockRejectedValue(new Error('fail'));
     await expect(propertiesAPI.getAll()).rejects.toThrow('fail');
     await expect(propertiesAPI.create({ address: 'X' })).rejects.toThrow('fail');
