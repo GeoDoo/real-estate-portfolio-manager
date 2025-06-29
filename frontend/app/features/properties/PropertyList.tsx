@@ -117,7 +117,7 @@ export default function HomePage() {
             Properties
           </h1>
           <Link href="/properties/new">
-            <Button size="lg">
+            <Button>
               <PlusIcon className="w-4 h-4 mr-2" />
               Add Property
             </Button>

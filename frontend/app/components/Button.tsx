@@ -29,7 +29,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      className={`flex flex-row items-center ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`flex flex-row items-center rounded-lg ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {children}

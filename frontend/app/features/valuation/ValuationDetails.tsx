@@ -331,7 +331,7 @@ export default function ValuationDetailPage() {
               {!isEditing && (
                 <Button
                   onClick={handleEdit}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium"
                 >
                   <PencilIcon className="w-4 h-4 mr-2" />
                   Edit
@@ -342,7 +342,7 @@ export default function ValuationDetailPage() {
                   <Button
                     onClick={handleSave}
                     disabled={!isFormValid() || saving}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium"
                   >
                     <CheckIcon className="w-4 h-4 mr-2" />
                     {saving ? "Saving..." : "Save"}
@@ -350,7 +350,7 @@ export default function ValuationDetailPage() {
                   <Button
                     onClick={handleCancel}
                     variant="secondary"
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium"
                   >
                     <XMarkIcon className="w-4 h-4 mr-2" />
                     Cancel
@@ -634,7 +634,7 @@ export default function ValuationDetailPage() {
                   />
                   <Button
                     onClick={runMonteCarlo}
-                    className="w-full mt-8 px-4 py-3 rounded"
+                    className="w-full mt-8 px-4 py-3"
                     disabled={mcRunning || !hasValidValuation(valuation)}
                   >
                     {mcRunning
