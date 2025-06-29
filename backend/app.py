@@ -2,7 +2,7 @@ from fractions import Fraction
 from flask import Flask, request, jsonify, abort, Response
 from flask_cors import CORS
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 import os
 from scipy.optimize import brentq
@@ -272,6 +272,16 @@ def calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, in
 
     return cumulative_pv, irrs
 
+# Helper for safe IRR stats
+def safe_irr_stats(irrs):
+    if np.all(np.isnan(irrs)):
+        return None, None, None
+    return (
+        float(np.nanmean(irrs)),
+        float(np.nanpercentile(irrs, 5)),
+        float(np.nanpercentile(irrs, 95)),
+    )
+
 # --- App Factory ---
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -305,7 +315,7 @@ def create_app(test_config=None):
         elif request.method == "POST":
             data = request.json
             val_id = str(uuid.uuid4())
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             valuation = Valuation(
                 id=val_id,
                 created_at=now,
@@ -331,7 +341,7 @@ def create_app(test_config=None):
     # GET/PUT/DELETE /api/valuations/<id>
     @app.route("/api/valuations/<val_id>", methods=["GET", "PUT", "DELETE"])
     def valuation_item(val_id):
-        valuation = Valuation.query.get(val_id)
+        valuation = db.session.get(Valuation, val_id)
         if not valuation:
             abort(404)
         if request.method == "GET":
@@ -351,7 +361,7 @@ def create_app(test_config=None):
     # GET /api/valuations/<id>/cashflows
     @app.route("/api/valuations/<val_id>/cashflows", methods=["GET"])
     def valuation_cashflows(val_id):
-        valuation = Valuation.query.get(val_id)
+        valuation = db.session.get(Valuation, val_id)
         if not valuation:
             abort(404)
         cash_flows = calculate_cash_flows(valuation.to_dict())
@@ -400,7 +410,7 @@ def create_app(test_config=None):
             if Property.query.filter_by(address=address).first():
                 return jsonify({"error": "Property with this address already exists"}), 400
             prop_id = str(uuid.uuid4())
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             prop = Property(
                 id=prop_id,
                 address=address,
@@ -413,7 +423,7 @@ def create_app(test_config=None):
 
     @app.route("/api/properties/<prop_id>", methods=["GET", "PUT", "PATCH"])
     def property_item(prop_id):
-        prop = Property.query.get(prop_id)
+        prop = db.session.get(Property, prop_id)
         if not prop:
             abort(404)
 
@@ -428,7 +438,7 @@ def create_app(test_config=None):
             # Check if address is being changed and if it conflicts with existing property
             if (
                 address != prop.address
-                and Property.query.filter_by(address=address).first()
+                and db.session.get(Property, address)
             ):
                 return jsonify({"error": "Property with this address already exists"}), 400
 
@@ -448,7 +458,7 @@ def create_app(test_config=None):
                 # Check if address is being changed and if it conflicts with existing property
                 if (
                     address != prop.address
-                    and Property.query.filter_by(address=address).first()
+                    and db.session.get(Property, address)
                 ):
                     return jsonify({"error": "Property with this address already exists"}), 400
                 
@@ -471,11 +481,11 @@ def create_app(test_config=None):
     # --- Property Valuation Endpoints ---
     @app.route("/api/properties/<prop_id>/valuation", methods=["GET", "POST", "PUT"])
     def property_valuation(prop_id):
-        prop = Property.query.get(prop_id)
+        prop = db.session.get(Property, prop_id)
         if not prop:
             abort(404)
         if request.method == "GET":
-            val = Valuation.query.filter_by(property_id=prop_id).first()
+            val = db.session.query(Valuation).filter_by(property_id=prop_id).first()
             if not val:
                 return jsonify({}), 200
             return jsonify(clean_for_json(val.to_dict()))
@@ -495,8 +505,8 @@ def create_app(test_config=None):
                 value = data.get(field)
                 if value is not None and value < 0:
                     return jsonify({"error": f"{field.replace('_', ' ').capitalize()} cannot be negative."}), 400
-            val = Valuation.query.filter_by(property_id=prop_id).first()
-            now = datetime.utcnow().isoformat()
+            val = db.session.query(Valuation).filter_by(property_id=prop_id).first()
+            now = datetime.now(timezone.utc).isoformat()
             if val:
                 # Update existing valuation
                 for key, value in data.items():
@@ -561,20 +571,21 @@ def create_app(test_config=None):
         else:
             interest_rates = np.full(num_simulations, interest_rate_dist["mean"])
         npvs, irrs = calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, interest_rates)
+        irr_mean, irr_5th, irr_95th = safe_irr_stats(irrs)
         summary = {
             "npv_mean": float(np.nanmean(npvs)),
             "npv_5th_percentile": float(np.nanpercentile(npvs, 5)),
             "npv_95th_percentile": float(np.nanpercentile(npvs, 95)),
-            "irr_mean": float(np.nanmean(irrs)),
-            "irr_5th_percentile": float(np.nanpercentile(irrs, 5)),
-            "irr_95th_percentile": float(np.nanpercentile(irrs, 95)),
+            "irr_mean": irr_mean,
+            "irr_5th_percentile": irr_5th,
+            "irr_95th_percentile": irr_95th,
             "probability_npv_positive": float(np.mean(npvs > 0)),
         }
         return jsonify({"npv_results": npvs.tolist(), "irr_results": irrs.tolist(), "summary": summary})
 
     @app.route("/api/valuations/monte-carlo-stream", methods=["GET"])
     def monte_carlo_stream():
-        num_simulations = max(10000, int(request.args.get("num_simulations", 10000)))
+        num_simulations = int(request.args.get("num_simulations", 10000))
         rent_growth_dist = json.loads(
             unquote(request.args.get("annual_rent_growth", "%7B%7D"))
         )
@@ -594,60 +605,56 @@ def create_app(test_config=None):
                     base_input[k] = request.args[k]
 
         def event_stream():
-            npvs = []
-            irrs = []
-            batch_size = 500
-            for i in range(num_simulations):
-                if rent_growth_dist["distribution"] == "normal":
-                    rent_growth = np.random.normal(
-                        rent_growth_dist["mean"], rent_growth_dist["stddev"]
-                    )
-                else:
-                    rent_growth = rent_growth_dist["mean"]
-                if discount_rate_dist["distribution"] == "normal":
-                    discount_rate = np.random.normal(
-                        discount_rate_dist["mean"], discount_rate_dist["stddev"]
-                    )
-                else:
-                    discount_rate = discount_rate_dist["mean"]
-                if interest_rate_dist["distribution"] == "normal":
-                    interest_rate = np.random.normal(
-                        interest_rate_dist["mean"], interest_rate_dist["stddev"]
-                    )
-                else:
-                    interest_rate = interest_rate_dist["mean"]
-                sim_input = base_input.copy()
-                sim_input["annual_rent_growth"] = rent_growth
-                sim_input["discount_rate"] = discount_rate
-                sim_input["interest_rate"] = interest_rate
-                cash_flows = calculate_cash_flows(sim_input)
-                npv = cash_flows[-1]["cumulativePV"]
-                net_cash_flows = [row["netCashFlow"] for row in cash_flows]
-                irr = calculate_irr(net_cash_flows)
-                npvs.append(npv)
-                irrs.append(irr if irr is not None else float("nan"))
-                if (i + 1) % batch_size == 0 or (i + 1) == num_simulations:
-                    progress = i + 1
-                    partial = {
-                        "progress": progress,
-                        "total": num_simulations,
-                        "npvs": npvs[:],
-                        "irrs": irrs[:],
-                    }
-                    yield f"data: {json.dumps(clean_for_json(partial))}\n\n"
+            # Generate all random variables upfront (vectorized)
+            if rent_growth_dist["distribution"] == "normal":
+                rent_growths = np.random.normal(
+                    rent_growth_dist["mean"], rent_growth_dist["stddev"], num_simulations
+                )
+            else:
+                rent_growths = np.full(num_simulations, rent_growth_dist["mean"])
+            
+            if discount_rate_dist["distribution"] == "normal":
+                discount_rates = np.random.normal(
+                    discount_rate_dist["mean"], discount_rate_dist["stddev"], num_simulations
+                )
+            else:
+                discount_rates = np.full(num_simulations, discount_rate_dist["mean"])
+            
+            if interest_rate_dist["distribution"] == "normal":
+                interest_rates = np.random.normal(
+                    interest_rate_dist["mean"], interest_rate_dist["stddev"], num_simulations
+                )
+            else:
+                interest_rates = np.full(num_simulations, interest_rate_dist["mean"])
+            
+            # Use vectorized calculation for all simulations at once
+            npvs, irrs = calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, interest_rates)
+            
+            # Stream results in batches for progress updates
+            batch_size = 1000
+            for i in range(0, num_simulations, batch_size):
+                end_idx = min(i + batch_size, num_simulations)
+                progress = end_idx
+                partial = {
+                    "progress": progress,
+                    "total": num_simulations,
+                    "npvs": npvs[:end_idx].tolist(),
+                    "irrs": irrs[:end_idx].tolist(),
+                }
+                yield f"data: {json.dumps(clean_for_json(partial))}\n\n"
+            
             # Final summary
-            npvs_arr = np.array(npvs)
-            irrs_arr = np.array(irrs)
+            irr_mean, irr_5th, irr_95th = safe_irr_stats(irrs)
             summary = {
-                "npv_mean": float(np.nanmean(npvs_arr)),
-                "npv_5th_percentile": float(np.nanpercentile(npvs_arr, 5)),
-                "npv_95th_percentile": float(np.nanpercentile(npvs_arr, 95)),
-                "irr_mean": float(np.nanmean(irrs_arr)),
-                "irr_5th_percentile": float(np.nanpercentile(irrs_arr, 5)),
-                "irr_95th_percentile": float(np.nanpercentile(irrs_arr, 95)),
-                "probability_npv_positive": float(np.mean(npvs_arr > 0)),
+                "npv_mean": float(np.nanmean(npvs)),
+                "npv_5th_percentile": float(np.nanpercentile(npvs, 5)),
+                "npv_95th_percentile": float(np.nanpercentile(npvs, 95)),
+                "irr_mean": irr_mean,
+                "irr_5th_percentile": irr_5th,
+                "irr_95th_percentile": irr_95th,
+                "probability_npv_positive": float(np.mean(npvs > 0)),
             }
-            yield f"data: {json.dumps(clean_for_json({'done': True, 'summary': summary, 'npvs': npvs, 'irrs': irrs}))}\n\n"
+            yield f"data: {json.dumps(clean_for_json({'done': True, 'summary': summary, 'npvs': npvs.tolist(), 'irrs': irrs.tolist()}))}\n\n"
 
         return Response(event_stream(), mimetype="text/event-stream")
 
@@ -666,11 +673,11 @@ def create_app(test_config=None):
 
     @app.route("/api/portfolios/<portfolio_id>", methods=["DELETE"])
     def delete_portfolio(portfolio_id):
-        portfolio = Portfolio.query.get(portfolio_id)
+        portfolio = db.session.get(Portfolio, portfolio_id)
         if not portfolio:
             abort(404)
         # Set properties' portfolio_id to None (YAGNI: no cascade delete)
-        for prop in Property.query.filter_by(portfolio_id=portfolio_id):
+        for prop in db.session.query(Property).filter_by(portfolio_id=portfolio_id):
             prop.portfolio_id = None
         db.session.delete(portfolio)
         db.session.commit()
@@ -678,20 +685,20 @@ def create_app(test_config=None):
 
     @app.route("/api/portfolios/<portfolio_id>", methods=["GET"])
     def get_portfolio(portfolio_id):
-        portfolio = Portfolio.query.get(portfolio_id)
+        portfolio = db.session.get(Portfolio, portfolio_id)
         if not portfolio:
             abort(404)
         return jsonify({"id": portfolio.id, "name": portfolio.name})
 
     @app.route("/api/portfolios/<portfolio_id>/properties", methods=["GET"])
     def get_portfolio_properties(portfolio_id):
-        properties = Property.query.filter_by(portfolio_id=portfolio_id).all()
+        properties = db.session.query(Property).filter_by(portfolio_id=portfolio_id).all()
         return jsonify([p.to_dict() for p in properties])
 
     @app.route("/api/portfolios/<portfolio_id>/irr", methods=["GET"])
     def portfolio_irr(portfolio_id):
         # Get all properties in the portfolio
-        properties = Property.query.filter_by(portfolio_id=portfolio_id).all()
+        properties = db.session.query(Property).filter_by(portfolio_id=portfolio_id).all()
         if not properties:
             return jsonify({"error": "No properties found for this portfolio"}), 404
 
@@ -699,7 +706,7 @@ def create_app(test_config=None):
         all_cash_flows = []
         max_years = 0
         for prop in properties:
-            valuation = Valuation.query.filter_by(property_id=prop.id).first()
+            valuation = db.session.query(Valuation).filter_by(property_id=prop.id).first()
             if not valuation:
                 continue  # skip properties without valuation
             cash_flows = calculate_cash_flows(valuation.to_dict())
