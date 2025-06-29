@@ -1,4 +1,6 @@
-export interface DCFRow {
+import { ValuationBase } from "./valuation";
+
+export interface DCFRow extends ValuationBase {
   id: string;
   created_at: string;
   initial_investment: number;
