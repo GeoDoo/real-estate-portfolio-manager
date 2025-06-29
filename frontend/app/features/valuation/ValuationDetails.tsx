@@ -159,22 +159,23 @@ export default function ValuationDetailPage() {
     setFormError(null);
   };
 
-  // Add a validation function
+  // Validation logic for Save button
   function isFormValid() {
-    return (
-      parseFloat(form.initial_investment) > 0 &&
-      parseFloat(form.annual_rental_income) > 0 &&
-      parseFloat(form.service_charge) > 0 &&
-      parseFloat(form.ground_rent) > 0 &&
-      parseFloat(form.maintenance) > 0 &&
-      parseFloat(form.property_tax) > 0 &&
-      parseFloat(form.insurance) > 0 &&
-      parseFloat(form.management_fees) > 0 &&
-      parseFloat(form.transaction_costs) > 0 &&
-      parseFloat(form.annual_rent_growth) > 0 &&
-      parseFloat(form.discount_rate) > 0 &&
-      parseFloat(form.holding_period) > 0
-    );
+    // Required fields must be > 0
+    const required = [
+      'initial_investment', 'annual_rental_income', 'maintenance', 'property_tax',
+      'management_fees', 'transaction_costs', 'annual_rent_growth', 'discount_rate', 'holding_period'
+    ];
+    const formObj = form as Record<string, string>;
+    for (const field of required) {
+      if (!(parseFloat(formObj[field]) > 0)) return false;
+    }
+    // Optional fields: if filled, must be >= 0
+    const optional = ['service_charge', 'ground_rent', 'insurance'];
+    for (const field of optional) {
+      if (formObj[field] && parseFloat(formObj[field]) < 0) return false;
+    }
+    return true;
   }
 
   const handleSave = async () => {

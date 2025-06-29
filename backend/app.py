@@ -366,16 +366,20 @@ def property_valuation(prop_id):
         return jsonify(clean_for_json(val.to_dict()))
     elif request.method in ["POST", "PUT"]:
         data = request.json
-        # Backend validation: all required fields must be positive numbers
+        # Backend validation: required fields must be positive, optional fields can be 0 or positive
         required_fields = [
-            "initial_investment", "annual_rental_income", "service_charge", "ground_rent",
-            "maintenance", "property_tax", "insurance", "management_fees", "transaction_costs",
-            "annual_rent_growth", "discount_rate", "holding_period"
+            "initial_investment", "annual_rental_income", "maintenance", "property_tax",
+            "management_fees", "transaction_costs", "annual_rent_growth", "discount_rate", "holding_period"
         ]
+        optional_fields = ["service_charge", "ground_rent", "insurance"]
         for field in required_fields:
             value = data.get(field)
             if value is None or not isinstance(value, (int, float)) or value <= 0:
-                return jsonify({"error": f"{field.replace('_', ' ').capitalize()} must be a positive number."}), 400
+                return jsonify({"error": f"{field.replace('_', ' ').capitalize()} is required and must be a positive number."}), 400
+        for field in optional_fields:
+            value = data.get(field)
+            if value is not None and value < 0:
+                return jsonify({"error": f"{field.replace('_', ' ').capitalize()} cannot be negative."}), 400
         val = Valuation.query.filter_by(property_id=prop_id).first()
         now = datetime.utcnow().isoformat()
         if val:

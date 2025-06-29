@@ -16,6 +16,11 @@ export default function ValuationForm({
   disabled = false,
   error,
 }: ValuationFormProps) {
+  // Add a helper for required field label
+  function RequiredLabel({ children }: { children: React.ReactNode }) {
+    return <span>{children} <span style={{color: 'red'}}>*</span></span>;
+  }
+
   return (
     <form onSubmit={onSubmit} className="space-y-10">
       {/* Initial Investment & One-off Costs */}
@@ -26,7 +31,7 @@ export default function ValuationForm({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Purchase Price ($)
+              <RequiredLabel>Purchase Price ($)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -43,7 +48,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Transaction Costs ($)
+              <RequiredLabel>Transaction Costs ($)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -60,7 +65,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Property Tax ($)
+              <RequiredLabel>Property Tax ($)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -86,7 +91,7 @@ export default function ValuationForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Annual Rental Income ($)
+              <RequiredLabel>Annual Rental Income ($)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -146,7 +151,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Maintenance ($)
+              <RequiredLabel>Maintenance ($)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -180,7 +185,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Management Fees (%)
+              <RequiredLabel>Management Fees (%)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -206,7 +211,7 @@ export default function ValuationForm({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Annual Rent Growth (%)
+              <RequiredLabel>Annual Rent Growth (%)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -223,7 +228,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Discount Rate (%)
+              <RequiredLabel>Discount Rate (%)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -240,7 +245,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Holding Period (Years)
+              <RequiredLabel>Holding Period (Years)</RequiredLabel>
             </label>
             <input
               type="text"
