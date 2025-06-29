@@ -18,7 +18,7 @@ const Button: React.FC<ButtonProps> = ({
   const sizeClasses = {
     sm: "px-3 py-1.5 text-sm",
     md: "px-4 py-2 text-sm",
-    lg: "px-6 py-3 text-base",
+    lg: "px-5 py-2.5 text-lg",
   };
 
   const variantClasses = {
@@ -29,7 +29,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      className={`${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`flex flex-row items-center ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {children}

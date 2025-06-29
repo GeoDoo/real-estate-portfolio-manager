@@ -9,7 +9,7 @@ const PageContainer: React.FC<PageContainerProps> = ({
   children,
   className = "",
 }) => (
-  <div className={` ${className}`} style={{ background: "var(--background)" }}>
+  <div className={`${className}`.trim()} style={{ background: "var(--background)" }}>
     <div className="max-w-6xl mx-auto">{children}</div>
   </div>
 );
