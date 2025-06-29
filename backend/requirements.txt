@@ -1,2 +1,6 @@
-flask 
-sqlalchemy 
+flask
+flask_sqlalchemy
+flask-cors
+scipy
+numpy
+pytest

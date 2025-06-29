@@ -11,6 +11,7 @@ import Button from "@/components/Button";
 import PageContainer from "@/components/PageContainer";
 import { getNumberColor } from "@/lib/utils";
 import { config } from "../../config";
+import { isValidValuationForm } from "../properties/validation";
 
 interface MonteCarloSummary {
   npv_mean: number;
@@ -160,23 +161,9 @@ export default function ValuationDetailPage() {
     setFormError(null);
   };
 
-  // Validation logic for Save button
+  // Use shared validation logic
   function isFormValid() {
-    // Required fields must be > 0
-    const required = [
-      'initial_investment', 'annual_rental_income', 'maintenance', 'property_tax',
-      'management_fees', 'transaction_costs', 'annual_rent_growth', 'discount_rate', 'holding_period'
-    ];
-    const formObj = form as Record<string, string>;
-    for (const field of required) {
-      if (!(parseFloat(formObj[field]) > 0)) return false;
-    }
-    // Optional fields: if filled, must be >= 0
-    const optional = ['service_charge', 'ground_rent', 'insurance'];
-    for (const field of optional) {
-      if (formObj[field] && parseFloat(formObj[field]) < 0) return false;
-    }
-    return true;
+    return isValidValuationForm(form);
   }
 
   const handleSave = async () => {
