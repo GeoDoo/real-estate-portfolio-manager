@@ -180,7 +180,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Management Fees ($)
+              Management Fees (%)
             </label>
             <input
               type="text"
@@ -191,7 +191,7 @@ export default function ValuationForm({
               style={
                 { "--tw-ring-color": "var(--primary)" } as React.CSSProperties
               }
-              placeholder="0"
+              placeholder="e.g. 12"
               disabled={disabled}
             />
           </div>
