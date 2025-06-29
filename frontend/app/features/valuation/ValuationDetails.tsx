@@ -634,7 +634,7 @@ export default function ValuationDetailPage() {
                   />
                   <Button
                     onClick={runMonteCarlo}
-                    className="w-full mt-8 px-4 py-2"
+                    className="w-full mt-8 px-4 py-3 rounded"
                     disabled={mcRunning || !hasValidValuation(valuation)}
                   >
                     {mcRunning

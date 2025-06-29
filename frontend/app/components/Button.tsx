@@ -22,9 +22,9 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   const variantClasses = {
-    primary: "btn btn-primary",
-    secondary: "btn btn-secondary",
-    danger: "btn btn-danger",
+    primary: "bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none",
+    secondary: "bg-[var(--card)] hover:bg-[var(--background)] text-[var(--foreground)] border border-[var(--card-border)] hover:border-[var(--primary)]",
+    danger: "bg-red-400 hover:bg-red-500 text-white",
   };
 
   return (
