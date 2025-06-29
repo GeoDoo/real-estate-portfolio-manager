@@ -69,6 +69,8 @@ export default function ValuationDetailPage() {
   const [mcProgress, setMcProgress] = useState(0);
   const [mcTotal, setMcTotal] = useState(0);
   const [mcRunning, setMcRunning] = useState(false);
+  const [mcInterestMean, setMcInterestMean] = useState(5);
+  const [mcInterestStd, setMcInterestStd] = useState(1);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -253,6 +255,13 @@ export default function ValuationDetailPage() {
           distribution: "normal",
           mean: mcDiscountMean,
           stddev: mcDiscountStd,
+        }),
+      ),
+      interest_rate: encodeURIComponent(
+        JSON.stringify({
+          distribution: "normal",
+          mean: mcInterestMean,
+          stddev: mcInterestStd,
         }),
       ),
       num_simulations: String(mcNumSim),
@@ -623,6 +632,29 @@ export default function ValuationDetailPage() {
                     type="number"
                     value={mcDiscountStd}
                     onChange={(e) => setMcDiscountStd(Number(e.target.value))}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    Interest Rate
+                  </h3>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mean (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={mcInterestMean}
+                    onChange={(e) => setMcInterestMean(Number(e.target.value))}
+                    className="w-full p-2 border rounded mb-2"
+                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stddev (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={mcInterestStd}
+                    onChange={(e) => setMcInterestStd(Number(e.target.value))}
                     className="w-full p-2 border rounded"
                   />
                 </div>

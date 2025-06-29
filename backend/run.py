@@ -18,6 +18,8 @@ VENV_BIN = os.path.join(os.path.dirname(__file__), 'venv', 'bin')
 PYTHON_BIN = os.path.join(VENV_BIN, 'python')
 ALEMBIC_BIN = os.path.join(VENV_BIN, 'alembic')
 
+os.environ.setdefault("FRONTEND_URL", "http://localhost:3000")
+
 def run_tests():
     """Run all tests."""
     print("🧪 Running tests...")

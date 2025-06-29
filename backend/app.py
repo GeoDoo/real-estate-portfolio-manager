@@ -126,8 +126,8 @@ def calculate_cash_flows(input):
     annual_rent_growth = Fraction(str(input["annual_rent_growth"]))
     discount_rate = Fraction(str(input["discount_rate"]))
     holding_period = int(input["holding_period"])
-    ltv = Fraction(str(input["ltv"]))
-    interest_rate = Fraction(str(input["interest_rate"]))
+    ltv = Fraction(str(input.get("ltv", 0) or 0))
+    interest_rate = Fraction(str(input.get("interest_rate", 0) or 0))
 
     # Calculate mortgage payment if LTV > 0
     monthly_mortgage_payment = Fraction(0)
@@ -447,18 +447,21 @@ def property_valuation(prop_id):
 def monte_carlo_valuation():
     data = request.json
     num_simulations = max(10000, data.get("num_simulations", 1000))
-    # Support normal distribution for annual_rent_growth and discount_rate
+    # Support normal distribution for annual_rent_growth, discount_rate, and interest_rate
     rent_growth_dist = data.get(
         "annual_rent_growth", {"distribution": "normal", "mean": 2, "stddev": 1}
     )
     discount_rate_dist = data.get(
         "discount_rate", {"distribution": "normal", "mean": 15, "stddev": 2}
     )
+    interest_rate_dist = data.get(
+        "interest_rate", {"distribution": "normal", "mean": 5, "stddev": 1}
+    )
     # Copy other inputs as fixed values
     base_input = {
         k: v
         for k, v in data.items()
-        if k not in ["annual_rent_growth", "discount_rate", "num_simulations"]
+        if k not in ["annual_rent_growth", "discount_rate", "interest_rate", "num_simulations"]
     }
     npvs = []
     irrs = []
@@ -475,9 +478,16 @@ def monte_carlo_valuation():
             )
         else:
             discount_rate = discount_rate_dist["mean"]
+        if interest_rate_dist["distribution"] == "normal":
+            interest_rate = np.random.normal(
+                interest_rate_dist["mean"], interest_rate_dist["stddev"]
+            )
+        else:
+            interest_rate = interest_rate_dist["mean"]
         sim_input = base_input.copy()
         sim_input["annual_rent_growth"] = rent_growth
         sim_input["discount_rate"] = discount_rate
+        sim_input["interest_rate"] = interest_rate
         cash_flows = calculate_cash_flows(sim_input)
         npv = cash_flows[-1]["cumulativePV"]
         net_cash_flows = [row["netCashFlow"] for row in cash_flows]
@@ -519,10 +529,13 @@ def monte_carlo_stream():
     discount_rate_dist = json.loads(
         unquote(request.args.get("discount_rate", "%7B%7D"))
     )
+    interest_rate_dist = json.loads(
+        unquote(request.args.get("interest_rate", "%7B%7D"))
+    )
     # All other fields as base_input
     base_input = {}
     for k in request.args:
-        if k not in ["annual_rent_growth", "discount_rate", "num_simulations"]:
+        if k not in ["annual_rent_growth", "discount_rate", "interest_rate", "num_simulations"]:
             try:
                 base_input[k] = float(request.args[k])
             except ValueError:
@@ -545,9 +558,16 @@ def monte_carlo_stream():
                 )
             else:
                 discount_rate = discount_rate_dist["mean"]
+            if interest_rate_dist["distribution"] == "normal":
+                interest_rate = np.random.normal(
+                    interest_rate_dist["mean"], interest_rate_dist["stddev"]
+                )
+            else:
+                interest_rate = interest_rate_dist["mean"]
             sim_input = base_input.copy()
             sim_input["annual_rent_growth"] = rent_growth
             sim_input["discount_rate"] = discount_rate
+            sim_input["interest_rate"] = interest_rate
             cash_flows = calculate_cash_flows(sim_input)
             npv = cash_flows[-1]["cumulativePV"]
             net_cash_flows = [row["netCashFlow"] for row in cash_flows]
