@@ -11,7 +11,7 @@ import Button from "@/components/Button";
 import PageContainer from "@/components/PageContainer";
 import { getNumberColor } from "@/lib/utils";
 import { config } from "../../config";
-import { isValidValuationForm } from "../properties/validation";
+import { isValidValuationForm, hasValidValuation } from "../properties/validation";
 import InfoTooltip from "@/components/InfoTooltip";
 
 interface MonteCarloSummary {
@@ -635,12 +635,17 @@ export default function ValuationDetailPage() {
                   <Button
                     onClick={runMonteCarlo}
                     className="w-full mt-8 px-4 py-2"
-                    disabled={mcRunning}
+                    disabled={mcRunning || !hasValidValuation(valuation)}
                   >
                     {mcRunning
                       ? `Running... (${mcProgress}/${mcTotal})`
                       : "Run Simulation"}
                   </Button>
+                  {!hasValidValuation(valuation) && (
+                    <div className="text-xs text-red-500 mt-2 text-center">
+                      Please enter and save a valid valuation before running the simulation.
+                    </div>
+                  )}
                 </div>
               </div>
               {mcRunning && (
