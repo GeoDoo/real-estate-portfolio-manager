@@ -12,17 +12,11 @@ from urllib.parse import unquote
 import math
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dcf_calculations.db"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# CORS configuration with environment variables
-CORS(
-    app,
-    origins=[os.environ.get("FRONTEND_URL", "http://localhost:3000")],
-    supports_credentials=True,
-)
 
 db = SQLAlchemy(app)
 
@@ -372,6 +366,16 @@ def property_valuation(prop_id):
         return jsonify(clean_for_json(val.to_dict()))
     elif request.method in ["POST", "PUT"]:
         data = request.json
+        # Backend validation: all required fields must be positive numbers
+        required_fields = [
+            "initial_investment", "annual_rental_income", "service_charge", "ground_rent",
+            "maintenance", "property_tax", "insurance", "management_fees", "transaction_costs",
+            "annual_rent_growth", "discount_rate", "holding_period"
+        ]
+        for field in required_fields:
+            value = data.get(field)
+            if value is None or not isinstance(value, (int, float)) or value <= 0:
+                return jsonify({"error": f"{field.replace('_', ' ').capitalize()} must be a positive number."}), 400
         val = Valuation.query.filter_by(property_id=prop_id).first()
         now = datetime.utcnow().isoformat()
         if val:
@@ -623,4 +627,4 @@ def portfolio_irr(portfolio_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8000)
+    app.run(debug=True, port=5050)

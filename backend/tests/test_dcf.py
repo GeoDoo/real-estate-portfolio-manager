@@ -1,7 +1,16 @@
 import pytest
-from app import calculate_cash_flows, calculate_irr
+from app import calculate_cash_flows, calculate_irr, app, db
+from tests import in_memory_db
 import numpy as np
 import math
+
+@pytest.fixture(autouse=True, scope="module")
+def in_memory_db():
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    with app.app_context():
+        db.create_all()
+        yield
+        db.drop_all()
 
 def test_all_years_present_value():
     input_data = {

@@ -38,20 +38,31 @@ export default function HomePage() {
         const ribbonsObj: Record<string, RibbonData> = {};
         await Promise.all(
           data.map(async (property) => {
-            ribbonsObj[property.id] = { status: "loading" };
             const valuation = await valuationsAPI.getByPropertyId(property.id);
-            if (!valuation) {
-              ribbonsObj[property.id] = { status: "none" };
+            // Only treat as having a valuation if all required fields are positive numbers
+            const requiredFields = [
+              'initial_investment', 'annual_rental_income', 'service_charge', 'ground_rent',
+              'maintenance', 'property_tax', 'insurance', 'management_fees', 'transaction_costs',
+              'annual_rent_growth', 'discount_rate', 'holding_period'
+            ];
+            if (!valuation || !requiredFields.every(f => typeof (valuation as Record<string, any>)[f] === 'number' && (valuation as Record<string, any>)[f] > 0)) {
               return;
             }
+            // Only calculate cash flows and IRR if valuation exists and is valid
             const cashFlows = await valuationsAPI.calculateCashFlows(valuation);
+            if (!cashFlows || cashFlows.length === 0) {
+              // No ribbon if no cash flows
+              return;
+            }
             const npv = cashFlows[cashFlows.length - 1]?.cumulativePV;
             const netCashFlows = cashFlows.map((row) => row.netCashFlow);
             let irr: number | null = null;
-            try {
-              irr = await valuationsAPI.calculateIRR(netCashFlows);
-            } catch {
-              irr = null;
+            if (netCashFlows.length > 1) {
+              try {
+                irr = await valuationsAPI.calculateIRR(netCashFlows);
+              } catch {
+                irr = null;
+              }
             }
             if (npv > 0 && irr && irr > 0) {
               ribbonsObj[property.id] = {
@@ -112,7 +123,9 @@ export default function HomePage() {
           </div>
         ) : error ? (
           <div className="text-center" style={{ color: "var(--error)" }}>
-            {error}
+            {error.includes('CORS') || error.includes('Network')
+              ? 'Could not connect to backend. Check CORS or server status.'
+              : error}
           </div>
         ) : properties.length === 0 ? (
           <div className="text-center" style={{ color: "var(--text-muted)" }}>
@@ -153,23 +166,24 @@ export default function HomePage() {
                   </button>
 
                   {/* BUY Ribbon */}
-                  {ribbon && ribbon.status !== "none" && (
+                  {ribbon && (ribbon.status === "buy" || ribbon.status === "no-buy") && (
                     <div className="absolute top-4 right-4 z-30">
                       <div
                         className="badge badge-success shadow text-xs font-semibold px-4 py-1"
                         style={{
-                          background: "var(--primary)",
+                          background:
+                            ribbon.status === "buy"
+                              ? "#10b981" // green for BUY
+                              : "#ef4444", // red for DO NOT BUY
                           color: "white",
                           borderRadius: 9999,
                           boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
                           letterSpacing: 1,
                         }}
                       >
-                        {ribbon.status === "loading"
-                          ? "..."
-                          : ribbon.status === "buy"
-                            ? "BUY"
-                            : "DO NOT BUY"}
+                        {ribbon.status === "buy"
+                          ? "BUY"
+                          : "DO NOT BUY"}
                       </div>
                     </div>
                   )}

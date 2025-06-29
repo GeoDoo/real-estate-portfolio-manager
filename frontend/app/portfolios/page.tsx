@@ -68,7 +68,9 @@ export default function PortfoliosPage() {
       </form>
       {error && (
         <div style={{ color: "var(--error)" }} className="mb-4">
-          {error}
+          {error.includes('CORS') || error.includes('Network')
+            ? 'Could not connect to backend. Check CORS or server status.'
+            : error}
         </div>
       )}
       {loading && portfolios.length === 0 ? (

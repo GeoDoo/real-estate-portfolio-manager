@@ -159,8 +159,30 @@ export default function ValuationDetailPage() {
     setFormError(null);
   };
 
+  // Add a validation function
+  function isFormValid() {
+    return (
+      parseFloat(form.initial_investment) > 0 &&
+      parseFloat(form.annual_rental_income) > 0 &&
+      parseFloat(form.service_charge) > 0 &&
+      parseFloat(form.ground_rent) > 0 &&
+      parseFloat(form.maintenance) > 0 &&
+      parseFloat(form.property_tax) > 0 &&
+      parseFloat(form.insurance) > 0 &&
+      parseFloat(form.management_fees) > 0 &&
+      parseFloat(form.transaction_costs) > 0 &&
+      parseFloat(form.annual_rent_growth) > 0 &&
+      parseFloat(form.discount_rate) > 0 &&
+      parseFloat(form.holding_period) > 0
+    );
+  }
+
   const handleSave = async () => {
     if (!propertyId) return;
+    if (!isFormValid()) {
+      setFormError("All fields must be positive numbers.");
+      return;
+    }
 
     setSaving(true);
     setFormError(null);
@@ -329,7 +351,7 @@ export default function ValuationDetailPage() {
                 <>
                   <Button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={!isFormValid() || saving}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md"
                   >
                     <CheckIcon className="w-4 h-4 mr-2" />
