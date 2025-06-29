@@ -1411,56 +1411,74 @@ export default function ValuationDetailPage() {
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Item</th>
-                            <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Amount</th>
+                            <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Amount ($)</th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">Rental Income</td>
-                            <td className="px-4 py-2 text-right text-sm font-medium text-green-600">
-                              ${rentalAnalysis.monthly_breakdown.rental_income.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-medium" style={{ color: getNumberColor(rentalAnalysis.monthly_breakdown.rental_income) }}>
+                              {rentalAnalysis.monthly_breakdown.rental_income !== 0
+                                ? rentalAnalysis.monthly_breakdown.rental_income.toLocaleString()
+                                : "0"}
                             </td>
                           </tr>
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">Mortgage Payment</td>
-                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
-                              -${rentalAnalysis.monthly_breakdown.mortgage_payment.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-medium" style={{ color: getNumberColor(-Math.abs(rentalAnalysis.monthly_breakdown.mortgage_payment)) }}>
+                              {rentalAnalysis.monthly_breakdown.mortgage_payment !== 0
+                                ? `-${Math.abs(rentalAnalysis.monthly_breakdown.mortgage_payment).toLocaleString()}`
+                                : "0"}
                             </td>
                           </tr>
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">Property Tax</td>
-                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
-                              -${rentalAnalysis.monthly_breakdown.property_tax.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-medium" style={{ color: getNumberColor(-Math.abs(rentalAnalysis.monthly_breakdown.property_tax)) }}>
+                              {rentalAnalysis.monthly_breakdown.property_tax !== 0
+                                ? `-${Math.abs(rentalAnalysis.monthly_breakdown.property_tax).toLocaleString()}`
+                                : "0"}
                             </td>
                           </tr>
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">Insurance</td>
-                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
-                              -${rentalAnalysis.monthly_breakdown.insurance.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-medium" style={{ color: getNumberColor(-Math.abs(rentalAnalysis.monthly_breakdown.insurance)) }}>
+                              {rentalAnalysis.monthly_breakdown.insurance !== 0
+                                ? `-${Math.abs(rentalAnalysis.monthly_breakdown.insurance).toLocaleString()}`
+                                : "0"}
                             </td>
                           </tr>
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">Maintenance</td>
-                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
-                              -${rentalAnalysis.monthly_breakdown.maintenance.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-medium" style={{ color: getNumberColor(-Math.abs(rentalAnalysis.monthly_breakdown.maintenance)) }}>
+                              {rentalAnalysis.monthly_breakdown.maintenance !== 0
+                                ? `-${Math.abs(rentalAnalysis.monthly_breakdown.maintenance).toLocaleString()}`
+                                : "0"}
                             </td>
                           </tr>
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">Property Management</td>
-                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
-                              -${rentalAnalysis.monthly_breakdown.property_management.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-medium" style={{ color: getNumberColor(-Math.abs(rentalAnalysis.monthly_breakdown.property_management)) }}>
+                              {rentalAnalysis.monthly_breakdown.property_management !== 0
+                                ? `-${Math.abs(rentalAnalysis.monthly_breakdown.property_management).toLocaleString()}`
+                                : "0"}
                             </td>
                           </tr>
                           <tr className="border-t border-gray-200 bg-gray-50">
                             <td className="px-4 py-2 text-sm font-medium text-gray-800">Total Expenses</td>
-                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
-                              -${rentalAnalysis.monthly_breakdown.total_expenses.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-medium" style={{ color: getNumberColor(-Math.abs(rentalAnalysis.monthly_breakdown.total_expenses)) }}>
+                              {rentalAnalysis.monthly_breakdown.total_expenses !== 0
+                                ? `-${Math.abs(rentalAnalysis.monthly_breakdown.total_expenses).toLocaleString()}`
+                                : "0"}
                             </td>
                           </tr>
                           <tr className="border-t-2 border-gray-300 bg-blue-50">
                             <td className="px-4 py-2 text-sm font-bold text-gray-800">Monthly Cash Flow</td>
-                            <td className={`px-4 py-2 text-right text-sm font-bold ${getNumberColor(rentalAnalysis.monthly_breakdown.cash_flow)}`}>
-                              ${rentalAnalysis.monthly_breakdown.cash_flow.toLocaleString()}
+                            <td className="px-4 py-2 text-right text-sm font-bold" style={{ color: getNumberColor(rentalAnalysis.monthly_breakdown.cash_flow) }}>
+                              {rentalAnalysis.monthly_breakdown.cash_flow > 0
+                                ? rentalAnalysis.monthly_breakdown.cash_flow.toLocaleString()
+                                : rentalAnalysis.monthly_breakdown.cash_flow < 0
+                                  ? `-${Math.abs(rentalAnalysis.monthly_breakdown.cash_flow).toLocaleString()}`
+                                  : "0"}
                             </td>
                           </tr>
                         </tbody>
