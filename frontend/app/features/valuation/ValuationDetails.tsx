@@ -531,7 +531,7 @@ export default function ValuationDetailPage() {
                         ? "text-green-700"
                         : irr && irr < 0
                           ? "text-red-600"
-                          : "text-gray-900"
+                        : "text-gray-900"
                     }
                   >
                     {irr ? `${irr.toFixed(2)}%` : "N/A"}
@@ -667,9 +667,29 @@ export default function ValuationDetailPage() {
                   <h3 className="font-semibold text-gray-800 mb-2">
                     Rent Growth
                   </h3>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mean (%)
-                  </label>
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    Mean (%) <InfoTooltip label={
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                      >
+                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                        <text
+                          x="12"
+                          y="16"
+                          textAnchor="middle"
+                          fontSize="12"
+                          fill="currentColor"
+                        >
+                          i
+                        </text>
+                      </svg>
+                    } tooltip="The average annual growth rate for rental income. This represents the expected increase in rent over time." />
+                  </div>
                   <input
                     type="number"
                     value={mcRentGrowthMean}
@@ -679,9 +699,29 @@ export default function ValuationDetailPage() {
                     className="w-full p-2 border rounded mb-2"
                     disabled={mcRunning}
                   />
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stddev (%)
-                  </label>
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    Stddev (%) <InfoTooltip label={
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                      >
+                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                        <text
+                          x="12"
+                          y="16"
+                          textAnchor="middle"
+                          fontSize="12"
+                          fill="currentColor"
+                        >
+                          i
+                        </text>
+                      </svg>
+                    } tooltip="The standard deviation of rent growth. Higher values indicate more uncertainty in future rent increases." />
+                  </div>
                   <input
                     type="number"
                     value={mcRentGrowthStd}
@@ -693,18 +733,58 @@ export default function ValuationDetailPage() {
                   <h3 className="font-semibold text-gray-800 mb-2">
                     Discount Rate
                   </h3>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mean (%)
-                  </label>
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    Mean (%) <InfoTooltip label={
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                      >
+                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                        <text
+                          x="12"
+                          y="16"
+                          textAnchor="middle"
+                          fontSize="12"
+                          fill="currentColor"
+                        >
+                          i
+                        </text>
+                      </svg>
+                    } tooltip="The average discount rate used to calculate present values. This represents the required rate of return for the investment." />
+                  </div>
                   <input
                     type="number"
                     value={mcDiscountMean}
                     onChange={(e) => setMcDiscountMean(Number(e.target.value))}
                     className="w-full p-2 border rounded mb-2"
                   />
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stddev (%)
-                  </label>
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    Stddev (%) <InfoTooltip label={
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                      >
+                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                        <text
+                          x="12"
+                          y="16"
+                          textAnchor="middle"
+                          fontSize="12"
+                          fill="currentColor"
+                        >
+                          i
+                        </text>
+                      </svg>
+                    } tooltip="The standard deviation of the discount rate. Higher values indicate more uncertainty in the required rate of return." />
+                  </div>
                   <input
                     type="number"
                     value={mcDiscountStd}
@@ -719,18 +799,58 @@ export default function ValuationDetailPage() {
                       <h3 className="font-semibold text-gray-800 mb-2">
                         Interest Rate
                       </h3>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mean (%)
-                      </label>
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        Mean (%) <InfoTooltip label={
+                          <svg
+                            width="16"
+                            height="16"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                          >
+                            <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                            <text
+                              x="12"
+                              y="16"
+                              textAnchor="middle"
+                              fontSize="12"
+                              fill="currentColor"
+                            >
+                              i
+                            </text>
+                          </svg>
+                        } tooltip="The average interest rate for the mortgage loan. This affects monthly mortgage payments and overall cash flow." />
+                      </div>
                       <input
                         type="number"
                         value={mcInterestMean}
                         onChange={(e) => setMcInterestMean(Number(e.target.value))}
                         className="w-full p-2 border rounded mb-2"
                       />
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Stddev (%)
-                      </label>
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        Stddev (%) <InfoTooltip label={
+                          <svg
+                            width="16"
+                            height="16"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                          >
+                            <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                            <text
+                              x="12"
+                              y="16"
+                              textAnchor="middle"
+                              fontSize="12"
+                              fill="currentColor"
+                            >
+                              i
+                            </text>
+                          </svg>
+                        } tooltip="The standard deviation of interest rates. Higher values indicate more uncertainty in future interest rate changes." />
+                      </div>
                       <input
                         type="number"
                         value={mcInterestStd}
@@ -744,9 +864,29 @@ export default function ValuationDetailPage() {
                   <h3 className="font-semibold text-gray-800 mb-2">
                     Simulation Settings
                   </h3>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Simulations
-                  </label>
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    Simulations <InfoTooltip label={
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                      >
+                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                        <text
+                          x="12"
+                          y="16"
+                          textAnchor="middle"
+                          fontSize="12"
+                          fill="currentColor"
+                        >
+                          i
+                        </text>
+                      </svg>
+                    } tooltip="The number of Monte Carlo simulations to run. More simulations provide more accurate results but take longer to compute." />
+                  </div>
                   <input
                     type="number"
                     value={mcNumSim}
@@ -800,10 +940,7 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(mcSummary.npv_mean),
                               }}
                             >
-                              {mcSummary.npv_mean > 0 ? "+" : ""}$
-                              {mcSummary.npv_mean.toLocaleString(undefined, {
-                                maximumFractionDigits: 2,
-                              })}
+                              {mcSummary.npv_mean > 0 ? "+" : ""}{mcSummary.npv_mean.toLocaleString()}
                             </span>
                           </td>
                         </tr>
@@ -823,11 +960,7 @@ export default function ValuationDetailPage() {
                                 ),
                               }}
                             >
-                              $
-                              {mcSummary.npv_5th_percentile.toLocaleString(
-                                undefined,
-                                { maximumFractionDigits: 2 },
-                              )}
+                              {mcSummary.npv_5th_percentile.toLocaleString()}
                             </span>
                           </td>
                         </tr>
@@ -847,11 +980,7 @@ export default function ValuationDetailPage() {
                                 ),
                               }}
                             >
-                              $
-                              {mcSummary.npv_95th_percentile.toLocaleString(
-                                undefined,
-                                { maximumFractionDigits: 2 },
-                              )}
+                              {mcSummary.npv_95th_percentile.toLocaleString()}
                             </span>
                           </td>
                         </tr>
@@ -1104,39 +1233,171 @@ export default function ValuationDetailPage() {
                     <h3 className="font-bold mb-3 text-lg">Key Metrics</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Monthly Cash Flow</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Monthly Cash Flow ($) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="The monthly cash flow after all expenses including mortgage, taxes, insurance, maintenance, and property management fees." />
+                        </div>
                         <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.monthly_cash_flow)}`}>
-                          ${rentalAnalysis.metrics.monthly_cash_flow.toLocaleString()}
+                          {rentalAnalysis.metrics.monthly_cash_flow.toLocaleString()}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Annual Cash Flow</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Annual Cash Flow ($) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="The annual cash flow after all expenses. This represents the net income from the rental property each year." />
+                        </div>
                         <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.annual_cash_flow)}`}>
-                          ${rentalAnalysis.metrics.annual_cash_flow.toLocaleString()}
+                          {rentalAnalysis.metrics.annual_cash_flow.toLocaleString()}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">ROI</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          ROI (%) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="Return on Investment. Calculated as (Annual Cash Flow / Total Investment) × 100. Shows the percentage return on your total investment." />
+                        </div>
                         <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.roi_percent)}`}>
-                          {rentalAnalysis.metrics.roi_percent.toFixed(2)}%
+                          {rentalAnalysis.metrics.roi_percent.toFixed(2)}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Cap Rate</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Cap Rate (%) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="Capitalization Rate. Calculated as (Net Operating Income / Property Value) × 100. Measures the property's unlevered return." />
+                        </div>
                         <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cap_rate_percent)}`}>
-                          {rentalAnalysis.metrics.cap_rate_percent.toFixed(2)}%
+                          {rentalAnalysis.metrics.cap_rate_percent.toFixed(2)}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Cash-on-Cash Return</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Cash-on-Cash Return (%) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="Cash-on-Cash Return. Calculated as (Annual Cash Flow / Down Payment) × 100. Shows the return on your actual cash investment." />
+                        </div>
                         <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cash_on_cash_percent)}`}>
-                          {rentalAnalysis.metrics.cash_on_cash_percent.toFixed(2)}%
+                          {rentalAnalysis.metrics.cash_on_cash_percent.toFixed(2)}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Break-even Rent</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Break-even Rent ($) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="The minimum monthly rent needed to cover all expenses and achieve zero cash flow. This is your break-even point." />
+                        </div>
                         <div className="text-xl font-bold text-gray-800">
-                          ${rentalAnalysis.metrics.break_even_rent.toLocaleString()}
+                          {rentalAnalysis.metrics.break_even_rent.toLocaleString()}
                         </div>
                       </div>
                     </div>
@@ -1157,7 +1418,7 @@ export default function ValuationDetailPage() {
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">Rental Income</td>
                             <td className="px-4 py-2 text-right text-sm font-medium text-green-600">
-                              +${rentalAnalysis.monthly_breakdown.rental_income.toLocaleString()}
+                              ${rentalAnalysis.monthly_breakdown.rental_income.toLocaleString()}
                             </td>
                           </tr>
                           <tr className="border-t border-gray-200">
@@ -1199,7 +1460,7 @@ export default function ValuationDetailPage() {
                           <tr className="border-t-2 border-gray-300 bg-blue-50">
                             <td className="px-4 py-2 text-sm font-bold text-gray-800">Monthly Cash Flow</td>
                             <td className={`px-4 py-2 text-right text-sm font-bold ${getNumberColor(rentalAnalysis.monthly_breakdown.cash_flow)}`}>
-                              {rentalAnalysis.monthly_breakdown.cash_flow >= 0 ? '+' : ''}${rentalAnalysis.monthly_breakdown.cash_flow.toLocaleString()}
+                              ${rentalAnalysis.monthly_breakdown.cash_flow.toLocaleString()}
                             </td>
                           </tr>
                         </tbody>
@@ -1212,27 +1473,115 @@ export default function ValuationDetailPage() {
                     <h3 className="font-bold mb-3 text-lg">Loan Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Down Payment</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Down Payment ($) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="The amount of money you need to pay upfront to get the loan." />
+                        </div>
                         <div className="text-lg font-bold text-gray-800">
-                          ${rentalAnalysis.loan_details.down_payment.toLocaleString()}
+                          {rentalAnalysis.loan_details.down_payment.toLocaleString()}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Loan Amount</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Loan Amount ($) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="The total amount of money you need to borrow to buy the property." />
+                        </div>
                         <div className="text-lg font-bold text-gray-800">
-                          ${rentalAnalysis.loan_details.loan_amount.toLocaleString()}
+                          {rentalAnalysis.loan_details.loan_amount.toLocaleString()}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Monthly Mortgage</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Monthly Mortgage ($) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="The amount of money you need to pay each month to cover the interest and principal of the loan." />
+                        </div>
                         <div className="text-lg font-bold text-gray-800">
-                          ${rentalAnalysis.loan_details.monthly_mortgage.toLocaleString()}
+                          {rentalAnalysis.loan_details.monthly_mortgage.toLocaleString()}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-600">Total Investment</div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Total Investment ($) <InfoTooltip label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          } tooltip="The total amount of money you need to invest in the property." />
+                        </div>
                         <div className="text-lg font-bold text-gray-800">
-                          ${rentalAnalysis.loan_details.total_investment.toLocaleString()}
+                          {rentalAnalysis.loan_details.total_investment.toLocaleString()}
                         </div>
                       </div>
                     </div>

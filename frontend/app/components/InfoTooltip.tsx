@@ -46,17 +46,20 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
   }, [show]);
 
   return (
-    <span className={`relative group inline-flex items-center ${className}`}>
+    <span className={`relative group inline-flex items-center ${className}`} style={{verticalAlign: 'baseline'}}>
       <span
         ref={labelRef}
         className="cursor-pointer inline-block"
+        style={{marginBottom: '-2px'}}
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
         onFocus={() => setShow(true)}
         onBlur={() => setShow(false)}
         tabIndex={0}
       >
-        {label}
+        {React.isValidElement(label) && (label as React.ReactElement<any>).props
+          ? React.cloneElement(label as React.ReactElement<any>, { style: { ...((label as React.ReactElement<any>).props.style || {}), verticalAlign: 'text-bottom' } })
+          : label}
       </span>
       {mounted && show && coords && createPortal(
         <span
