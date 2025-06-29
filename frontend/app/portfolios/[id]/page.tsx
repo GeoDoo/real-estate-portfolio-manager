@@ -203,7 +203,7 @@ export default function PortfolioDetailsPage({ params }: { params: any }) {
                 className="text-base font-semibold mb-2 tracking-wide"
                 style={{ color: "var(--text-muted)" }}
               >
-                Projected Net Worth
+                Profit made at present time (year 0)
               </div>
               <div
                 className={`text-3xl font-extrabold ${projectedNetWorth >= targetNetWorth ? "text-green-600" : "text-red-600"}`}
