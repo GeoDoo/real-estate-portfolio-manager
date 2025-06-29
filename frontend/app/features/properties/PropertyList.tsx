@@ -156,7 +156,7 @@ export default function HomePage() {
               return (
                 <div
                   key={property.id}
-                  className="card p-6 min-h-[180px] h-full relative group transition-all duration-200 hover:shadow-lg hover:-translate-y-1 flex flex-col"
+                  className="card p-6 min-h-[180px] h-full relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 flex flex-col"
                   style={{
                     borderRadius: 20,
                     boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
