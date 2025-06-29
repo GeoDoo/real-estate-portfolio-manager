@@ -156,7 +156,7 @@ export default function HomePage() {
               return (
                 <div
                   key={property.id}
-                  className="card p-6 min-h-[180px] h-full relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 flex flex-col"
+                  className="card p-6 min-h-[180px] h-full relative z-[9998] transition-all duration-200 hover:shadow-lg hover:-translate-y-1 flex flex-col"
                   style={{
                     borderRadius: 20,
                     boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
@@ -174,7 +174,7 @@ export default function HomePage() {
 
                   {/* BUY Ribbon */}
                   {ribbon && (ribbon.status === "buy" || ribbon.status === "no-buy") && (
-                    <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                    <div className="absolute top-4 right-4 z-[9999] flex items-center gap-2">
                       <InfoTooltip
                         label={
                           <div
@@ -197,11 +197,16 @@ export default function HomePage() {
                           </div>
                         }
                         tooltip={
-                          <span>
-                            <b>NPV:</b> <span style={{color: ribbon.npv && ribbon.npv > 0 ? '#10b981' : ribbon.npv && ribbon.npv < 0 ? '#ef4444' : undefined}}>${ribbon.npv?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span><br/>
-                            <b>IRR:</b> <span style={{color: ribbon.irr !== undefined && ribbon.irr > 0 ? '#10b981' : ribbon.irr !== undefined && ribbon.irr < 0 ? '#ef4444' : undefined}}>{ribbon.irr !== undefined ? `${ribbon.irr.toFixed(2)}%` : 'N/A'}</span><br/>
-                            NPV is the total value of all future cash flows (income minus expenses), discounted to today's value. A positive NPV means the investment is expected to be profitable.
-                          </span>
+                          <>
+                            <div>
+                              <b>NPV:</b> <span style={{color: ribbon.npv && ribbon.npv > 0 ? '#10b981' : ribbon.npv && ribbon.npv < 0 ? '#ef4444' : undefined}}>${ribbon.npv?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span><br/>
+                              <b>IRR:</b> <span style={{color: ribbon.irr !== undefined && ribbon.irr > 0 ? '#10b981' : ribbon.irr !== undefined && ribbon.irr < 0 ? '#ef4444' : undefined}}>{ribbon.irr !== undefined ? `${ribbon.irr.toFixed(2)}%` : 'N/A'}</span>
+                            </div>
+                            <div className="mt-2 text-xs text-gray-200">
+                              <b>NPV</b>: Net Present Value. A positive NPV means the investment is expected to be profitable.<br/>
+                              <b>IRR</b>: Internal Rate of Return. Higher IRR generally means a better investment.
+                            </div>
+                          </>
                         }
                       />
                     </div>

@@ -1,4 +1,8 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+
+// @ts-ignore: If you see a type error for 'react-dom', run: npm install --save-dev @types/react-dom
+// @ts-ignore: If you see a type error for HTMLSpanElement, ensure your tsconfig includes DOM lib
 
 interface InfoTooltipProps {
   label: React.ReactNode;
@@ -10,21 +14,71 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
   label,
   tooltip,
   className = "",
-}) => (
-  <span className={`relative group inline-flex items-center ${className}`}>
-    <span className="cursor-pointer inline-block">{label}</span>
-    <span
-      className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none text-sm rounded-lg px-5 py-3 shadow-xl max-w-2xl min-w-[300px] border bg-gray-900 text-white"
-      style={{
-        top: "100%",
-        borderColor: "var(--card-border)",
-        boxShadow:
-          "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-      }}
-    >
-      {tooltip}
+}) => {
+  const labelRef = useRef(null);
+  const [show, setShow] = useState(false);
+  const [coords, setCoords] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (show && labelRef.current) {
+      const rect = (labelRef.current as HTMLSpanElement).getBoundingClientRect();
+      setCoords({
+        left: rect.left + rect.width / 2,
+        top: rect.bottom,
+        width: rect.width,
+      });
+    }
+  }, [show]);
+
+  // Hide tooltip on scroll or resize
+  useEffect(() => {
+    if (!show) return;
+    const hide = () => setShow(false);
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide, true);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide, true);
+    };
+  }, [show]);
+
+  return (
+    <span className={`relative group inline-flex items-center ${className}`}>
+      <span
+        ref={labelRef}
+        className="cursor-pointer inline-block"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        tabIndex={0}
+      >
+        {label}
+      </span>
+      {mounted && show && coords && createPortal(
+        <span
+          className="fixed z-[10000] opacity-100 transition-opacity duration-200 pointer-events-auto text-sm rounded-lg px-5 py-3 shadow-xl max-w-2xl min-w-[300px] border bg-gray-900 text-white"
+          style={{
+            left: coords.left,
+            top: coords.top + 8, // 8px gap below the label
+            transform: "translateX(-50%)",
+            borderColor: "var(--card-border)",
+            boxShadow:
+              "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            position: "fixed",
+          }}
+        >
+          {tooltip}
+        </span>,
+        document.body
+      )}
     </span>
-  </span>
-);
+  );
+};
 
 export default InfoTooltip;

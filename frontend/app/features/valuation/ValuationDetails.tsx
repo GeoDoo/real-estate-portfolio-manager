@@ -12,6 +12,7 @@ import PageContainer from "@/components/PageContainer";
 import { getNumberColor } from "@/lib/utils";
 import { config } from "../../config";
 import { isValidValuationForm } from "../properties/validation";
+import InfoTooltip from "@/components/InfoTooltip";
 
 interface MonteCarloSummary {
   npv_mean: number;
@@ -890,21 +891,31 @@ export default function ValuationDetailPage() {
                             return hist.map((bin, i) => (
                               <div
                                 key={i}
-                                className="relative flex flex-col items-center group"
+                                className="relative flex flex-col items-center"
                                 style={{ width: 28 }}
                               >
-                                <div
-                                  style={{
-                                    width: 20,
-                                    height: bin.height * 3.2,
-                                    background: "var(--primary)",
-                                    marginRight: 2,
-                                    borderRadius: 6,
-                                    transition: "background 0.2s",
-                                    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                                    cursor: "pointer",
-                                  }}
-                                  title={`$${formatXAxisTick(bin.range[0])} to $${formatXAxisTick(bin.range[1])}: ${bin.count} simulations`}
+                                <InfoTooltip
+                                  label={
+                                    <div
+                                      style={{
+                                        width: 20,
+                                        height: bin.height * 3.2,
+                                        background: "var(--primary)",
+                                        marginRight: 2,
+                                        borderRadius: 6,
+                                        transition: "background 0.2s",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                                        cursor: "pointer",
+                                      }}
+                                    />
+                                  }
+                                  tooltip={
+                                    <>
+                                      ${formatXAxisTick(bin.range[0])} to ${formatXAxisTick(bin.range[1])}
+                                      <br />
+                                      {bin.count} simulations
+                                    </>
+                                  }
                                 />
                                 <span
                                   className="text-base text-gray-700 font-bold mt-2"
@@ -921,16 +932,6 @@ export default function ValuationDetailPage() {
                                   {bin.count > 0
                                     ? formatYAxisTick(bin.count)
                                     : ""}
-                                </span>
-                                {/* Tooltip on hover */}
-                                <span
-                                  className="absolute z-20 px-2 py-1 rounded bg-gray-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                                  style={{ bottom: 40, whiteSpace: "nowrap" }}
-                                >
-                                  ${formatXAxisTick(bin.range[0])} to $
-                                  {formatXAxisTick(bin.range[1])}
-                                  <br />
-                                  {bin.count} simulations
                                 </span>
                               </div>
                             ));
