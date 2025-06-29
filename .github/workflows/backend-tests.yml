@@ -26,4 +26,4 @@ jobs:
         run: |
           cd backend
           . venv/bin/activate
-          pytest 
+          PYTHONPATH=$(pwd) pytest 

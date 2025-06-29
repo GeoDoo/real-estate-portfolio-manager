@@ -17,6 +17,8 @@
 - Run tests:
   ```sh
   ./backend/venv/bin/python backend/run.py test
+  # If you see 'ModuleNotFoundError: No module named app', run:
+  PYTHONPATH=$(pwd) ./venv/bin/python -m pytest tests/
   ```
 - CORS: All origins allowed for local dev. For production, edit `backend/app.py`.
 
