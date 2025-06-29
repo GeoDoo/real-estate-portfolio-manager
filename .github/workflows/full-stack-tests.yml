@@ -1,4 +1,4 @@
-name: Backend Tests
+name: Full Stack Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  test-all:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,9 +31,12 @@ jobs:
         run: |
           cd frontend
           npm ci
-      - name: Run frontend linter and tests
+          npm install --save-dev @types/react-dom
+      - name: Run frontend linter
         run: |
           cd frontend
-          npm run lint || true
-          # No frontend tests currently; npm test is non-blocking for future use
-          npm test || true 
+          npm run lint
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test 
