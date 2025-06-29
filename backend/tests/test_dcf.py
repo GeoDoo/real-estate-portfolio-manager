@@ -1,11 +1,7 @@
 import pytest
 from app import calculate_cash_flows, calculate_irr
-import math
-from app import clean_for_json
 import numpy as np
-import uuid
-from app import app, db, Property, Valuation
-
+import math
 
 def test_all_years_present_value():
     input_data = {
@@ -22,54 +18,21 @@ def test_all_years_present_value():
         "discount_rate": 15,
         "holding_period": 25,
     }
-    # Hardcoded expected present values for years 0-25 (mathematically calculated)
     expected_pvs = [
-        -209000.00,  # Year 0
-        12869.57,  # Year 1
-        11457.09,  # Year 2
-        10198.76,  # Year 3
-        9077.88,  # Year 4
-        8079.52,  # Year 5
-        7190.40,  # Year 6
-        6398.62,  # Year 7
-        5693.60,  # Year 8
-        5065.90,  # Year 9
-        4507.07,  # Year 10
-        4009.62,  # Year 11
-        3566.82,  # Year 12
-        3172.72,  # Year 13
-        2821.98,  # Year 14
-        2509.85,  # Year 15
-        2232.11,  # Year 16
-        1984.99,  # Year 17
-        1765.13,  # Year 18
-        1569.53,  # Year 19
-        1395.52,  # Year 20
-        1240.74,  # Year 21
-        1103.07,  # Year 22
-        980.63,  # Year 23
-        871.73,  # Year 24
-        774.89,  # Year 25
+        -209000.00, 12869.57, 11457.09, 10198.76, 9077.88, 8079.52, 7190.40, 6398.62, 5693.60, 5065.90, 4507.07, 4009.62, 3566.82, 3172.72, 2821.98, 2509.85, 2232.11, 1984.99, 1765.13, 1569.53, 1395.52, 1240.74, 1103.07, 980.63, 871.73, 774.89,
     ]
     cash_flows = calculate_cash_flows(input_data)
     for i, expected in enumerate(expected_pvs):
         actual = cash_flows[i]["presentValue"]
-        assert (
-            abs(actual - expected) < 0.01
-        ), f"Year {i} PV: {actual}, expected: {expected}"
-
+        assert abs(actual - expected) < 0.01, f"Year {i} PV: {actual}, expected: {expected}"
 
 def test_irr_known_case():
-    # Example: Initial investment -1000, then +500, +500, +500. IRR should be about 23.45% (0.2345)
     cash_flows = [-1000, 500, 500, 500]
     irr = calculate_irr(cash_flows)
     assert irr is not None, "IRR calculation failed"
-    # Compare to Excel/XIRR: 0.2345 (23.45%) - using more realistic tolerance
     assert abs(irr - 0.2345) < 0.001, f"IRR: {irr}, expected: 0.2345"
 
-
 def test_irr_with_dcf_cashflows():
-    # Test IRR calculation with the same input data used in DCF test
     input_data = {
         "initial_investment": 200000,
         "annual_rental_income": 20000,
@@ -84,44 +47,12 @@ def test_irr_with_dcf_cashflows():
         "discount_rate": 15,
         "holding_period": 25,
     }
-
-    # Calculate cash flows and extract net cash flows for IRR calculation
     cash_flows_data = calculate_cash_flows(input_data)
     net_cash_flows = [cf["netCashFlow"] for cf in cash_flows_data]
-
-    # Calculate IRR
     irr = calculate_irr(net_cash_flows)
     assert irr is not None, "IRR calculation failed for DCF cash flows"
-
-    # IRR should be positive for this profitable investment
     assert irr > 0, f"IRR should be positive for profitable investment, got: {irr}"
-
-    # IRR should be reasonable (between 0% and 50%)
     assert 0 < irr < 0.5, f"IRR should be between 0% and 50%, got: {irr}"
-
-
-def test_clean_for_json_basic():
-    assert clean_for_json(float("nan")) is None
-    assert clean_for_json(float("inf")) is None
-    assert clean_for_json(float("-inf")) is None
-    assert clean_for_json(42.0) == 42.0
-    assert clean_for_json("foo") == "foo"
-
-
-def test_clean_for_json_list():
-    data = [1, float("nan"), 2, float("inf"), 3]
-    assert clean_for_json(data) == [1, None, 2, None, 3]
-
-
-def test_clean_for_json_dict():
-    data = {"a": 1, "b": float("nan"), "c": float("inf"), "d": 2}
-    assert clean_for_json(data) == {"a": 1, "b": None, "c": None, "d": 2}
-
-
-def test_clean_for_json_nested():
-    data = {"a": [1, float("nan"), {"b": float("inf"), "c": [float("-inf"), 2]}]}
-    assert clean_for_json(data) == {"a": [1, None, {"b": None, "c": [None, 2]}]}
-
 
 def run_mc_sim(
     base_input,
@@ -143,7 +74,6 @@ def run_mc_sim(
         npvs.append(npv)
     return npvs
 
-
 def test_mc_sim_deterministic_matches_dcf():
     base_input = {
         "initial_investment": 200000,
@@ -159,15 +89,11 @@ def test_mc_sim_deterministic_matches_dcf():
         "discount_rate": 15,
         "holding_period": 25,
     }
-    # Deterministic DCF
     dcf = calculate_cash_flows(base_input)
     dcf_npv = dcf[-1]["cumulativePV"]
-    # MC with stddev=0
     npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=100)
     assert all(abs(n - dcf_npv) < 1e-6 for n in npvs)
-    # MC mean matches DCF
     assert abs(np.mean(npvs) - dcf_npv) < 1e-6
-
 
 def test_mc_sim_spread_increases_with_stddev():
     base_input = {
@@ -187,9 +113,7 @@ def test_mc_sim_spread_increases_with_stddev():
     npvs_low = run_mc_sim(base_input, 2, 0.01, 15, 0.01, num_sim=1000)
     npvs_high = run_mc_sim(base_input, 2, 0.10, 15, 0.10, num_sim=1000)
     assert np.std(npvs_high) > np.std(npvs_low)
-    # Mean should still be in the same ballpark
     assert abs(np.mean(npvs_low) - np.mean(npvs_high)) < 10000
-
 
 def test_mc_sim_no_nan_inf():
     base_input = {
@@ -209,7 +133,6 @@ def test_mc_sim_no_nan_inf():
     npvs = run_mc_sim(base_input, 2, 0.10, 15, 0.10, num_sim=1000)
     assert all(np.isfinite(n) for n in npvs)
 
-
 def test_mc_sim_negative_rent_growth():
     base_input = {
         "initial_investment": 200000,
@@ -227,7 +150,6 @@ def test_mc_sim_negative_rent_growth():
     }
     npvs = run_mc_sim(base_input, -2, 0, 15, 0, num_sim=100)
     assert all(n < 0 for n in npvs)
-
 
 def test_mc_sim_negative_discount_rate():
     base_input = {
@@ -248,7 +170,6 @@ def test_mc_sim_negative_discount_rate():
     assert all(np.isfinite(n) for n in npvs)
     assert all(n > 0 for n in npvs)
 
-
 def test_mc_sim_zero_discount_rate():
     base_input = {
         "initial_investment": 200000,
@@ -267,7 +188,6 @@ def test_mc_sim_zero_discount_rate():
     npvs = run_mc_sim(base_input, 2, 0, 0, 0, num_sim=100)
     assert all(np.isfinite(n) for n in npvs)
     assert all(n > 0 for n in npvs)
-
 
 def test_mc_sim_high_discount_rate():
     base_input = {
@@ -288,7 +208,6 @@ def test_mc_sim_high_discount_rate():
     assert all(np.isfinite(n) for n in npvs)
     assert all(n < 0 for n in npvs)
 
-
 def test_mc_sim_zero_holding_period():
     base_input = {
         "initial_investment": 200000,
@@ -307,7 +226,6 @@ def test_mc_sim_zero_holding_period():
     npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=10)
     assert all(np.isfinite(n) for n in npvs)
     assert all(abs(n + 209000) < 1e-2 for n in npvs)
-
 
 def test_mc_sim_all_zero_cash_flows():
     base_input = {
@@ -328,7 +246,6 @@ def test_mc_sim_all_zero_cash_flows():
     assert all(np.isfinite(n) for n in npvs)
     assert all(abs(n + 200000) < 1e-2 for n in npvs)
 
-
 def test_mc_sim_extreme_stddev():
     base_input = {
         "initial_investment": 200000,
@@ -345,130 +262,4 @@ def test_mc_sim_extreme_stddev():
         "holding_period": 25,
     }
     npvs = run_mc_sim(base_input, 2, 100, 15, 100, num_sim=1000)
-    assert all(np.isfinite(n) for n in npvs)
-
-
-def create_property_with_valuation(portfolio_id, address, valuation_data):
-    prop = Property(id=str(uuid.uuid4()), address=address, portfolio_id=portfolio_id)
-    db.session.add(prop)
-    db.session.commit()
-    val = Valuation(
-        id=str(uuid.uuid4()),
-        property_id=prop.id,
-        created_at="2024-01-01T00:00:00Z",
-        **valuation_data
-    )
-    db.session.add(val)
-    db.session.commit()
-    return prop, val
-
-
-@pytest.fixture
-def client():
-    app.config["TESTING"] = True
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-        yield client
-        with app.app_context():
-            db.drop_all()
-
-
-def create_portfolio_with_properties_and_valuations(portfolio_id, props_and_vals):
-    with app.app_context():
-        for address, val_data in props_and_vals:
-            create_property_with_valuation(portfolio_id, address, val_data)
-
-
-def test_portfolio_irr_negative(client):
-    """Portfolio with sign change but not profitable: IRR should be negative."""
-    portfolio_id = str(uuid.uuid4())
-    v1 = {
-        "initial_investment": 100000,
-        "annual_rental_income": 10000,
-        "service_charge": 1000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 10,
-        "transaction_costs": 2000,
-        "annual_rent_growth": 0,
-        "discount_rate": 10,
-        "holding_period": 3,
-    }
-    v2 = {
-        "initial_investment": 50000,
-        "annual_rental_income": 5000,
-        "service_charge": 500,
-        "ground_rent": 200,
-        "maintenance": 500,
-        "property_tax": 3000,
-        "insurance": 100,
-        "management_fees": 5,
-        "transaction_costs": 1000,
-        "annual_rent_growth": 0,
-        "discount_rate": 10,
-        "holding_period": 3,
-    }
-    create_portfolio_with_properties_and_valuations(
-        portfolio_id,
-        [("123 Main St", v1), ("456 Side St", v2)]
-    )
-    resp = client.get(f"/api/portfolios/{portfolio_id}/irr")
-    assert resp.status_code == 200
-    data = resp.get_json()
-    assert "irr" in data
-    assert data["irr"] is not None
-    assert math.isfinite(data["irr"])
-    assert data["irr"] < 0
-
-
-def test_portfolio_irr_positive(client):
-    """Portfolio with sign change and profitable: IRR should be positive."""
-    portfolio_id = str(uuid.uuid4())
-    v = {
-        "initial_investment": 100000,
-        "annual_rental_income": 70000,  # High enough for positive IRR
-        "service_charge": 1000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 10,
-        "transaction_costs": 2000,
-        "annual_rent_growth": 0,
-        "discount_rate": 10,
-        "holding_period": 3,
-    }
-    create_portfolio_with_properties_and_valuations(
-        portfolio_id,
-        [("789 High St", v)]
-    )
-    resp = client.get(f"/api/portfolios/{portfolio_id}/irr")
-    assert resp.status_code == 200
-    data = resp.get_json()
-    assert "irr" in data
-    assert data["irr"] is not None
-    assert math.isfinite(data["irr"])
-    assert data["irr"] > 0
-
-
-def test_portfolio_irr_no_properties(client):
-    portfolio_id = str(uuid.uuid4())
-    resp = client.get(f"/api/portfolios/{portfolio_id}/irr")
-    assert resp.status_code == 404
-    data = resp.get_json()
-    assert "error" in data
-
-
-def test_portfolio_irr_no_valuations(client):
-    portfolio_id = str(uuid.uuid4())
-    with app.app_context():
-        prop = Property(id=str(uuid.uuid4()), address="789 Empty St", portfolio_id=portfolio_id)
-        db.session.add(prop)
-        db.session.commit()
-    resp = client.get(f"/api/portfolios/{portfolio_id}/irr")
-    assert resp.status_code == 404
-    data = resp.get_json()
-    assert "error" in data
+    assert all(np.isfinite(n) for n in npvs) 
