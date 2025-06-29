@@ -10,6 +10,7 @@ import { valuationsAPI } from "@/lib/api/valuations";
 import { portfoliosAPI, Portfolio } from "@/lib/api/portfolios";
 import PageContainer from "@/components/PageContainer";
 import Button from "@/components/Button";
+import InfoTooltip from "@/components/InfoTooltip";
 
 type RibbonStatus = "loading" | "buy" | "no-buy" | "none";
 
@@ -41,11 +42,17 @@ export default function HomePage() {
             const valuation = await valuationsAPI.getByPropertyId(property.id);
             // Only treat as having a valuation if all required fields are positive numbers
             const requiredFields = [
-              'initial_investment', 'annual_rental_income', 'service_charge', 'ground_rent',
-              'maintenance', 'property_tax', 'insurance', 'management_fees', 'transaction_costs',
-              'annual_rent_growth', 'discount_rate', 'holding_period'
+              'initial_investment', 'annual_rental_income', 'maintenance', 'property_tax',
+              'management_fees', 'transaction_costs', 'annual_rent_growth', 'discount_rate', 'holding_period'
             ];
-            if (!valuation || !requiredFields.every(f => typeof (valuation as Record<string, any>)[f] === 'number' && (valuation as Record<string, any>)[f] > 0)) {
+            const optionalFields = ['service_charge', 'ground_rent', 'insurance'];
+            if (!valuation ||
+              !requiredFields.every(f => typeof (valuation as Record<string, any>)[f] === 'number' && (valuation as Record<string, any>)[f] > 0) ||
+              !optionalFields.every(f => {
+                const v = (valuation as Record<string, any>)[f];
+                return v === undefined || v === null || (typeof v === 'number' && v >= 0);
+              })
+            ) {
               return;
             }
             // Only calculate cash flows and IRR if valuation exists and is valid
@@ -167,24 +174,35 @@ export default function HomePage() {
 
                   {/* BUY Ribbon */}
                   {ribbon && (ribbon.status === "buy" || ribbon.status === "no-buy") && (
-                    <div className="absolute top-4 right-4 z-30">
-                      <div
-                        className="badge badge-success shadow text-xs font-semibold px-4 py-1"
-                        style={{
-                          background:
-                            ribbon.status === "buy"
-                              ? "#10b981" // green for BUY
-                              : "#ef4444", // red for DO NOT BUY
-                          color: "white",
-                          borderRadius: 9999,
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
-                          letterSpacing: 1,
-                        }}
-                      >
-                        {ribbon.status === "buy"
-                          ? "BUY"
-                          : "DO NOT BUY"}
-                      </div>
+                    <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                      <InfoTooltip
+                        label={
+                          <div
+                            className="badge badge-success shadow text-xs font-semibold px-4 py-1 cursor-pointer"
+                            style={{
+                              background:
+                                ribbon.status === "buy"
+                                  ? "#10b981" // green for BUY
+                                  : "#ef4444", // red for DO NOT BUY
+                              color: "white",
+                              borderRadius: 9999,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                              letterSpacing: 1,
+                            }}
+                          >
+                            {ribbon.status === "buy"
+                              ? "BUY"
+                              : "DO NOT BUY"}
+                          </div>
+                        }
+                        tooltip={
+                          <span>
+                            <b>NPV:</b> <span style={{color: ribbon.npv && ribbon.npv > 0 ? '#10b981' : ribbon.npv && ribbon.npv < 0 ? '#ef4444' : undefined}}>${ribbon.npv?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span><br/>
+                            <b>IRR:</b> <span style={{color: ribbon.irr !== undefined && ribbon.irr > 0 ? '#10b981' : ribbon.irr !== undefined && ribbon.irr < 0 ? '#ef4444' : undefined}}>{ribbon.irr !== undefined ? `${ribbon.irr.toFixed(2)}%` : 'N/A'}</span><br/>
+                            NPV is the total value of all future cash flows (income minus expenses), discounted to today's value. A positive NPV means the investment is expected to be profitable.
+                          </span>
+                        }
+                      />
                     </div>
                   )}
                   <div className="mb-2 mt-2 flex-1 flex flex-col pt-6">
