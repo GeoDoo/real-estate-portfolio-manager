@@ -1,18 +1,11 @@
-import { api, APIError } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import { Property } from "@/types/property";
 
 // Property API functions
 export const propertiesAPI = {
   // Get all properties
   getAll: async (): Promise<Property[]> => {
-    try {
-      return await api.get<Property[]>("/api/properties");
-    } catch (error) {
-      if (error instanceof APIError) {
-        throw error;
-      }
-      throw new APIError("Failed to fetch properties");
-    }
+    return apiRequest<Property[]>("/api/properties");
   },
 
   // Create a new property
@@ -20,14 +13,10 @@ export const propertiesAPI = {
     address: string;
     listing_link?: string;
   }): Promise<Property> => {
-    try {
-      return await api.post<Property>("/api/properties", data);
-    } catch (error) {
-      if (error instanceof APIError) {
-        throw error;
-      }
-      throw new APIError("Failed to create property");
-    }
+    return apiRequest<Property>("/api/properties", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   // Update a property
@@ -35,43 +24,26 @@ export const propertiesAPI = {
     id: string,
     data: { address: string; listing_link?: string },
   ): Promise<Property> => {
-    try {
-      return await api.put<Property>(`/api/properties/${id}`, data);
-    } catch (error) {
-      if (error instanceof APIError) {
-        throw error;
-      }
-      throw new APIError("Failed to update property");
-    }
+    return apiRequest<Property>(`/api/properties/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
   },
 
   // Get a specific property by ID
   getById: async (id: string): Promise<Property> => {
-    try {
-      return await api.get<Property>(`/api/properties/${id}`);
-    } catch (error) {
-      if (error instanceof APIError) {
-        throw error;
-      }
-      throw new APIError("Failed to fetch property");
-    }
+    return apiRequest<Property>(`/api/properties/${id}`);
   },
 
   // Delete a property
   delete: async (id: string): Promise<void> => {
-    try {
-      await api.delete(`/api/properties/${id}`);
-    } catch (error) {
-      if (error instanceof APIError) {
-        throw error;
-      }
-      throw new APIError("Failed to delete property");
-    }
+    await apiRequest(`/api/properties/${id}`, { method: "DELETE" });
   },
 
   assignToPortfolio: async (propertyId: string, portfolioId: string | null) => {
-    return await api.patch(`/api/properties/${propertyId}`, {
-      portfolio_id: portfolioId,
+    return apiRequest(`/api/properties/${propertyId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ portfolio_id: portfolioId }),
     });
   },
 };

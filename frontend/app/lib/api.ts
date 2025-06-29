@@ -11,13 +11,10 @@ const API_CONFIG = {
 
 // Custom error class for API errors
 export class APIError extends Error {
-  constructor(
-    message: string,
-    public status?: number,
-    public response?: unknown,
-  ) {
+  status: number;
+  constructor(message: string, status: number = 500) {
     super(message);
-    this.name = "APIError";
+    this.status = status;
   }
 }
 
@@ -99,3 +96,26 @@ export const api = {
   delete: <T>(endpoint: string): Promise<T> =>
     apiFetch<T>(endpoint, { method: "DELETE" }),
 };
+
+export async function apiRequest<T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new APIError(errorText || res.statusText, res.status);
+  }
+
+  // If there's no content, return null
+  if (res.status === 204) return null as unknown as T;
+
+  return res.json();
+}
