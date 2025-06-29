@@ -12,13 +12,14 @@ Commands:
 import sys
 import subprocess
 import os
+from app import create_app, db
 
 # Helper to get venv bin path
 VENV_BIN = os.path.join(os.path.dirname(__file__), 'venv', 'bin')
 PYTHON_BIN = os.path.join(VENV_BIN, 'python')
 ALEMBIC_BIN = os.path.join(VENV_BIN, 'alembic')
 
-os.environ.setdefault("FRONTEND_URL", "http://localhost:3000")
+os.environ.setdefault("FRONTEND_URL", "http://localhost")
 
 def run_tests():
     """Run all tests."""
@@ -75,6 +76,15 @@ def run_downgrade():
     except subprocess.CalledProcessError:
         return False
 
+def init_db():
+    """Initialize the database tables."""
+    print("🗄️  Initializing database tables...")
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+    print("✅ Database initialized!")
+    return True
+
 def main():
     if len(sys.argv) != 2:
         print("❌ Usage: python run.py <command>")
@@ -93,6 +103,8 @@ def main():
         success = run_upgrade()
     elif command == "downgrade":
         success = run_downgrade()
+    elif command == "initdb":
+        success = init_db()
     elif command == "help":
         show_help()
         success = True

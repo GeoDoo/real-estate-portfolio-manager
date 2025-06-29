@@ -1,6 +1,5 @@
 import pytest
 from app import clean_for_json
-from tests import in_memory_db
 
 def test_clean_for_json_basic():
     assert clean_for_json(float("nan")) is None
