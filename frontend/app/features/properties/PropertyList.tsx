@@ -178,7 +178,7 @@ export default function HomePage() {
                       <InfoTooltip
                         label={
                           <div
-                            className="badge badge-success shadow text-xs font-semibold px-4 py-1 cursor-pointer"
+                            className="badge badge-success shadow text-xs font-semibold px-4 py-1 cursor-pointer inline-block"
                             style={{
                               background:
                                 ribbon.status === "buy"
@@ -188,6 +188,7 @@ export default function HomePage() {
                               borderRadius: 9999,
                               boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
                               letterSpacing: 1,
+                              display: "inline-block",
                             }}
                           >
                             {ribbon.status === "buy"
