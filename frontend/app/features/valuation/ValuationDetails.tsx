@@ -22,6 +22,44 @@ interface MonteCarloSummary {
   probability_npv_positive: number;
 }
 
+interface RentalAnalysis {
+  metrics: {
+    monthly_cash_flow: number;
+    annual_cash_flow: number;
+    roi_percent: number;
+    cap_rate_percent: number;
+    cash_on_cash_percent: number;
+    break_even_rent: number;
+    rent_coverage_ratio: number;
+  };
+  monthly_breakdown: {
+    rental_income: number;
+    mortgage_payment: number;
+    property_tax: number;
+    insurance: number;
+    maintenance: number;
+    property_management: number;
+    total_expenses: number;
+    cash_flow: number;
+  };
+  annual_breakdown: {
+    rental_income: number;
+    mortgage_payments: number;
+    property_tax: number;
+    insurance: number;
+    maintenance: number;
+    property_management: number;
+    total_expenses: number;
+    cash_flow: number;
+  };
+  loan_details: {
+    down_payment: number;
+    loan_amount: number;
+    monthly_mortgage: number;
+    total_investment: number;
+  };
+}
+
 function getChanceLabel(prob: number) {
   if (prob < 0.05) return "Highly Unlikely";
   if (prob < 0.2) return "Unlikely";
@@ -71,6 +109,8 @@ export default function ValuationDetailPage() {
   const [mcRunning, setMcRunning] = useState(false);
   const [mcInterestMean, setMcInterestMean] = useState(5);
   const [mcInterestStd, setMcInterestStd] = useState(1);
+  const [rentalAnalysis, setRentalAnalysis] = useState<RentalAnalysis | null>(null);
+  const [rentalLoading, setRentalLoading] = useState(false);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -300,6 +340,31 @@ export default function ValuationDetailPage() {
       setMcRunning(false);
       es.close();
     };
+  };
+
+  const runRentalAnalysis = async () => {
+    if (!valuation) return;
+    setRentalLoading(true);
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/api/valuations/rental-analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(valuation),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setRentalAnalysis(data);
+      } else {
+        console.error('Failed to run rental analysis');
+      }
+    } catch (error) {
+      console.error('Error running rental analysis:', error);
+    } finally {
+      setRentalLoading(false);
+    }
   };
 
   function getHistogram(data: number[], bins: number) {
@@ -1002,6 +1067,173 @@ export default function ValuationDetailPage() {
                           }
                           return null;
                         })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Rental Analysis */}
+          {!isEditing && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h2 className="text-xl font-bold mb-4">Rental Analysis</h2>
+              <p className="text-gray-600 mb-6">
+                Analyze the rental performance of this property. Calculate key metrics like ROI, cap rate, and cash flow.
+              </p>
+              
+              <Button
+                onClick={runRentalAnalysis}
+                className="w-full mb-6 px-4 py-3"
+                disabled={rentalLoading || !hasValidValuation(valuation as any)}
+              >
+                {rentalLoading ? "Analyzing..." : "Run Rental Analysis"}
+              </Button>
+              
+              {!hasValidValuation(valuation as any) && (
+                <div className="text-xs text-red-500 mb-4 text-center">
+                  Please enter and save a valid valuation before running the analysis.
+                </div>
+              )}
+
+              {rentalAnalysis && (
+                <div className="space-y-6">
+                  {/* Key Metrics */}
+                  <div>
+                    <h3 className="font-bold mb-3 text-lg">Key Metrics</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Monthly Cash Flow</div>
+                        <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.monthly_cash_flow)}`}>
+                          ${rentalAnalysis.metrics.monthly_cash_flow.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Annual Cash Flow</div>
+                        <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.annual_cash_flow)}`}>
+                          ${rentalAnalysis.metrics.annual_cash_flow.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">ROI</div>
+                        <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.roi_percent)}`}>
+                          {rentalAnalysis.metrics.roi_percent.toFixed(2)}%
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Cap Rate</div>
+                        <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cap_rate_percent)}`}>
+                          {rentalAnalysis.metrics.cap_rate_percent.toFixed(2)}%
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Cash-on-Cash Return</div>
+                        <div className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cash_on_cash_percent)}`}>
+                          {rentalAnalysis.metrics.cash_on_cash_percent.toFixed(2)}%
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Break-even Rent</div>
+                        <div className="text-xl font-bold text-gray-800">
+                          ${rentalAnalysis.metrics.break_even_rent.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Monthly Breakdown */}
+                  <div>
+                    <h3 className="font-bold mb-3 text-lg">Monthly Breakdown</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Item</th>
+                            <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">Rental Income</td>
+                            <td className="px-4 py-2 text-right text-sm font-medium text-green-600">
+                              +${rentalAnalysis.monthly_breakdown.rental_income.toLocaleString()}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">Mortgage Payment</td>
+                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
+                              -${rentalAnalysis.monthly_breakdown.mortgage_payment.toLocaleString()}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">Property Tax</td>
+                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
+                              -${rentalAnalysis.monthly_breakdown.property_tax.toLocaleString()}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">Insurance</td>
+                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
+                              -${rentalAnalysis.monthly_breakdown.insurance.toLocaleString()}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">Maintenance</td>
+                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
+                              -${rentalAnalysis.monthly_breakdown.maintenance.toLocaleString()}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">Property Management</td>
+                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
+                              -${rentalAnalysis.monthly_breakdown.property_management.toLocaleString()}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200 bg-gray-50">
+                            <td className="px-4 py-2 text-sm font-medium text-gray-800">Total Expenses</td>
+                            <td className="px-4 py-2 text-right text-sm font-medium text-red-600">
+                              -${rentalAnalysis.monthly_breakdown.total_expenses.toLocaleString()}
+                            </td>
+                          </tr>
+                          <tr className="border-t-2 border-gray-300 bg-blue-50">
+                            <td className="px-4 py-2 text-sm font-bold text-gray-800">Monthly Cash Flow</td>
+                            <td className={`px-4 py-2 text-right text-sm font-bold ${getNumberColor(rentalAnalysis.monthly_breakdown.cash_flow)}`}>
+                              {rentalAnalysis.monthly_breakdown.cash_flow >= 0 ? '+' : ''}${rentalAnalysis.monthly_breakdown.cash_flow.toLocaleString()}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Loan Details */}
+                  <div>
+                    <h3 className="font-bold mb-3 text-lg">Loan Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Down Payment</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          ${rentalAnalysis.loan_details.down_payment.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Loan Amount</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          ${rentalAnalysis.loan_details.loan_amount.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Monthly Mortgage</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          ${rentalAnalysis.loan_details.monthly_mortgage.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600">Total Investment</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          ${rentalAnalysis.loan_details.total_investment.toLocaleString()}
+                        </div>
                       </div>
                     </div>
                   </div>

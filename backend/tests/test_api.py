@@ -233,4 +233,86 @@ def test_monte_carlo_stream_endpoint(client):
     
     # Check that we got the expected number of results
     assert len(final_data["npvs"]) == 1000
-    assert len(final_data["irrs"]) == 1000 
+    assert len(final_data["irrs"]) == 1000
+
+def test_rental_analysis_endpoint(client):
+    """Test that the rental analysis endpoint works correctly and all metrics are accurate."""
+    # Test data for rental analysis
+    rental_data = {
+        "initial_investment": 400000,
+        "annual_rental_income": 36000,  # $3,000/month
+        "property_tax": 4800,  # $400/month
+        "insurance": 1200,  # $100/month
+        "maintenance": 2400,  # $200/month
+        "management_fees": 10,  # 10% of rent
+        "interest_rate": 5,
+        "ltv": 80,  # 80% loan-to-value
+        "transaction_costs": 5000,
+    }
+    
+    response = client.post("/api/valuations/rental-analysis", json=rental_data)
+    assert response.status_code == 200
+    data = response.get_json()
+    
+    # Check that all required fields are present
+    assert "metrics" in data
+    assert "monthly_breakdown" in data
+    assert "annual_breakdown" in data
+    assert "loan_details" in data
+    
+    # Extract values
+    metrics = data["metrics"]
+    monthly = data["monthly_breakdown"]
+    annual = data["annual_breakdown"]
+    loan = data["loan_details"]
+    
+    # Hand-calculated expected values
+    purchase_price = 400000
+    annual_rent = 36000
+    monthly_rent = 3000
+    ltv = 0.8
+    interest_rate = 0.05
+    property_tax = 400
+    insurance = 100
+    maintenance = 200
+    management_fees = 0.10 * monthly_rent  # $300
+    transaction_costs = 5000
+    loan_amount = purchase_price * ltv  # 320,000
+    down_payment = purchase_price - loan_amount  # 80,000
+    monthly_rate = interest_rate / 12
+    num_payments = 30 * 12
+    monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
+    monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
+    monthly_cash_flow = monthly_rent - monthly_expenses
+    annual_cash_flow = monthly_cash_flow * 12
+    total_investment = down_payment + transaction_costs
+    roi = (annual_cash_flow / total_investment) * 100
+    annual_expenses_no_mortgage = (property_tax + insurance + maintenance + management_fees) * 12
+    net_operating_income = annual_rent - annual_expenses_no_mortgage
+    cap_rate = (net_operating_income / purchase_price) * 100
+    cash_on_cash = roi
+    break_even_rent = monthly_expenses
+    rent_coverage_ratio = monthly_rent / monthly_expenses
+    
+    # Assert values (allowing for small floating point error)
+    assert abs(metrics["monthly_cash_flow"] - monthly_cash_flow) < 0.1
+    assert abs(metrics["annual_cash_flow"] - annual_cash_flow) < 1
+    assert abs(metrics["roi_percent"] - roi) < 0.01
+    assert abs(metrics["cap_rate_percent"] - cap_rate) < 0.01
+    assert abs(metrics["cash_on_cash_percent"] - cash_on_cash) < 0.01
+    assert abs(metrics["break_even_rent"] - break_even_rent) < 0.1
+    assert abs(metrics["rent_coverage_ratio"] - rent_coverage_ratio) < 0.01
+    # Also check loan details
+    assert abs(loan["loan_amount"] - loan_amount) < 1
+    assert abs(loan["down_payment"] - down_payment) < 1
+    assert abs(loan["monthly_mortgage"] - monthly_mortgage) < 0.1
+    assert abs(loan["total_investment"] - total_investment) < 1
+    # And monthly breakdown
+    assert abs(monthly["rental_income"] - monthly_rent) < 0.01
+    assert abs(monthly["mortgage_payment"] - monthly_mortgage) < 0.01
+    assert abs(monthly["property_tax"] - property_tax) < 0.01
+    assert abs(monthly["insurance"] - insurance) < 0.01
+    assert abs(monthly["maintenance"] - maintenance) < 0.01
+    assert abs(monthly["property_management"] - management_fees) < 0.01
+    assert abs(monthly["total_expenses"] - monthly_expenses) < 0.01
+    assert abs(monthly["cash_flow"] - monthly_cash_flow) < 0.01 

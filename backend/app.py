@@ -733,6 +733,105 @@ def create_app(test_config=None):
 
         return jsonify({"irr": irr * 100})
 
+    # Add rental analysis endpoint after the Monte Carlo endpoints
+    @app.route("/api/valuations/rental-analysis", methods=["POST"])
+    def rental_analysis():
+        """Calculate rental investment metrics for a property."""
+        data = request.json
+        
+        # Extract input data - ONLY use existing fields
+        purchase_price = float(data.get("initial_investment", 0))
+        monthly_rent = float(data.get("annual_rental_income", 0)) / 12
+        ltv = float(data.get("ltv", 0))
+        interest_rate = float(data.get("interest_rate", 5))
+        property_tax = float(data.get("property_tax", 0)) / 12
+        insurance = float(data.get("insurance", 0)) / 12
+        maintenance = float(data.get("maintenance", 0)) / 12
+        management_fees = float(data.get("management_fees", 0)) / 100 * monthly_rent
+        transaction_costs = float(data.get("transaction_costs", 0))
+        
+        # Calculate loan details using LTV
+        loan_amount = purchase_price * (ltv / 100)
+        down_payment = purchase_price - loan_amount
+        monthly_rate = interest_rate / 100 / 12
+        num_payments = 30 * 12  # 30-year loan
+        
+        # Calculate monthly mortgage payment
+        if monthly_rate > 0:
+            monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
+        else:
+            monthly_mortgage = loan_amount / num_payments
+        
+        # Calculate monthly expenses
+        monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
+        
+        # Calculate cash flow
+        monthly_cash_flow = monthly_rent - monthly_expenses
+        annual_cash_flow = monthly_cash_flow * 12
+        
+        # Calculate key metrics
+        total_investment = down_payment + transaction_costs
+        
+        # ROI (Return on Investment)
+        roi = (annual_cash_flow / total_investment) * 100 if total_investment > 0 else 0
+        
+        # Cap Rate (Capitalization Rate)
+        annual_rental_income = monthly_rent * 12
+        annual_expenses_no_mortgage = (property_tax + insurance + maintenance + management_fees) * 12
+        net_operating_income = annual_rental_income - annual_expenses_no_mortgage
+        cap_rate = (net_operating_income / purchase_price) * 100 if purchase_price > 0 else 0
+        
+        # Cash-on-Cash Return
+        cash_on_cash = (annual_cash_flow / total_investment) * 100 if total_investment > 0 else 0
+        
+        # Break-even analysis
+        break_even_rent = monthly_expenses
+        rent_coverage_ratio = monthly_rent / monthly_expenses if monthly_expenses > 0 else 0
+        
+        # Monthly breakdown
+        monthly_breakdown = {
+            "rental_income": monthly_rent,
+            "mortgage_payment": monthly_mortgage,
+            "property_tax": property_tax,
+            "insurance": insurance,
+            "maintenance": maintenance,
+            "property_management": management_fees,
+            "total_expenses": monthly_expenses,
+            "cash_flow": monthly_cash_flow
+        }
+        
+        # Annual breakdown
+        annual_breakdown = {
+            "rental_income": annual_rental_income,
+            "mortgage_payments": monthly_mortgage * 12,
+            "property_tax": property_tax * 12,
+            "insurance": insurance * 12,
+            "maintenance": maintenance * 12,
+            "property_management": management_fees * 12,
+            "total_expenses": monthly_expenses * 12,
+            "cash_flow": annual_cash_flow
+        }
+        
+        return jsonify({
+            "metrics": {
+                "monthly_cash_flow": round(monthly_cash_flow, 2),
+                "annual_cash_flow": round(annual_cash_flow, 2),
+                "roi_percent": round(roi, 2),
+                "cap_rate_percent": round(cap_rate, 2),
+                "cash_on_cash_percent": round(cash_on_cash, 2),
+                "break_even_rent": round(break_even_rent, 2),
+                "rent_coverage_ratio": round(rent_coverage_ratio, 2)
+            },
+            "monthly_breakdown": {k: round(v, 2) for k, v in monthly_breakdown.items()},
+            "annual_breakdown": {k: round(v, 2) for k, v in annual_breakdown.items()},
+            "loan_details": {
+                "down_payment": round(down_payment, 2),
+                "loan_amount": round(loan_amount, 2),
+                "monthly_mortgage": round(monthly_mortgage, 2),
+                "total_investment": round(total_investment, 2)
+            }
+        })
+
     return app
 
 if __name__ == "__main__":
