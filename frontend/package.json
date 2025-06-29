@@ -9,7 +9,8 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "lint-staged": "lint-staged",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test": "jest"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -22,13 +23,16 @@
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "24.0.4",
     "@types/react": "19.1.8",
     "@typescript-eslint/eslint-plugin": "^8.35.0",
     "@typescript-eslint/parser": "^8.35.0",
     "eslint": "^9.29.0",
+    "jest": "^30.0.3",
     "prettier": "^3.6.2",
-    "typescript": "5.8.3"
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md,json}": [

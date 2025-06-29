@@ -12,7 +12,9 @@ from urllib.parse import unquote
 import math
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+BACKEND_PORT = int(os.environ.get("BACKEND_PORT", 5050))
+CORS(app, supports_credentials=True, origins=[FRONTEND_URL])
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dcf_calculations.db"
 )
@@ -631,4 +633,4 @@ def portfolio_irr(portfolio_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    app.run(debug=True, port=BACKEND_PORT)

@@ -21,8 +21,19 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           pip install -r requirements.txt
+          pip install pytest
       - name: Run backend tests
         run: |
           cd backend
           . venv/bin/activate
-          python run.py test 
+          pytest
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+      - name: Run frontend linter and tests
+        run: |
+          cd frontend
+          npm run lint || true
+          # No frontend tests currently; npm test is non-blocking for future use
+          npm test || true 

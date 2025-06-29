@@ -10,6 +10,7 @@ import { valuationsAPI } from "@/lib/api/valuations";
 import Button from "@/components/Button";
 import PageContainer from "@/components/PageContainer";
 import { getNumberColor } from "@/lib/utils";
+import { config } from "../../config";
 
 interface MonteCarloSummary {
   npv_mean: number;
@@ -258,7 +259,7 @@ export default function ValuationDetailPage() {
       ),
       num_simulations: String(mcNumSim),
     });
-    const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/valuations/monte-carlo-stream?${params.toString()}`;
+    const url = `${config.apiBaseUrl}/api/valuations/monte-carlo-stream?${params.toString()}`;
     const es = new window.EventSource(url);
     let allNPVs: number[] = [];
     es.onmessage = (event) => {
