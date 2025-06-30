@@ -22,6 +22,8 @@ interface MonteCarloSummary {
   npv_95th_percentile: number;
   irr_mean: number;
   probability_npv_positive: number;
+  mean_valid_irr?: number | null;
+  percent_valid_irr?: number | null;
 }
 
 interface RentalAnalysis {
@@ -1023,7 +1025,7 @@ export default function ValuationDetailPage() {
                             className="font-bold text-right pr-4"
                             style={{ color: "var(--foreground)" }}
                           >
-                            IRR Mean:
+                            IRR Mean (All):
                           </td>
                           <td>
                             <span
@@ -1034,6 +1036,30 @@ export default function ValuationDetailPage() {
                             >
                               {Number.isFinite(mcSummary.irr_mean) && mcSummary.irr_mean !== null && mcSummary.irr_mean !== undefined
                                 ? (mcSummary.irr_mean * 100).toFixed(2) + "%"
+                                : "N/A"}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="font-bold text-right pr-4 text-[var(--color-dark)]">
+                            IRR Mean (Valid Only):
+                          </td>
+                          <td>
+                            <span className="font-bold" style={{ color: getNumberColor(Number.isFinite(mcSummary.mean_valid_irr) ? mcSummary.mean_valid_irr! : 0) }}>
+                              {Number.isFinite(mcSummary.mean_valid_irr) && mcSummary.mean_valid_irr !== null && mcSummary.mean_valid_irr !== undefined
+                                ? (mcSummary.mean_valid_irr * 100).toFixed(2) + "%"
+                                : "N/A"}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="font-bold text-right pr-4" style={{ color: "var(--foreground)" }}>
+                            % of Valid IRR Scenarios:
+                          </td>
+                          <td>
+                            <span className="font-bold">
+                              {mcSummary.percent_valid_irr !== null && mcSummary.percent_valid_irr !== undefined
+                                ? mcSummary.percent_valid_irr.toFixed(1) + "%"
                                 : "N/A"}
                             </span>
                           </td>

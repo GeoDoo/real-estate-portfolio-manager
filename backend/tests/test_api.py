@@ -304,4 +304,44 @@ def test_rental_analysis_endpoint(client):
     assert abs(monthly["maintenance"] - maintenance) < 0.01
     assert abs(monthly["property_management"] - management_fees) < 0.01
     assert abs(monthly["total_expenses"] - monthly_expenses) < 0.01
-    assert abs(monthly["cash_flow"] - monthly_cash_flow) < 0.01 
+    assert abs(monthly["cash_flow"] - monthly_cash_flow) < 0.01
+
+def test_monte_carlo_irr_valid(client):
+    """Test that the Monte Carlo endpoint returns valid IRR when cash flows cross zero."""
+    # Create a test valuation with strong positive cash flows
+    valuation_data = {
+        "initial_investment": 100000,
+        "annual_rental_income": 70000,  # Large enough to ensure positive cash flows
+        "service_charge": 1000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "insurance": 300,
+        "management_fees": 10,
+        "transaction_costs": 2000,
+        "annual_rent_growth": 0,
+        "discount_rate": 10,
+        "holding_period": 3,
+        "ltv": 0,
+        "interest_rate": 0,
+    }
+    # Create property and valuation
+    property_response = client.post("/api/properties", json={"address": "999 IRR Test St"})
+    property_id = property_response.json["id"]
+    client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
+    # Monte Carlo input
+    monte_carlo_data = {
+        "num_simulations": 100,
+        "annual_rent_growth": {"distribution": "normal", "mean": 0, "stddev": 0},
+        "discount_rate": {"distribution": "normal", "mean": 10, "stddev": 0},
+        "interest_rate": {"distribution": "normal", "mean": 0, "stddev": 0},
+        **{k: v for k, v in valuation_data.items() if k not in ["annual_rent_growth", "discount_rate", "interest_rate"]}
+    }
+    response = client.post("/api/valuations/monte-carlo", json=monte_carlo_data)
+    assert response.status_code == 200
+    data = response.get_json()
+    summary = data["summary"]
+    # There should be valid IRR scenarios
+    assert summary["percent_valid_irr"] > 0, f"Expected >0% valid IRR scenarios, got {summary['percent_valid_irr']}%"
+    assert summary["mean_valid_irr"] is not None, "mean_valid_irr should not be None when valid scenarios exist"
+    assert summary["mean_valid_irr"] > 0, f"Expected positive mean_valid_irr, got {summary['mean_valid_irr']}" 

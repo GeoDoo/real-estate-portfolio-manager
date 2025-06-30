@@ -8,6 +8,7 @@ import os
 from scipy.optimize import brentq
 import numpy as np
 import math
+import numpy_financial as npf
 
 db = SQLAlchemy()
 PORT = int(os.environ.get("BACKEND_PORT", 5050))
@@ -382,7 +383,7 @@ def calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, in
     # IRR calculation (vectorized, but fallback to nan if fails)
     def try_irr(cf):
         try:
-            return float(np.irr(cf))
+            return float(npf.irr(cf))
         except Exception:
             return float('nan')
     # Use numpy's vectorized function if available, else fallback to list comprehension
@@ -720,7 +721,9 @@ def create_app(test_config=None):
     def _calculate_monte_carlo_summary(npvs, irrs):
         """Calculate summary statistics for Monte Carlo results."""
         irr_mean, irr_5th, irr_95th = safe_irr_stats(irrs)
-        
+        valid_irrs = irrs[np.isfinite(irrs)]
+        percent_valid_irr = 100 * len(valid_irrs) / len(irrs) if len(irrs) > 0 else 0
+        mean_valid_irr = float(np.nanmean(valid_irrs)) if len(valid_irrs) > 0 else None
         return {
             "npv_mean": float(np.nanmean(npvs)),
             "npv_5th_percentile": float(np.nanpercentile(npvs, 5)),
@@ -729,6 +732,8 @@ def create_app(test_config=None):
             "irr_5th_percentile": irr_5th,
             "irr_95th_percentile": irr_95th,
             "probability_npv_positive": float(np.mean(npvs > 0)),
+            "mean_valid_irr": mean_valid_irr,
+            "percent_valid_irr": percent_valid_irr,
         }
 
     # Minimal Portfolio CRUD endpoints (KISS, DRY, YAGNI)
