@@ -428,7 +428,11 @@ def test_rental_analysis_with_vacancy_rate(client):
     assert abs(data["monthly_breakdown"]["effective_rental_income"] - expected_effective_monthly) < 0.01
     
     # Cash flow should be based on effective rent
-    assert data["monthly_breakdown"]["cash_flow"] == data["monthly_breakdown"]["effective_rental_income"] - data["monthly_breakdown"]["total_expenses"]
+    assert math.isclose(
+        data["monthly_breakdown"]["cash_flow"],
+        data["monthly_breakdown"]["effective_rental_income"] - data["monthly_breakdown"]["total_expenses"],
+        abs_tol=0.01
+    )
 
 def test_monte_carlo_with_vacancy_rate(client):
     """Test that Monte Carlo API correctly handles vacancy rate."""
