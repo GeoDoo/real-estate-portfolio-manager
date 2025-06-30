@@ -77,7 +77,7 @@ This project uses industry-standard formulas for real estate investment analysis
 - Summary statistics include mean, percentiles, probability of positive NPV, and valid IRR scenarios.
 
 ### General Assumptions
-- All monetary values are in the same currency (user input).
+- All monetary values are in pounds (£) by default (user input).
 - CapEx is always included as a separate expense.
 - Management fees are a percentage of effective (not gross) rent.
 - Vacancy rate is applied to gross rent to get effective rent.

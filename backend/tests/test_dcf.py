@@ -1,7 +1,6 @@
-import pytest
-from app import calculate_cash_flows, calculate_irr
 import numpy as np
-import math
+from scipy.optimize import brentq
+from app import calculate_cash_flows, calculate_irr, calculate_cash_flows_vectorized
 
 def test_all_years_present_value():
     input_data = {

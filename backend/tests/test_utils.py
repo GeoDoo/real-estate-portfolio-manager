@@ -1,4 +1,3 @@
-import pytest
 from app import clean_for_json
 
 def test_clean_for_json_basic():

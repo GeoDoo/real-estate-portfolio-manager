@@ -6,7 +6,7 @@ export function getNumberColor(n: number): string {
   return "var(--text-muted)";
 }
 
-export function formatCurrency(amount: number, currency = "$"): string {
+export function formatCurrency(amount: number, currency = "£"): string {
   return `${currency}${amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 

@@ -193,34 +193,35 @@ def calculate_mortgage_payment(initial_investment, ltv, interest_rate, holding_p
         # Simple interest-free loan
         return mortgage_amount / num_payments
 
-def calculate_year_cash_flow(year, annual_rental_income, annual_rent_growth, service_charge, 
-                           ground_rent, maintenance, insurance, management_fees, 
-                           annual_mortgage_payment, discount_rate, vacancy_rate=0):
+def calculate_year_cash_flow(
+    year, annual_rental_income, annual_rent_growth, service_charge,
+    ground_rent, maintenance, insurance, management_fees,
+    annual_mortgage_payment, discount_rate, vacancy_rate=0
+):
     """Calculate cash flow for a specific year."""
-    if year == 0:
-        return {
-            "gross_revenue": 0,
-            "effective_revenue": 0,
-            "totalExpenses": 0,
-            "net_cash_flow": 0,
-            "presentValue": 0,
-        }
+    # Calculate gross revenue with growth
     gross_revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
+    
+    # Apply vacancy rate to get effective revenue
     effective_revenue = gross_revenue * (1 - vacancy_rate / 100)
-    management_fee = effective_revenue * management_fees / 100
-    total_expenses = (
+    
+    # Calculate operating expenses (excluding mortgage)
+    operating_expenses = (
         service_charge + ground_rent + maintenance + insurance + 
-        management_fee + annual_mortgage_payment
+        management_fees
     )
-    net_cash_flow = effective_revenue - total_expenses
-    denominator = (1 + discount_rate / 100) ** year
-    present_value = net_cash_flow / denominator
+    
+    # Calculate NOI and net cash flow
+    noi = effective_revenue - operating_expenses
+    net_cash_flow = noi - annual_mortgage_payment
+    
     return {
-        "gross_revenue": float(gross_revenue),
-        "effective_revenue": float(effective_revenue),
-        "totalExpenses": float(total_expenses),
-        "net_cash_flow": float(net_cash_flow),
-        "presentValue": float(present_value),
+        "gross_rent": gross_revenue,
+        "vacancy_loss": gross_revenue - effective_revenue,
+        "effective_rent": effective_revenue,
+        "operating_expenses": operating_expenses,
+        "noi": noi,
+        "net_cash_flow": net_cash_flow
     }
 
 def calculate_cash_flows(input):

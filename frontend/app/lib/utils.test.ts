@@ -16,19 +16,19 @@ describe('getNumberColor', () => {
 });
 
 describe('formatCurrency', () => {
-  it('formats positive numbers with default $', () => {
-    expect(formatCurrency(1234.56)).toBe('$1,234.56');
-    expect(formatCurrency(1000000)).toBe('$1,000,000');
+  it('formats positive numbers with default £', () => {
+    expect(formatCurrency(1234.56)).toBe('£1,234.56');
+    expect(formatCurrency(1000000)).toBe('£1,000,000');
   });
   it('formats negative numbers', () => {
-    expect(formatCurrency(-1234.56)).toBe('$-1,234.56');
+    expect(formatCurrency(-1234.56)).toBe('£-1,234.56');
   });
   it('formats with custom currency symbol', () => {
     expect(formatCurrency(1234.56, '€')).toBe('€1,234.56');
     expect(formatCurrency(1234.56, '£')).toBe('£1,234.56');
   });
   it('handles zero', () => {
-    expect(formatCurrency(0)).toBe('$0');
+    expect(formatCurrency(0)).toBe('£0');
   });
 });
 

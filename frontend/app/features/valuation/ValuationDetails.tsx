@@ -546,7 +546,7 @@ export default function ValuationDetailPage() {
                           : "text-gray-900"
                     }`}
                   >
-                    $
+                    £
                     {cashFlows[
                       cashFlows.length - 1
                     ].cumulative_pv.toLocaleString(undefined, {
@@ -639,16 +639,16 @@ export default function ValuationDetailPage() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="py-2 px-4 text-left">Year</th>
-                      <th className="py-2 px-4 text-right">Gross Rent ($)</th>
-                      <th className="py-2 px-4 text-right">Vacancy Loss ($)</th>
-                      <th className="py-2 px-4 text-right">Effective Rent ($)</th>
-                      <th className="py-2 px-4 text-right">Operating Expenses ($)</th>
-                      <th className="py-2 px-4 text-right">NOI ($)</th>
-                      <th className="py-2 px-4 text-right">CapEx ($)</th>
-                      <th className="py-2 px-4 text-right">Net Cash Flow ($)</th>
+                      <th className="py-2 px-4 text-right">Gross Rent (£)</th>
+                      <th className="py-2 px-4 text-right">Vacancy Loss (£)</th>
+                      <th className="py-2 px-4 text-right">Effective Rent (£)</th>
+                      <th className="py-2 px-4 text-right">Operating Expenses (£)</th>
+                      <th className="py-2 px-4 text-right">NOI (£)</th>
+                      <th className="py-2 px-4 text-right">CapEx (£)</th>
+                      <th className="py-2 px-4 text-right">Net Cash Flow (£)</th>
                       <th className="py-2 px-4 text-right">Discount Factor</th>
-                      <th className="py-2 px-4 text-right">Present Value ($)</th>
-                      <th className="py-2 px-4 text-right">Cumulative PV ($)</th>
+                      <th className="py-2 px-4 text-right">Present Value (£)</th>
+                      <th className="py-2 px-4 text-right">Cumulative PV (£)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1330,7 +1330,7 @@ export default function ValuationDetailPage() {
                         className="absolute left-1/2 text-base text-gray-600 font-medium"
                         style={{ transform: "translateX(-100%)", bottom: 24 }}
                       >
-                        Net Present Value ($)
+                        Net Present Value (£)
                       </span>
                       {/* Y-axis ticks */}
                       {(() => {
@@ -1441,7 +1441,7 @@ export default function ValuationDetailPage() {
                                   }
                                   tooltip={
                                     <>
-                                      ${formatXAxisTick(bin.range[0])} to $
+                                      £{formatXAxisTick(bin.range[0])} to £
                                       {formatXAxisTick(bin.range[1])}
                                       <br />
                                       {bin.count} simulations
@@ -1516,7 +1516,7 @@ export default function ValuationDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Monthly Cash Flow ($){" "}
+                          Monthly Cash Flow (£){" "}
                           <InfoTooltip
                             label={
                               <svg
@@ -1557,7 +1557,7 @@ export default function ValuationDetailPage() {
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Annual Cash Flow ($){" "}
+                          Annual Cash Flow (£){" "}
                           <InfoTooltip
                             label={
                               <svg
@@ -1721,7 +1721,7 @@ export default function ValuationDetailPage() {
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Break-even Rent ($){" "}
+                          Break-even Rent (£){" "}
                           <InfoTooltip
                             label={
                               <svg
@@ -1815,7 +1815,7 @@ export default function ValuationDetailPage() {
                               Item
                             </th>
                             <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">
-                              Amount ($)
+                              Amount (£)
                             </th>
                           </tr>
                         </thead>
@@ -2028,7 +2028,7 @@ export default function ValuationDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Down Payment ($){" "}
+                          Down Payment (£){" "}
                           <InfoTooltip
                             label={
                               <svg
@@ -2067,7 +2067,7 @@ export default function ValuationDetailPage() {
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Loan Amount ($){" "}
+                          Loan Amount (£){" "}
                           <InfoTooltip
                             label={
                               <svg
@@ -2106,7 +2106,7 @@ export default function ValuationDetailPage() {
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Monthly Mortgage ($){" "}
+                          Monthly Mortgage (£){" "}
                           <InfoTooltip
                             label={
                               <svg
@@ -2145,7 +2145,7 @@ export default function ValuationDetailPage() {
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Total Investment ($){" "}
+                          Total Investment (£){" "}
                           <InfoTooltip
                             label={
                               <svg

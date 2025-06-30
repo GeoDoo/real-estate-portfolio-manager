@@ -2,9 +2,7 @@ import pytest
 import math
 import uuid
 from datetime import datetime, timezone
-from app import db, Property, Valuation, Portfolio
-import json
-from urllib.parse import quote
+from app import Portfolio, Property, Valuation, db
 
 def create_property_with_valuation(app, portfolio_id, address, valuation_data):
     with app.app_context():
@@ -194,9 +192,6 @@ def test_monte_carlo_endpoint(client):
     # Create property and valuation
     property_response = client.post("/api/properties", json={"address": "123 Test St"})
     property_id = property_response.json["id"]
-    
-    valuation_response = client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
-    valuation_id = valuation_response.json["id"]
     
     # Test Monte Carlo with smaller number for speed
     monte_carlo_data = {
@@ -412,11 +407,10 @@ def test_monte_carlo_with_vacancy_rate(client):
     }
     
     valuation_response = client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
-    valuation_id = valuation_response.json["id"]
     
     # Run Monte Carlo simulation
     mc_data = {
-        "valuation_id": valuation_id,
+        "valuation_id": valuation_response.json["id"],
         "num_simulations": 1000,
         "distributions": {
             "annual_rent_growth": {

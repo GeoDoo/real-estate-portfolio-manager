@@ -11,6 +11,7 @@ import { portfoliosAPI, Portfolio } from "@/lib/api/portfolios";
 import PageContainer from "@/components/PageContainer";
 import Button from "@/components/Button";
 import InfoTooltip from "@/components/InfoTooltip";
+import { formatCurrency } from "@/lib/utils";
 
 type RibbonStatus = "loading" | "buy" | "no-buy" | "none";
 
@@ -204,7 +205,7 @@ export default function HomePage() {
                         tooltip={
                           <>
                             <div>
-                              <b>NPV:</b> <span style={{color: ribbon.npv && ribbon.npv > 0 ? '#10b981' : ribbon.npv && ribbon.npv < 0 ? '#ef4444' : undefined}}>${ribbon.npv?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span><br/>
+                              <b>NPV:</b> <span style={{color: ribbon.npv && ribbon.npv > 0 ? '#10b981' : ribbon.npv && ribbon.npv < 0 ? '#ef4444' : undefined}}>{ribbon.npv !== undefined ? formatCurrency(ribbon.npv) : 'N/A'}</span><br/>
                               <b>IRR:</b> <span style={{color: ribbon.irr !== undefined && ribbon.irr > 0 ? '#10b981' : ribbon.irr !== undefined && ribbon.irr < 0 ? '#ef4444' : undefined}}>{ribbon.irr !== undefined ? `${ribbon.irr.toFixed(2)}%` : 'N/A'}</span>
                             </div>
                             <div className="mt-2 text-xs text-gray-200">

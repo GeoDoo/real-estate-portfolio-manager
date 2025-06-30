@@ -1,6 +1,5 @@
 import time
 import numpy as np
-import pytest
 from app import calculate_cash_flows, calculate_irr, calculate_cash_flows_vectorized
 
 def old_monte_carlo_simulation(base_input, rent_growths, discount_rates, interest_rates):
