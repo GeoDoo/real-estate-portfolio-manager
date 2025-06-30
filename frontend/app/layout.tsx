@@ -29,7 +29,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <nav
-          className="shadow h-16 flex items-center w-full mb-8 fixed top-0 left-0 right-0 z-50"
+          className="shadow h-16 flex items-center w-full mb-8 fixed top-0 left-0 right-0 z-[100]"
           style={{ background: "var(--card)" }}
         >
           <div className="max-w-6xl mx-auto w-full flex justify-between h-16 items-center">

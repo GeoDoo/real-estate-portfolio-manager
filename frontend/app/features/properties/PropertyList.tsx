@@ -65,8 +65,8 @@ export default function HomePage() {
               // No ribbon if no cash flows
               return;
             }
-            const npv = cashFlows[cashFlows.length - 1]?.cumulativePV;
-            const netCashFlows = cashFlows.map((row) => row.netCashFlow);
+            const npv = cashFlows[cashFlows.length - 1]?.cumulative_pv;
+            const netCashFlows = cashFlows.map((row) => row.net_cash_flow);
             let irr: number | null = null;
             if (netCashFlows.length > 1) {
               try {
@@ -160,7 +160,7 @@ export default function HomePage() {
               return (
                 <div
                   key={property.id}
-                  className="card p-6 min-h-[180px] h-full relative z-[9998] transition-all duration-200 hover:shadow-lg hover:-translate-y-1 flex flex-col"
+                  className="card p-6 min-h-[180px] h-full relative z-10 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 flex flex-col"
                   style={{
                     borderRadius: 20,
                     boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
@@ -169,7 +169,7 @@ export default function HomePage() {
                   {/* Edit Button - top left */}
                   <Button
                     onClick={() => handleEditProperty(property)}
-                    className="absolute top-4 left-4 p-1 transition-colors z-30"
+                    className="absolute top-4 left-4 p-1 transition-colors z-20"
                     style={{ color: "var(--text-muted)" }}
                     title="Edit Property"
                     variant="secondary"
@@ -180,7 +180,7 @@ export default function HomePage() {
 
                   {/* BUY Ribbon */}
                   {ribbon && (ribbon.status === "buy" || ribbon.status === "no-buy") && (
-                    <div className="absolute top-4 right-4 z-[9999] flex items-center gap-2">
+                    <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
                       <InfoTooltip
                         label={
                           <div
