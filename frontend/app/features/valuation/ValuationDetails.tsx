@@ -37,7 +37,8 @@ interface RentalAnalysis {
     rent_coverage_ratio: number;
   };
   monthly_breakdown: {
-    rental_income: number;
+    gross_rental_income: number;
+    effective_rental_income: number;
     mortgage_payment: number;
     property_tax: number;
     insurance: number;
@@ -47,7 +48,8 @@ interface RentalAnalysis {
     cash_flow: number;
   };
   annual_breakdown: {
-    rental_income: number;
+    gross_rental_income: number;
+    effective_rental_income: number;
     mortgage_payments: number;
     property_tax: number;
     insurance: number;
@@ -1858,19 +1860,37 @@ export default function ValuationDetailPage() {
                         <tbody>
                           <tr className="border-t border-gray-200">
                             <td className="px-4 py-2 text-sm text-gray-600">
-                              Rental Income
+                              Gross Rental Income
                             </td>
                             <td
                               className="px-4 py-2 text-right text-sm font-medium"
                               style={{
                                 color: getNumberColor(
-                                  rentalAnalysis.monthly_breakdown.rental_income
+                                  rentalAnalysis.monthly_breakdown.gross_rental_income
                                 ),
                               }}
                             >
                               {rentalAnalysis.monthly_breakdown
-                                .rental_income !== 0
-                                ? rentalAnalysis.monthly_breakdown.rental_income.toLocaleString()
+                                .gross_rental_income !== 0
+                                ? rentalAnalysis.monthly_breakdown.gross_rental_income.toLocaleString()
+                                : "0"}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">
+                              Effective Rental Income
+                            </td>
+                            <td
+                              className="px-4 py-2 text-right text-sm font-medium"
+                              style={{
+                                color: getNumberColor(
+                                  rentalAnalysis.monthly_breakdown.effective_rental_income
+                                ),
+                              }}
+                            >
+                              {rentalAnalysis.monthly_breakdown
+                                .effective_rental_income !== 0
+                                ? rentalAnalysis.monthly_breakdown.effective_rental_income.toLocaleString()
                                 : "0"}
                             </td>
                           </tr>

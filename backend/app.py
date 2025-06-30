@@ -833,28 +833,33 @@ def create_app(test_config=None):
         
         # Extract input data
         purchase_price = float(data.get("initial_investment", 0))
-        monthly_rent = float(data.get("annual_rental_income", 0)) / 12
+        annual_rental_income = float(data.get("annual_rental_income", 0))
+        vacancy_rate = float(data.get("vacancy_rate", 0))
         ltv = float(data.get("ltv", 0))
         interest_rate = float(data.get("interest_rate", 5))
         property_tax = float(data.get("property_tax", 0)) / 12
         insurance = float(data.get("insurance", 0)) / 12
         maintenance = float(data.get("maintenance", 0)) / 12
-        management_fees = float(data.get("management_fees", 0)) / 100 * monthly_rent
         transaction_costs = float(data.get("transaction_costs", 0))
         holding_period_years = int(data.get("holding_period", 25))  # Default to 25 years
         
-        # Calculate metrics
+        # Calculate gross and effective rent
+        gross_monthly_rent = annual_rental_income / 12
+        effective_monthly_rent = gross_monthly_rent * (1 - vacancy_rate / 100)
+        management_fees = effective_monthly_rent * float(data.get("management_fees", 0)) / 100
+        
+        # Calculate metrics using effective rent
         metrics = calculate_rental_metrics(
-            purchase_price, monthly_rent, ltv, interest_rate,
+            purchase_price, effective_monthly_rent, ltv, interest_rate,
             property_tax, insurance, maintenance, management_fees,
             transaction_costs, holding_period_years
         )
         
         # Prepare response
-        annual_rental_income = monthly_rent * 12
         monthly_expenses = metrics["monthly_mortgage"] + property_tax + insurance + maintenance + management_fees
         monthly_breakdown = {
-            "rental_income": monthly_rent,
+            "gross_rental_income": gross_monthly_rent,
+            "effective_rental_income": effective_monthly_rent,
             "mortgage_payment": metrics["monthly_mortgage"],
             "property_tax": property_tax,
             "insurance": insurance,
@@ -865,7 +870,8 @@ def create_app(test_config=None):
         }
         
         annual_breakdown = {
-            "rental_income": annual_rental_income,
+            "gross_rental_income": annual_rental_income,
+            "effective_rental_income": effective_monthly_rent * 12,
             "mortgage_payments": metrics["monthly_mortgage"] * 12,
             "property_tax": property_tax * 12,
             "insurance": insurance * 12,

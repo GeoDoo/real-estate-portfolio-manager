@@ -83,7 +83,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
               yearMap.set(row.year, { ...row });
             } else {
               const agg = yearMap.get(row.year)!;
-              agg.revenue += row.revenue;
+              agg.effective_revenue += row.effective_revenue;
               agg.totalExpenses += row.totalExpenses;
               agg.netCashFlow += row.netCashFlow;
               agg.presentValue += row.presentValue;
@@ -282,9 +282,9 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
                   <td style={{ color: "var(--foreground)" }}>{row.year}</td>
                   <td
                     className="text-right font-bold"
-                    style={{ color: getNumberColor(row.revenue) }}
+                    style={{ color: getNumberColor(row.effective_revenue) }}
                   >
-                    {formatCurrency(row.revenue)}
+                    {formatCurrency(row.effective_revenue)}
                   </td>
                   <td
                     className="text-right font-bold"
