@@ -500,7 +500,7 @@ export default function ValuationDetailPage() {
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        className="inline-block align-middle text-gray-400 group-hover:text-gray-700"
+                        className="inline-block align-baseline text-gray-400 group-hover:text-gray-700"
                       >
                         <circle cx="12" cy="12" r="10" strokeWidth="2" />
                         <text
@@ -531,7 +531,7 @@ export default function ValuationDetailPage() {
                         ? "text-green-700"
                         : irr && irr < 0
                           ? "text-red-600"
-                          : "text-gray-900"
+                        : "text-gray-900"
                     }`}
                   >
                     {irr ? `${irr.toFixed(2)}%` : "N/A"}
@@ -545,7 +545,7 @@ export default function ValuationDetailPage() {
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        className="inline-block align-middle text-gray-400 group-hover:text-gray-700"
+                        className="inline-block align-baseline text-gray-400 group-hover:text-gray-700"
                       >
                         <circle cx="12" cy="12" r="10" strokeWidth="2" />
                         <text
@@ -677,7 +677,7 @@ export default function ValuationDetailPage() {
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                          className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                         >
                           <circle cx="12" cy="12" r="10" strokeWidth="2" />
                           <text
@@ -713,7 +713,7 @@ export default function ValuationDetailPage() {
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                          className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                         >
                           <circle cx="12" cy="12" r="10" strokeWidth="2" />
                           <text
@@ -751,7 +751,7 @@ export default function ValuationDetailPage() {
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                          className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                         >
                           <circle cx="12" cy="12" r="10" strokeWidth="2" />
                           <text
@@ -784,7 +784,7 @@ export default function ValuationDetailPage() {
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                          className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                         >
                           <circle cx="12" cy="12" r="10" strokeWidth="2" />
                           <text
@@ -825,7 +825,7 @@ export default function ValuationDetailPage() {
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
-                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                              className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                             >
                               <circle cx="12" cy="12" r="10" strokeWidth="2" />
                               <text
@@ -860,7 +860,7 @@ export default function ValuationDetailPage() {
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
-                              className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                              className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                             >
                               <circle cx="12" cy="12" r="10" strokeWidth="2" />
                               <text
@@ -902,7 +902,7 @@ export default function ValuationDetailPage() {
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                          className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                         >
                           <circle cx="12" cy="12" r="10" strokeWidth="2" />
                           <text
@@ -1287,7 +1287,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1328,7 +1328,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1369,7 +1369,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1410,7 +1410,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1451,7 +1451,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1492,7 +1492,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1531,7 +1531,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1762,7 +1762,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1801,7 +1801,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1840,7 +1840,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
@@ -1879,7 +1879,7 @@ export default function ValuationDetailPage() {
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                               >
                                 <circle
                                   cx="12"
