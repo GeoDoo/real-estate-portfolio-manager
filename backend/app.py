@@ -754,7 +754,8 @@ def create_app(test_config=None):
         loan_amount = purchase_price * (ltv / 100)
         down_payment = purchase_price - loan_amount
         monthly_rate = interest_rate / 100 / 12
-        num_payments = 30 * 12  # 30-year loan
+        holding_period_years = int(data["holding_period"])
+        num_payments = holding_period_years * 12
         
         # Calculate monthly mortgage payment
         if monthly_rate > 0:

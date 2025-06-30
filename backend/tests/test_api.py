@@ -280,7 +280,7 @@ def test_rental_analysis_endpoint(client):
     loan_amount = purchase_price * ltv  # 320,000
     down_payment = purchase_price - loan_amount  # 80,000
     monthly_rate = interest_rate / 12
-    num_payments = 30 * 12
+    num_payments = rental_data.get('holding_period', 30) * 12
     monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
     monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
     monthly_cash_flow = monthly_rent - monthly_expenses
