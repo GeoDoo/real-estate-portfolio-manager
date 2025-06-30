@@ -1176,7 +1176,7 @@ export default function ValuationDetailPage() {
                             className="font-bold text-right pr-4"
                             style={{ color: "var(--foreground)" }}
                           >
-                            NPV Mean:
+                            NPV Mean (£):
                           </td>
                           <td>
                             <span
@@ -1195,7 +1195,7 @@ export default function ValuationDetailPage() {
                             className="font-bold text-right pr-4"
                             style={{ color: "var(--foreground)" }}
                           >
-                            NPV 5th Percentile:
+                            NPV 5th Percentile (£):
                           </td>
                           <td>
                             <span
@@ -1215,7 +1215,7 @@ export default function ValuationDetailPage() {
                             className="font-bold text-right pr-4"
                             style={{ color: "var(--foreground)" }}
                           >
-                            NPV 95th Percentile:
+                            NPV 95th Percentile (£):
                           </td>
                           <td>
                             <span
@@ -1235,7 +1235,7 @@ export default function ValuationDetailPage() {
                             className="font-bold text-right pr-4"
                             style={{ color: "var(--foreground)" }}
                           >
-                            IRR Mean (All):
+                            IRR Mean (All, %):
                           </td>
                           <td>
                             <span
@@ -1245,19 +1245,19 @@ export default function ValuationDetailPage() {
                               }}
                             >
                               {Number.isFinite(mcSummary.irr_mean) && mcSummary.irr_mean !== null && mcSummary.irr_mean !== undefined
-                                ? (mcSummary.irr_mean * 100).toFixed(2) + "%"
+                                ? (mcSummary.irr_mean * 100).toFixed(2)
                                 : "N/A"}
                             </span>
                           </td>
                         </tr>
                         <tr>
                           <td className="font-bold text-right pr-4 text-[var(--color-dark)]">
-                            IRR Mean (Valid Only):
+                            IRR Mean (Valid Only, %):
                           </td>
                           <td>
                             <span className="font-bold" style={{ color: getNumberColor(Number.isFinite(mcSummary.mean_valid_irr) ? mcSummary.mean_valid_irr! : 0) }}>
                               {Number.isFinite(mcSummary.mean_valid_irr) && mcSummary.mean_valid_irr !== null && mcSummary.mean_valid_irr !== undefined
-                                ? (mcSummary.mean_valid_irr * 100).toFixed(2) + "%"
+                                ? (mcSummary.mean_valid_irr * 100).toFixed(2)
                                 : "N/A"}
                             </span>
                           </td>
@@ -1269,7 +1269,7 @@ export default function ValuationDetailPage() {
                           <td>
                             <span className="font-bold">
                               {mcSummary.percent_valid_irr !== null && mcSummary.percent_valid_irr !== undefined
-                                ? mcSummary.percent_valid_irr.toFixed(1) + "%"
+                                ? mcSummary.percent_valid_irr.toFixed(1)
                                 : "N/A"}
                             </span>
                           </td>
