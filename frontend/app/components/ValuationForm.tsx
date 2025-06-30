@@ -31,7 +31,7 @@ export default function ValuationForm({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <RequiredLabel>Purchase Price ($)</RequiredLabel>
+              <RequiredLabel>Purchase Price (£)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -48,7 +48,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <RequiredLabel>Transaction Costs ($)</RequiredLabel>
+              <RequiredLabel>Transaction Costs (£)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -65,7 +65,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <RequiredLabel>Property Tax ($)</RequiredLabel>
+              <RequiredLabel>Property Tax (£)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -91,7 +91,7 @@ export default function ValuationForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <RequiredLabel>Annual Rental Income ($)</RequiredLabel>
+              <RequiredLabel>Annual Rental Income (£)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -134,7 +134,7 @@ export default function ValuationForm({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Service Charge ($)
+              Service Charge (£)
             </label>
             <input
               type="text"
@@ -151,7 +151,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ground Rent ($)
+              Ground Rent (£)
             </label>
             <input
               type="text"
@@ -168,7 +168,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <RequiredLabel>Maintenance ($)</RequiredLabel>
+              <RequiredLabel>Maintenance (£)</RequiredLabel>
             </label>
             <input
               type="text"
@@ -185,7 +185,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Insurance ($)
+              Insurance (£)
             </label>
             <input
               type="text"
@@ -219,7 +219,7 @@ export default function ValuationForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              CapEx ($)
+              CapEx (£)
             </label>
             <input
               type="text"

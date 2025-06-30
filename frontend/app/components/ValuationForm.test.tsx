@@ -225,11 +225,11 @@ describe('ValuationForm', () => {
 
       // Check that required fields have asterisks
       const requiredLabels = [
-        'Purchase Price ($)',
-        'Transaction Costs ($)',
-        'Property Tax ($)',
-        'Annual Rental Income ($)',
-        'Maintenance ($)',
+        'Purchase Price (£)',
+        'Transaction Costs (£)',
+        'Property Tax (£)',
+        'Annual Rental Income (£)',
+        'Maintenance (£)',
         'Management Fees (%)',
         'Annual Rent Growth (%)',
         'Discount Rate (%)',

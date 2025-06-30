@@ -269,11 +269,11 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
             <thead>
               <tr>
                 <th className="text-left">Year</th>
-                <th className="text-right">Revenue ($)</th>
-                <th className="text-right">Expenses ($)</th>
-                <th className="text-right">Net Cash Flow ($)</th>
-                <th className="text-right">Present Value ($)</th>
-                <th className="text-right">Cumulative PV ($)</th>
+                <th className="text-right">Revenue (£)</th>
+                <th className="text-right">Expenses (£)</th>
+                <th className="text-right">Net Cash Flow (£)</th>
+                <th className="text-right">Present Value (£)</th>
+                <th className="text-right">Cumulative PV (£)</th>
               </tr>
             </thead>
             <tbody>
