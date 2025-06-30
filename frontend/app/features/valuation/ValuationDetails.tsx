@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { CashFlowRow, DCFRow } from "@/types/cashflow";
+import type { CashFlowRow, DCFRow } from "@/types/cashflow";
 import { PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import ValuationForm from "@/components/ValuationForm";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -287,7 +287,7 @@ export default function ValuationDetailPage() {
     setMcResults([]);
     setMcSummary(null);
     // Prepare the request body for POST
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       ...valuation,
       annual_rent_growth: {
         distribution: "normal",
@@ -933,13 +933,13 @@ export default function ValuationDetailPage() {
                   <Button
                     onClick={runMonteCarlo}
                     className="w-full mt-8 px-4 py-3"
-                    disabled={mcRunning || !hasValidValuation(valuation as any)}
+                    disabled={mcRunning || !hasValidValuation(valuation as DCFRow)}
                   >
                     {mcRunning
                       ? `Running... (${mcProgress}/${mcTotal})`
                       : "Run Simulation"}
                   </Button>
-                  {!hasValidValuation(valuation as any) && (
+                  {!hasValidValuation(valuation as DCFRow) && (
                     <div className="text-xs text-red-500 mt-2 text-center">
                       Please enter and save a valid valuation before running the
                       simulation.
@@ -1283,13 +1283,13 @@ export default function ValuationDetailPage() {
                     variant="primary"
                     size="md"
                     disabled={
-                      rentalLoading || !hasValidValuation(valuation as any)
+                      rentalLoading || !hasValidValuation(valuation as DCFRow)
                     }
                   >
                     {rentalLoading ? "Analyzing..." : "Run Rental Analysis"}
                   </Button>
 
-                  {!hasValidValuation(valuation as any) && (
+                  {!hasValidValuation(valuation as DCFRow) && (
                     <div className="text-xs text-red-500 mt-2 text-center">
                       Please enter and save a valid valuation before running the
                       analysis.

@@ -8,6 +8,10 @@ interface InfoTooltipProps {
   className?: string;
 }
 
+function isReactElementWithProps(element: unknown): element is React.ReactElement<{ style?: React.CSSProperties }> {
+  return React.isValidElement(element) && typeof element.props === 'object';
+}
+
 const InfoTooltip: React.FC<InfoTooltipProps> = ({
   label,
   tooltip,
@@ -57,8 +61,8 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
         onBlur={() => setShow(false)}
         tabIndex={0}
       >
-        {React.isValidElement(label) && (label as React.ReactElement<any>).props
-          ? React.cloneElement(label as React.ReactElement<any>, { style: { ...((label as React.ReactElement<any>).props.style || {}), verticalAlign: 'text-bottom' } })
+        {isReactElementWithProps(label)
+          ? React.cloneElement(label, { style: { ...(label.props.style || {}), verticalAlign: 'text-bottom' } })
           : label}
       </span>
       {mounted && show && coords && createPortal(
