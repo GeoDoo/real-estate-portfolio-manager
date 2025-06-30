@@ -76,6 +76,19 @@ function getChanceLabel(prob: number) {
   return "Highly Likely";
 }
 
+// Helper for zero formatting and color
+function renderCell(value: number, colorFn: (n: number) => string) {
+  const isZero = Number(value) === 0 || Object.is(value, -0);
+  return (
+    <span
+      className="font-bold"
+      style={{ color: isZero ? '#6B7280' : colorFn(value) }} // Tailwind gray-500
+    >
+      {isZero ? '0' : value.toLocaleString()}
+    </span>
+  );
+}
+
 export default function ValuationDetailPage() {
   const { id } = useParams();
   const propertyId = Array.isArray(id) ? id[0] : id;
@@ -101,6 +114,7 @@ export default function ValuationDetailPage() {
     holding_period: "",
     ltv: "",
     interest_rate: "",
+    capex: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -152,6 +166,7 @@ export default function ValuationDetailPage() {
             holding_period: String(json.holding_period ?? ""),
             ltv: String(json.ltv ?? ""),
             interest_rate: String(json.interest_rate ?? ""),
+            capex: String(json.capex ?? ""),
           });
           await fetchCashFlows(json);
         } else {
@@ -179,7 +194,7 @@ export default function ValuationDetailPage() {
 
       // Fetch IRR if cash flows are available
       if (cashFlowsData && cashFlowsData.length > 1) {
-        const netCashFlows = cashFlowsData.map((row) => row.netCashFlow);
+        const netCashFlows = cashFlowsData.map((row) => row.net_cash_flow);
         const irrValue = await valuationsAPI.calculateIRR(netCashFlows);
         setIrr(irrValue);
       } else {
@@ -221,6 +236,7 @@ export default function ValuationDetailPage() {
       holding_period: String(valuation.holding_period ?? ""),
       ltv: String(valuation.ltv ?? ""),
       interest_rate: String(valuation.interest_rate ?? ""),
+      capex: String(valuation.capex ?? ""),
     });
     setIsEditing(false);
     setFormError(null);
@@ -257,6 +273,7 @@ export default function ValuationDetailPage() {
       ltv: form.ltv !== "" ? parseFloat(form.ltv) : 0,
       interest_rate:
         form.interest_rate !== "" ? parseFloat(form.interest_rate) : 0,
+      capex: form.capex !== "" ? parseFloat(form.capex) : 0,
     };
 
     try {
@@ -281,6 +298,7 @@ export default function ValuationDetailPage() {
         holding_period: String(updatedValuation.holding_period ?? ""),
         ltv: String(updatedValuation.ltv ?? ""),
         interest_rate: String(updatedValuation.interest_rate ?? ""),
+        capex: String(updatedValuation.capex ?? ""),
       });
       await fetchCashFlows(updatedValuation);
     } catch (err) {
@@ -531,9 +549,9 @@ export default function ValuationDetailPage() {
                 <div className="text-center">
                   <span
                     className={`text-2xl font-bold ${
-                      cashFlows[cashFlows.length - 1].cumulativePV > 0
+                      cashFlows[cashFlows.length - 1].cumulative_pv > 0
                         ? "text-green-700"
-                        : cashFlows[cashFlows.length - 1].cumulativePV < 0
+                        : cashFlows[cashFlows.length - 1].cumulative_pv < 0
                           ? "text-red-600"
                           : "text-gray-900"
                     }`}
@@ -541,7 +559,7 @@ export default function ValuationDetailPage() {
                     $
                     {cashFlows[
                       cashFlows.length - 1
-                    ].cumulativePV.toLocaleString(undefined, {
+                    ].cumulative_pv.toLocaleString(undefined, {
                       maximumFractionDigits: 2,
                     })}
                   </span>
@@ -631,22 +649,16 @@ export default function ValuationDetailPage() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="py-2 px-4 text-left">Year</th>
-                      <th className="py-2 px-4 text-right">
-                        Gross Rent ($)
-                      </th>
-                      <th className="py-2 px-4 text-right">
-                        Effective Rent ($)
-                      </th>
-                      <th className="py-2 px-4 text-right">Expenses ($)</th>
-                      <th className="py-2 px-4 text-right">
-                        Net Cash Flow ($)
-                      </th>
-                      <th className="py-2 px-4 text-right">
-                        Present Value ($)
-                      </th>
-                      <th className="py-2 px-4 text-right">
-                        Cumulative PV ($)
-                      </th>
+                      <th className="py-2 px-4 text-right">Gross Rent ($)</th>
+                      <th className="py-2 px-4 text-right">Vacancy Loss ($)</th>
+                      <th className="py-2 px-4 text-right">Effective Rent ($)</th>
+                      <th className="py-2 px-4 text-right">Operating Expenses ($)</th>
+                      <th className="py-2 px-4 text-right">NOI ($)</th>
+                      <th className="py-2 px-4 text-right">CapEx ($)</th>
+                      <th className="py-2 px-4 text-right">Net Cash Flow ($)</th>
+                      <th className="py-2 px-4 text-right">Discount Factor</th>
+                      <th className="py-2 px-4 text-right">Present Value ($)</th>
+                      <th className="py-2 px-4 text-right">Cumulative PV ($)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -656,62 +668,22 @@ export default function ValuationDetailPage() {
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                       >
                         <td className="py-2 px-4">{row.year}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(row.gross_rent, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(-row.vacancy_loss, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(row.effective_rent, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(-row.operating_expenses, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(row.noi, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(-row.capex, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(row.net_cash_flow, getNumberColor)}</td>
                         <td className="py-2 px-4 text-right">
-                          <span
-                            className="font-bold"
-                            style={{ color: getNumberColor(row.gross_revenue) }}
-                          >
-                            {Number.isFinite(row.gross_revenue) ? row.gross_revenue.toLocaleString() : "-"}
+                          <span className="font-bold" style={{ color: (Number(row.discount_factor) === 0 || Object.is(row.discount_factor, -0)) ? '#6B7280' : undefined }}>
+                            {Number(row.discount_factor) === 0 || Object.is(row.discount_factor, -0)
+                              ? '0'
+                              : row.discount_factor.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                           </span>
                         </td>
-                        <td className="py-2 px-4 text-right">
-                          <span
-                            className="font-bold"
-                            style={{ color: getNumberColor(row.effective_revenue) }}
-                          >
-                            {Number.isFinite(row.effective_revenue) ? row.effective_revenue.toLocaleString() : "-"}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          <span
-                            className="font-bold"
-                            style={{
-                              color: getNumberColor(-row.totalExpenses),
-                            }}
-                          >
-                            {-row.totalExpenses !== 0
-                              ? `-${row.totalExpenses.toLocaleString()}`
-                              : "0"}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          <span
-                            className="font-bold"
-                            style={{ color: getNumberColor(row.netCashFlow) }}
-                          >
-                            {row.netCashFlow.toLocaleString()}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          <span
-                            className="font-bold"
-                            style={{ color: getNumberColor(row.presentValue) }}
-                          >
-                            {row.presentValue.toLocaleString(undefined, {
-                              maximumFractionDigits: 2,
-                            })}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          <span
-                            className="font-bold"
-                            style={{ color: getNumberColor(row.cumulativePV) }}
-                          >
-                            {row.cumulativePV.toLocaleString(undefined, {
-                              maximumFractionDigits: 2,
-                            })}
-                          </span>
-                        </td>
+                        <td className="py-2 px-4 text-right">{renderCell(row.present_value, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">{renderCell(row.cumulative_pv, getNumberColor)}</td>
                       </tr>
                     ))}
                   </tbody>

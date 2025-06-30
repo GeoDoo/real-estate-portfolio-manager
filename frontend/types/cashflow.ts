@@ -16,14 +16,21 @@ export interface DCFRow extends ValuationBase {
   annual_rent_growth: number;
   discount_rate: number;
   holding_period: number;
+  ltv?: number;
+  interest_rate?: number;
+  capex?: number;
 }
 
 export interface CashFlowRow {
   year: number;
-  gross_revenue: number;
-  effective_revenue: number;
-  totalExpenses: number;
-  netCashFlow: number;
-  presentValue: number;
-  cumulativePV: number;
+  gross_rent: number;
+  vacancy_loss: number;
+  effective_rent: number;
+  operating_expenses: number;
+  noi: number;
+  capex: number;
+  net_cash_flow: number;
+  discount_factor: number;
+  present_value: number;
+  cumulative_pv: number;
 }

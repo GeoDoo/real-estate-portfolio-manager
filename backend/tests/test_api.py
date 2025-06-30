@@ -383,15 +383,16 @@ def test_valuation_with_vacancy_rate(client):
     first_year = cash_flows[1]  # Year 1 (index 1, since index 0 is year 0)
     
     # Check that both gross and effective revenue are present
-    assert "gross_revenue" in first_year
-    assert "effective_revenue" in first_year
+    assert "gross_rent" in first_year
+    assert "effective_rent" in first_year
+    assert "vacancy_loss" in first_year
     
     # Verify calculations
     expected_gross = 24000 * (1 + 2/100) ** 0  # No growth in year 1
     expected_effective = expected_gross * (1 - 8/100)  # 8% vacancy
     
-    assert abs(first_year["gross_revenue"] - expected_gross) < 0.01
-    assert abs(first_year["effective_revenue"] - expected_effective) < 0.01
+    assert abs(first_year["gross_rent"] - expected_gross) < 0.01
+    assert abs(first_year["effective_rent"] - expected_effective) < 0.01
 
 def test_rental_analysis_with_vacancy_rate(client):
     """Test that rental analysis API correctly handles vacancy rate."""

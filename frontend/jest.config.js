@@ -2,10 +2,7 @@
 module.exports = {
   testEnvironment: "jsdom",
   transform: {
-    "^.+\\.(ts|tsx)$": ["ts-jest", { 
-      tsconfig: "<rootDir>/tsconfig.jest.json",
-      useESM: false
-    }],
+    "^.+\\.(ts|tsx|js|jsx)$": "babel-jest"
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/app/$1',
@@ -22,6 +19,6 @@ module.exports = {
     '!app/page.tsx'
   ],
   transformIgnorePatterns: [
-    "node_modules/(?!(.*\\.mjs$))"
+    "/node_modules/"
   ]
 };

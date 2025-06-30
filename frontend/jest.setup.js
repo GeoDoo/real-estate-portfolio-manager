@@ -1,5 +1,5 @@
-require('@testing-library/jest-dom');
 const React = require('react');
+require('@testing-library/jest-dom');
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -21,12 +21,8 @@ jest.mock('next/navigation', () => ({
   },
 }));
 
-// Mock Next.js link
-jest.mock('next/link', () => {
-  return function MockLink({ children, href, ...props }) {
-    return React.createElement('a', { href, ...props }, children);
-  };
-});
+// Mock Next.js link as a string to avoid referencing React
+jest.mock('next/link', () => 'a');
 
 // Global test utilities
 global.ResizeObserver = jest.fn().mockImplementation(() => ({

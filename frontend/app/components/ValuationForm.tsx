@@ -217,6 +217,21 @@ export default function ValuationForm({
               disabled={disabled}
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              CapEx ($)
+            </label>
+            <input
+              type="text"
+              name="capex"
+              value={form.capex ?? ""}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{ "--tw-ring-color": "var(--primary)" } as React.CSSProperties }
+              placeholder="0"
+              disabled={disabled}
+            />
+          </div>
         </div>
       </div>
 

@@ -78,6 +78,7 @@ def create_valuation_from_data(data, property_id=None, valuation_id=None):
             holding_period=data.get("holding_period", 0),
             ltv=data.get("ltv", 0),
             interest_rate=data.get("interest_rate", 0),
+            capex=data.get("capex", 0),
         )
         return valuation, None
 
@@ -145,6 +146,7 @@ class Valuation(db.Model):
     holding_period = db.Column(db.Integer)
     ltv = db.Column(db.Float)  # Loan-to-Value percentage
     interest_rate = db.Column(db.Float)  # Annual interest rate percentage
+    capex = db.Column(db.Float, default=0)  # Annual CapEx
 
     def to_dict(self):
         return {
@@ -166,9 +168,15 @@ class Valuation(db.Model):
             "holding_period": self.holding_period,
             "ltv": self.ltv,
             "interest_rate": self.interest_rate,
+            "capex": self.capex,
         }
 
 # --- Utility Functions ---
+def safe_number(val):
+    if val in (None, '', 'None'):
+        return 0
+    return val
+
 def calculate_mortgage_payment(initial_investment, ltv, interest_rate, holding_period):
     """Calculate monthly mortgage payment."""
     if ltv <= 0 or interest_rate <= 0:
@@ -194,7 +202,7 @@ def calculate_year_cash_flow(year, annual_rental_income, annual_rent_growth, ser
             "gross_revenue": 0,
             "effective_revenue": 0,
             "totalExpenses": 0,
-            "netCashFlow": 0,
+            "net_cash_flow": 0,
             "presentValue": 0,
         }
     gross_revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
@@ -211,29 +219,30 @@ def calculate_year_cash_flow(year, annual_rental_income, annual_rent_growth, ser
         "gross_revenue": float(gross_revenue),
         "effective_revenue": float(effective_revenue),
         "totalExpenses": float(total_expenses),
-        "netCashFlow": float(net_cash_flow),
+        "net_cash_flow": float(net_cash_flow),
         "presentValue": float(present_value),
     }
 
 def calculate_cash_flows(input):
-    """Calculate cash flows for property investment analysis."""
-    # Provide defaults for all expected fields
+    """Calculate cash flows for property investment analysis (Argus-style columns)."""
+    # Provide defaults for all expected fields, using safe_number
     input = {
-        "initial_investment": input.get("initial_investment", 0),
-        "annual_rental_income": input.get("annual_rental_income", 0),
-        "vacancy_rate": input.get("vacancy_rate", 0),
-        "service_charge": input.get("service_charge", 0),
-        "ground_rent": input.get("ground_rent", 0),
-        "maintenance": input.get("maintenance", 0),
-        "property_tax": input.get("property_tax", 0),
-        "insurance": input.get("insurance", 0),
-        "management_fees": input.get("management_fees", 0),
-        "transaction_costs": input.get("transaction_costs", 0),
-        "annual_rent_growth": input.get("annual_rent_growth", 0),
-        "discount_rate": input.get("discount_rate", 0),
-        "holding_period": input.get("holding_period", 0),
-        "ltv": input.get("ltv", 0),
-        "interest_rate": input.get("interest_rate", 0),
+        "initial_investment": safe_number(input.get("initial_investment", 0)),
+        "annual_rental_income": safe_number(input.get("annual_rental_income", 0)),
+        "vacancy_rate": safe_number(input.get("vacancy_rate", 0)),
+        "service_charge": safe_number(input.get("service_charge", 0)),
+        "ground_rent": safe_number(input.get("ground_rent", 0)),
+        "maintenance": safe_number(input.get("maintenance", 0)),
+        "property_tax": safe_number(input.get("property_tax", 0)),
+        "insurance": safe_number(input.get("insurance", 0)),
+        "management_fees": safe_number(input.get("management_fees", 0)),
+        "transaction_costs": safe_number(input.get("transaction_costs", 0)),
+        "annual_rent_growth": safe_number(input.get("annual_rent_growth", 0)),
+        "discount_rate": safe_number(input.get("discount_rate", 0)),
+        "holding_period": safe_number(input.get("holding_period", 0)),
+        "ltv": safe_number(input.get("ltv", 0)),
+        "interest_rate": safe_number(input.get("interest_rate", 0)),
+        "capex": safe_number(input.get("capex", 0)),
     }
     
     # Convert to Fraction for precision
@@ -253,6 +262,7 @@ def calculate_cash_flows(input):
     holding_period = int(input["holding_period"])
     ltv = Fraction(str(input.get("ltv", 0) or 0))
     interest_rate = Fraction(str(input.get("interest_rate", 0) or 0))
+    capex_value = Fraction(str(input["capex"]))
 
     # Calculate mortgage payment
     monthly_mortgage_payment = calculate_mortgage_payment(
@@ -264,39 +274,54 @@ def calculate_cash_flows(input):
     cumulative_pv = Fraction(0)
 
     # Year 0 (initial investment)
-    year0_revenue = -initial_investment
-    year0_expenses = transaction_costs + property_tax
-    year0_net_cash_flow = year0_revenue - year0_expenses
-    year0_pv = year0_net_cash_flow
-    cumulative_pv += year0_pv
-    rows.append({
+    year0_row = {
         "year": 0,
-        "revenue": float(f"{float(year0_revenue):.2f}"),
-        "totalExpenses": float(f"{float(year0_expenses):.2f}"),
-        "netCashFlow": float(f"{float(year0_net_cash_flow):.2f}"),
-        "presentValue": float(f"{float(year0_pv):.2f}"),
-        "cumulativePV": float(f"{float(cumulative_pv):.2f}"),
-    })
+        "gross_rent": float(f"{-initial_investment:.2f}"),
+        "vacancy_loss": 0.0,
+        "effective_rent": 0.0,
+        "operating_expenses": float(f"{transaction_costs + property_tax:.2f}"),
+        "noi": float(f"{-initial_investment - (transaction_costs + property_tax):.2f}"),
+        "capex": 0.0,
+        "net_cash_flow": float(f"{-initial_investment - (transaction_costs + property_tax):.2f}"),
+        "discount_factor": 1.0,
+        "present_value": float(f"{-initial_investment - (transaction_costs + property_tax):.2f}"),
+        "cumulative_pv": float(f"{-initial_investment - (transaction_costs + property_tax):.2f}"),
+    }
+    cumulative_pv += year0_row["present_value"]
+    rows.append(year0_row)
 
     # Years 1 to holding_period
     for year in range(1, holding_period + 1):
-        cash_flow = calculate_year_cash_flow(
-            year, annual_rental_income, annual_rent_growth, service_charge,
-            ground_rent, maintenance, insurance, management_fees,
-            annual_mortgage_payment, discount_rate, vacancy_rate
+        gross_rent = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
+        vacancy_loss = gross_rent * (vacancy_rate / 100)
+        effective_rent = gross_rent - vacancy_loss
+        management_fee = effective_rent * management_fees / 100
+        operating_expenses = (
+            service_charge + ground_rent + maintenance + property_tax + insurance + management_fee + annual_mortgage_payment
         )
-        cumulative_pv += cash_flow["presentValue"]
-        
-        rows.append({
+        noi = effective_rent - (
+            service_charge + ground_rent + maintenance + property_tax + insurance + management_fee
+        )
+        capex = capex_value
+        net_cash_flow = noi - capex - annual_mortgage_payment
+        discount_factor = float(1 / (1 + discount_rate / 100) ** year)
+        present_value = float(net_cash_flow * discount_factor)
+        cumulative_pv += present_value
+        row = {
             "year": year,
-            "gross_revenue": float(f"{float(cash_flow['gross_revenue']):.2f}"),
-            "effective_revenue": float(f"{float(cash_flow['effective_revenue']):.2f}"),
-            "totalExpenses": float(f"{float(cash_flow['totalExpenses']):.2f}"),
-            "netCashFlow": float(f"{float(cash_flow['netCashFlow']):.2f}"),
-            "presentValue": float(f"{float(cash_flow['presentValue']):.2f}"),
-            "cumulativePV": float(f"{float(cumulative_pv):.2f}"),
-        })
-    
+            "gross_rent": float(gross_rent),
+            "vacancy_loss": float(vacancy_loss),
+            "effective_rent": float(effective_rent),
+            "operating_expenses": float(operating_expenses),
+            "noi": float(noi),
+            "capex": float(capex),
+            "net_cash_flow": float(net_cash_flow),
+            "discount_factor": float(discount_factor),
+            "present_value": float(present_value),
+            "cumulative_pv": float(cumulative_pv),
+        }
+        rows.append(row)
+
     return rows
 
 def calculate_irr(cash_flows):
@@ -518,6 +543,7 @@ def create_app(test_config=None):
                 holding_period=data.get("holding_period", 0),
                 ltv=data.get("ltv", 0),
                 interest_rate=data.get("interest_rate", 0),
+                capex=data.get("capex", 0),
             )
             db.session.add(valuation)
             db.session.commit()
@@ -804,7 +830,7 @@ def create_app(test_config=None):
             if not valuation:
                 continue  # skip properties without valuation
             cash_flows = calculate_cash_flows(valuation.to_dict())
-            net_cash_flows = [row["netCashFlow"] for row in cash_flows]
+            net_cash_flows = [row["net_cash_flow"] for row in cash_flows]
             all_cash_flows.append(net_cash_flows)
             max_years = max(max_years, len(net_cash_flows))
 
