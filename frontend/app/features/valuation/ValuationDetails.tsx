@@ -1195,27 +1195,31 @@ export default function ValuationDetailPage() {
                             className="font-bold text-right pr-4"
                             style={{ color: "var(--foreground)" }}
                           >
-                            NPV 5th Percentile (£):
-                          </td>
-                          <td>
-                            <span
-                              className="font-bold"
-                              style={{
-                                color: getNumberColor(
-                                  mcSummary.npv_5th_percentile
-                                ),
-                              }}
-                            >
-                              {mcSummary.npv_5th_percentile.toLocaleString()}
-                            </span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            className="font-bold text-right pr-4"
-                            style={{ color: "var(--foreground)" }}
-                          >
-                            NPV 95th Percentile (£):
+                            NPV 95th Percentile (£)
+                            <InfoTooltip
+                              label={
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
+                                >
+                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <text
+                                    x="12"
+                                    y="16"
+                                    textAnchor="middle"
+                                    fontSize="12"
+                                    fill="currentColor"
+                                  >
+                                    i
+                                  </text>
+                                </svg>
+                              }
+                              tooltip="The 95th percentile of simulated Net Present Value (NPV) outcomes. Only 5% of simulations are above this value. This is an optimistic estimate of upside potential."
+                            />:
                           </td>
                           <td>
                             <span
@@ -1227,6 +1231,50 @@ export default function ValuationDetailPage() {
                               }}
                             >
                               {mcSummary.npv_95th_percentile.toLocaleString()}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            className="font-bold text-right pr-4"
+                            style={{ color: "var(--foreground)" }}
+                          >
+                            NPV 5th Percentile (£)
+                            <InfoTooltip
+                              label={
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
+                                >
+                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <text
+                                    x="12"
+                                    y="16"
+                                    textAnchor="middle"
+                                    fontSize="12"
+                                    fill="currentColor"
+                                  >
+                                    i
+                                  </text>
+                                </svg>
+                              }
+                              tooltip="The 5th percentile of simulated Net Present Value (NPV) outcomes. 95% of simulations are above this value. This is a conservative estimate of downside risk."
+                            />:
+                          </td>
+                          <td>
+                            <span
+                              className="font-bold"
+                              style={{
+                                color: getNumberColor(
+                                  mcSummary.npv_5th_percentile
+                                ),
+                              }}
+                            >
+                              {mcSummary.npv_5th_percentile.toLocaleString()}
                             </span>
                           </td>
                         </tr>
