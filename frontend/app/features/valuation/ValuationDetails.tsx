@@ -658,7 +658,7 @@ export default function ValuationDetailPage() {
           {/* Monte Carlo Simulation */}
           {!isEditing && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">Monte Carlo Simulation</h2>
+              <h2 className="text-xl font-bold mb-4">Monte Carlo Simulation (Gaussian)</h2>
               <p className="text-gray-600 mb-6">
                 Simulate thousands of possible outcomes for this property based
                 on your assumptions. Adjust the values below and click Run
