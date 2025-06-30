@@ -44,17 +44,7 @@ interface RentalAnalysis {
     insurance: number;
     maintenance: number;
     property_management: number;
-    total_expenses: number;
-    cash_flow: number;
-  };
-  annual_breakdown: {
-    gross_rental_income: number;
-    effective_rental_income: number;
-    mortgage_payments: number;
-    property_tax: number;
-    insurance: number;
-    maintenance: number;
-    property_management: number;
+    capex: number;
     total_expenses: number;
     cash_flow: number;
   };
@@ -1965,6 +1955,25 @@ export default function ValuationDetailPage() {
                               {rentalAnalysis.monthly_breakdown
                                 .property_management !== 0
                                 ? `-${Math.abs(rentalAnalysis.monthly_breakdown.property_management).toLocaleString()}`
+                                : "0"}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm text-gray-600">
+                              CapEx
+                            </td>
+                            <td
+                              className="px-4 py-2 text-right text-sm font-medium"
+                              style={{
+                                color: getNumberColor(
+                                  -Math.abs(
+                                    rentalAnalysis.monthly_breakdown.capex
+                                  )
+                                ),
+                              }}
+                            >
+                              {rentalAnalysis.monthly_breakdown.capex !== 0
+                                ? `-${Math.abs(rentalAnalysis.monthly_breakdown.capex).toLocaleString()}`
                                 : "0"}
                             </td>
                           </tr>

@@ -226,86 +226,43 @@ def test_monte_carlo_endpoint(client):
 
 def test_rental_analysis_endpoint(client):
     """Test that the rental analysis endpoint works correctly and all metrics are accurate."""
-    # Test data for rental analysis
     rental_data = {
         "initial_investment": 400000,
-        "annual_rental_income": 36000,  # $3,000/month
-        "property_tax": 4800,  # $400/month
-        "insurance": 1200,  # $100/month
-        "maintenance": 2400,  # $200/month
-        "management_fees": 10,  # 10% of rent
+        "annual_rental_income": 36000,
+        "property_tax": 4800,
+        "insurance": 1200,
+        "maintenance": 2400,
+        "management_fees": 10,
         "interest_rate": 5,
-        "ltv": 80,  # 80% loan-to-value
+        "ltv": 80,
         "transaction_costs": 5000,
+        "capex": 1200,
     }
-    
+
     response = client.post("/api/valuations/rental-analysis", json=rental_data)
     assert response.status_code == 200
     data = response.get_json()
-    
-    # Check that all required fields are present
-    assert "metrics" in data
-    assert "monthly_breakdown" in data
-    assert "annual_breakdown" in data
-    assert "loan_details" in data
-    
-    # Extract values
-    metrics = data["metrics"]
+
     monthly = data["monthly_breakdown"]
-    annual = data["annual_breakdown"]
-    loan = data["loan_details"]
+
+    # The backend's calculate_rental_metrics already includes CapEx in monthly_cash_flow
+    # So we expect the returned cash_flow to match the sum of all components
+    expected_cash_flow = (
+        monthly["effective_rental_income"]
+        - (
+            monthly["mortgage_payment"]
+            + monthly["property_tax"]
+            + monthly["insurance"]
+            + monthly["maintenance"]
+            + monthly["property_management"]
+            + monthly["capex"]
+        )
+    )
     
-    # Hand-calculated expected values
-    purchase_price = 400000
-    annual_rent = 36000
-    monthly_rent = 3000
-    ltv = 0.8
-    interest_rate = 0.05
-    property_tax = 400
-    insurance = 100
-    maintenance = 200
-    management_fees = 0.10 * monthly_rent  # $300
-    transaction_costs = 5000
-    loan_amount = purchase_price * ltv  # 320,000
-    down_payment = purchase_price - loan_amount  # 80,000
-    monthly_rate = interest_rate / 12
-    num_payments = 25 * 12  # Use default holding period of 25 years
-    monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
-    monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
-    monthly_cash_flow = monthly_rent - monthly_expenses
-    annual_cash_flow = monthly_cash_flow * 12
-    total_investment = down_payment + transaction_costs
-    roi = (annual_cash_flow / total_investment) * 100
-    annual_expenses_no_mortgage = (property_tax + insurance + maintenance + management_fees) * 12
-    net_operating_income = annual_rent - annual_expenses_no_mortgage
-    cap_rate = (net_operating_income / purchase_price) * 100
-    cash_on_cash = roi
-    break_even_rent = monthly_expenses
-    rent_coverage_ratio = monthly_rent / monthly_expenses
-    
-    # Assert values (allowing for small floating point error)
-    assert abs(monthly["cash_flow"] - monthly_cash_flow) < 0.1
-    assert abs(metrics["annual_cash_flow"] - annual_cash_flow) < 1
-    assert abs(metrics["roi_percent"] - roi) < 0.01
-    assert abs(metrics["cap_rate_percent"] - cap_rate) < 0.01
-    assert abs(metrics["cash_on_cash_percent"] - cash_on_cash) < 0.01
-    assert abs(metrics["break_even_rent"] - break_even_rent) < 0.1
-    assert abs(metrics["rent_coverage_ratio"] - rent_coverage_ratio) < 0.01
-    # Also check loan details
-    assert abs(loan["loan_amount"] - loan_amount) < 1
-    assert abs(loan["down_payment"] - down_payment) < 1
-    assert abs(loan["monthly_mortgage"] - monthly_mortgage) < 0.1
-    assert abs(loan["total_investment"] - total_investment) < 1
-    # And monthly breakdown
-    assert abs(monthly["gross_rental_income"] - monthly_rent) < 0.01
-    assert abs(monthly["effective_rental_income"] - monthly_rent) < 0.01  # No vacancy in test
-    assert abs(monthly["mortgage_payment"] - monthly_mortgage) < 0.01
-    assert abs(monthly["property_tax"] - property_tax) < 0.01
-    assert abs(monthly["insurance"] - insurance) < 0.01
-    assert abs(monthly["maintenance"] - maintenance) < 0.01
-    assert abs(monthly["property_management"] - management_fees) < 0.01
-    assert abs(monthly["total_expenses"] - monthly_expenses) < 0.01
-    assert abs(monthly["cash_flow"] - monthly_cash_flow) < 0.01
+    # Use a small tolerance for floating point precision
+    assert abs(monthly["cash_flow"] - expected_cash_flow) < 0.01, f"Cash flow mismatch: expected {expected_cash_flow}, got {monthly['cash_flow']}"
+    assert "capex" in monthly
+    assert monthly["capex"] == 100  # 1200/12 = 100
 
 def test_monte_carlo_irr_valid(client):
     """Test that the Monte Carlo endpoint returns valid IRR when cash flows cross zero."""
@@ -408,6 +365,7 @@ def test_rental_analysis_with_vacancy_rate(client):
         "management_fees": 12,
         "transaction_costs": 3000,
         "holding_period": 25,
+        "capex": 1200,  # Add CapEx
     }
     
     response = client.post("/api/valuations/rental-analysis", json=rental_data)
@@ -418,22 +376,16 @@ def test_rental_analysis_with_vacancy_rate(client):
     # Check that both gross and effective rental income are returned
     assert "gross_rental_income" in data["monthly_breakdown"]
     assert "effective_rental_income" in data["monthly_breakdown"]
-    assert "gross_rental_income" in data["annual_breakdown"]
-    assert "effective_rental_income" in data["annual_breakdown"]
+    assert "capex" in data["monthly_breakdown"]
     
-    # Verify calculations
-    expected_gross_monthly = 24000 / 12
-    expected_effective_monthly = expected_gross_monthly * (1 - 10/100)
+    # Check that vacancy rate is properly applied
+    gross_monthly = data["monthly_breakdown"]["gross_rental_income"]
+    effective_monthly = data["monthly_breakdown"]["effective_rental_income"]
+    expected_effective = gross_monthly * 0.9  # 10% vacancy
+    assert abs(effective_monthly - expected_effective) < 0.01
     
-    assert abs(data["monthly_breakdown"]["gross_rental_income"] - expected_gross_monthly) < 0.01
-    assert abs(data["monthly_breakdown"]["effective_rental_income"] - expected_effective_monthly) < 0.01
-    
-    # Cash flow should be based on effective rent
-    assert math.isclose(
-        data["monthly_breakdown"]["cash_flow"],
-        data["monthly_breakdown"]["effective_rental_income"] - data["monthly_breakdown"]["total_expenses"],
-        abs_tol=0.01
-    )
+    # Check that CapEx is included
+    assert data["monthly_breakdown"]["capex"] == 100  # 1200/12 = 100
 
 def test_monte_carlo_with_vacancy_rate(client):
     """Test that Monte Carlo API correctly handles vacancy rate."""

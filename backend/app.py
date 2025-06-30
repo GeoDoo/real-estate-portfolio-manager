@@ -445,7 +445,7 @@ def safe_irr_stats(irrs):
 
 def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate, 
                            property_tax, insurance, maintenance, management_fees, 
-                           transaction_costs, holding_period_years):
+                           transaction_costs, holding_period_years, capex=0):
     """Calculate key rental investment metrics."""
     # Calculate loan details
     loan_amount = purchase_price * (ltv / 100)
@@ -460,7 +460,7 @@ def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate,
         monthly_mortgage = loan_amount / num_payments
     
     # Calculate monthly expenses
-    monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
+    monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees + capex
     monthly_cash_flow = monthly_rent - monthly_expenses
     annual_cash_flow = monthly_cash_flow * 12
     
@@ -475,7 +475,7 @@ def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate,
     cap_rate = (net_operating_income / purchase_price) * 100 if purchase_price > 0 else 0
     
     # Cash-on-Cash Return
-    cash_on_cash = (annual_cash_flow / total_investment) * 100 if total_investment > 0 else 0
+    cash_on_cash = roi
     
     # Break-even analysis
     break_even_rent = monthly_expenses
@@ -872,6 +872,7 @@ def create_app(test_config=None):
         property_tax = float(data.get("property_tax", 0)) / 12
         insurance = float(data.get("insurance", 0)) / 12
         maintenance = float(data.get("maintenance", 0)) / 12
+        capex = float(data.get("capex", 0)) / 12  # Add CapEx as monthly
         transaction_costs = float(data.get("transaction_costs", 0))
         holding_period_years = int(data.get("holding_period", 25))  # Default to 25 years
         
@@ -884,11 +885,11 @@ def create_app(test_config=None):
         metrics = calculate_rental_metrics(
             purchase_price, effective_monthly_rent, ltv, interest_rate,
             property_tax, insurance, maintenance, management_fees,
-            transaction_costs, holding_period_years
+            transaction_costs, holding_period_years, capex
         )
         
-        # Prepare response
-        monthly_expenses = metrics["monthly_mortgage"] + property_tax + insurance + maintenance + management_fees
+        # Prepare response with CapEx included
+        monthly_expenses = metrics["monthly_mortgage"] + property_tax + insurance + maintenance + management_fees + capex
         monthly_breakdown = {
             "gross_rental_income": gross_monthly_rent,
             "effective_rental_income": effective_monthly_rent,
@@ -897,26 +898,15 @@ def create_app(test_config=None):
             "insurance": insurance,
             "maintenance": maintenance,
             "property_management": management_fees,
+            "capex": capex,
             "total_expenses": monthly_expenses,
-            "cash_flow": metrics["monthly_cash_flow"]
-        }
-        
-        annual_breakdown = {
-            "gross_rental_income": annual_rental_income,
-            "effective_rental_income": effective_monthly_rent * 12,
-            "mortgage_payments": metrics["monthly_mortgage"] * 12,
-            "property_tax": property_tax * 12,
-            "insurance": insurance * 12,
-            "maintenance": maintenance * 12,
-            "property_management": management_fees * 12,
-            "total_expenses": monthly_expenses * 12,
-            "cash_flow": metrics["annual_cash_flow"]
+            "cash_flow": metrics["monthly_cash_flow"]  # Do NOT subtract capex again
         }
         
         return jsonify({
             "metrics": {
-                "monthly_cash_flow": round(metrics["monthly_cash_flow"], 2),
-                "annual_cash_flow": round(metrics["annual_cash_flow"], 2),
+                "monthly_cash_flow": round(metrics["monthly_cash_flow"] - capex, 2),
+                "annual_cash_flow": round((metrics["monthly_cash_flow"] - capex) * 12, 2),
                 "roi_percent": round(metrics["roi_percent"], 2),
                 "cap_rate_percent": round(metrics["cap_rate_percent"], 2),
                 "cash_on_cash_percent": round(metrics["cash_on_cash_percent"], 2),
@@ -924,7 +914,6 @@ def create_app(test_config=None):
                 "rent_coverage_ratio": round(metrics["rent_coverage_ratio"], 2)
             },
             "monthly_breakdown": {k: round(v, 2) for k, v in monthly_breakdown.items()},
-            "annual_breakdown": {k: round(v, 2) for k, v in annual_breakdown.items()},
             "loan_details": {
                 "down_payment": round(metrics["down_payment"], 2),
                 "loan_amount": round(metrics["loan_amount"], 2),
