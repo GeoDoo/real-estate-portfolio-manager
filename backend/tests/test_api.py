@@ -297,7 +297,8 @@ def test_rental_analysis_endpoint(client):
     assert abs(loan["monthly_mortgage"] - monthly_mortgage) < 0.1
     assert abs(loan["total_investment"] - total_investment) < 1
     # And monthly breakdown
-    assert abs(monthly["rental_income"] - monthly_rent) < 0.01
+    assert abs(monthly["gross_rental_income"] - monthly_rent) < 0.01
+    assert abs(monthly["effective_rental_income"] - monthly_rent) < 0.01  # No vacancy in test
     assert abs(monthly["mortgage_payment"] - monthly_mortgage) < 0.01
     assert abs(monthly["property_tax"] - property_tax) < 0.01
     assert abs(monthly["insurance"] - insurance) < 0.01
@@ -344,4 +345,149 @@ def test_monte_carlo_irr_valid(client):
     # There should be valid IRR scenarios
     assert summary["percent_valid_irr"] > 0, f"Expected >0% valid IRR scenarios, got {summary['percent_valid_irr']}%"
     assert summary["mean_valid_irr"] is not None, "mean_valid_irr should not be None when valid scenarios exist"
-    assert summary["mean_valid_irr"] > 0, f"Expected positive mean_valid_irr, got {summary['mean_valid_irr']}" 
+    assert summary["mean_valid_irr"] > 0, f"Expected positive mean_valid_irr, got {summary['mean_valid_irr']}"
+
+def test_valuation_with_vacancy_rate(client):
+    """Test that valuation API correctly handles vacancy rate."""
+    # Create property
+    property_response = client.post("/api/properties", json={"address": "123 Vacancy Test St"})
+    property_id = property_response.json["id"]
+    
+    # Create valuation with vacancy rate
+    valuation_data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 24000,
+        "vacancy_rate": 8,  # 8% vacancy
+        "service_charge": 3000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "insurance": 300,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+        "ltv": 80,
+        "interest_rate": 5,
+    }
+    
+    valuation_response = client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
+    assert valuation_response.status_code == 201
+    
+    # Get cash flows and verify vacancy rate is applied
+    cash_flows_response = client.get(f"/api/valuations/{valuation_response.json['id']}/cashflows")
+    assert cash_flows_response.status_code == 200
+    
+    cash_flows = cash_flows_response.json["cashFlows"]  # Access the cashFlows field
+    first_year = cash_flows[1]  # Year 1 (index 1, since index 0 is year 0)
+    
+    # Check that both gross and effective revenue are present
+    assert "gross_revenue" in first_year
+    assert "effective_revenue" in first_year
+    
+    # Verify calculations
+    expected_gross = 24000 * (1 + 2/100) ** 0  # No growth in year 1
+    expected_effective = expected_gross * (1 - 8/100)  # 8% vacancy
+    
+    assert abs(first_year["gross_revenue"] - expected_gross) < 0.01
+    assert abs(first_year["effective_revenue"] - expected_effective) < 0.01
+
+def test_rental_analysis_with_vacancy_rate(client):
+    """Test that rental analysis API correctly handles vacancy rate."""
+    rental_data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 24000,
+        "vacancy_rate": 10,  # 10% vacancy
+        "ltv": 80,
+        "interest_rate": 5,
+        "property_tax": 6000,
+        "insurance": 300,
+        "maintenance": 1000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "holding_period": 25,
+    }
+    
+    response = client.post("/api/valuations/rental-analysis", json=rental_data)
+    assert response.status_code == 200
+    
+    data = response.json
+    
+    # Check that both gross and effective rental income are returned
+    assert "gross_rental_income" in data["monthly_breakdown"]
+    assert "effective_rental_income" in data["monthly_breakdown"]
+    assert "gross_rental_income" in data["annual_breakdown"]
+    assert "effective_rental_income" in data["annual_breakdown"]
+    
+    # Verify calculations
+    expected_gross_monthly = 24000 / 12
+    expected_effective_monthly = expected_gross_monthly * (1 - 10/100)
+    
+    assert abs(data["monthly_breakdown"]["gross_rental_income"] - expected_gross_monthly) < 0.01
+    assert abs(data["monthly_breakdown"]["effective_rental_income"] - expected_effective_monthly) < 0.01
+    
+    # Cash flow should be based on effective rent
+    assert data["monthly_breakdown"]["cash_flow"] == data["monthly_breakdown"]["effective_rental_income"] - data["monthly_breakdown"]["total_expenses"]
+
+def test_monte_carlo_with_vacancy_rate(client):
+    """Test that Monte Carlo API correctly handles vacancy rate."""
+    # Create property and valuation with vacancy rate
+    property_response = client.post("/api/properties", json={"address": "456 MC Vacancy Test St"})
+    property_id = property_response.json["id"]
+    
+    valuation_data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 24000,
+        "vacancy_rate": 5,  # 5% vacancy
+        "service_charge": 3000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "insurance": 300,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+        "ltv": 80,
+        "interest_rate": 5,
+    }
+    
+    valuation_response = client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
+    valuation_id = valuation_response.json["id"]
+    
+    # Run Monte Carlo simulation
+    mc_data = {
+        "valuation_id": valuation_id,
+        "num_simulations": 1000,
+        "distributions": {
+            "annual_rent_growth": {
+                "distribution": "normal",
+                "mean": 2,
+                "stddev": 1
+            },
+            "discount_rate": {
+                "distribution": "normal", 
+                "mean": 15,
+                "stddev": 2
+            }
+        }
+    }
+    
+    mc_response = client.post("/api/valuations/monte-carlo", json=mc_data)
+    assert mc_response.status_code == 200
+    
+    mc_results = mc_response.json
+    
+    # Check that results are reasonable
+    assert "npv_results" in mc_results
+    assert "irr_results" in mc_results
+    assert "summary" in mc_results
+    assert len(mc_results["npv_results"]) == 1000
+    assert len(mc_results["irr_results"]) == 1000
+    
+    # NPV should be finite and reasonable
+    npvs = mc_results["npv_results"]
+    assert all(math.isfinite(n) for n in npvs)
+    assert mc_results["summary"]["npv_mean"] is not None 

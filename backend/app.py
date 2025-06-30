@@ -331,6 +331,7 @@ def calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, in
     # Extract scalar inputs
     initial_investment = float(base_input.get("initial_investment", 0))
     annual_rental_income = float(base_input.get("annual_rental_income", 0))
+    vacancy_rate = float(base_input.get("vacancy_rate", 0))
     service_charge = float(base_input.get("service_charge", 0))
     ground_rent = float(base_input.get("ground_rent", 0))
     maintenance = float(base_input.get("maintenance", 0))
@@ -372,13 +373,14 @@ def calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, in
 
     # Precompute per-year factors
     years = np.arange(1, holding_period + 1)
-    # (num_sim, years)
-    revenue = annual_rental_income * (1 + rent_growths[:, None] / 100) ** (years[None, :] - 1)
-    management_fee = revenue * management_fees / 100
+    # (num_sim, years) - Calculate gross revenue first, then apply vacancy to get effective revenue
+    gross_revenue = annual_rental_income * (1 + rent_growths[:, None] / 100) ** (years[None, :] - 1)
+    effective_revenue = gross_revenue * (1 - vacancy_rate / 100)
+    management_fee = effective_revenue * management_fees / 100
     total_expenses = (
         service_charge + ground_rent + maintenance + insurance + management_fee + annual_mortgage_payment[:, None]
     )
-    net_cash = revenue - total_expenses
+    net_cash = effective_revenue - total_expenses
     net_cash_flows[:, 1:] = net_cash
 
     # Present value discounting
