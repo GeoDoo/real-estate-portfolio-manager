@@ -857,7 +857,15 @@ def create_app(test_config=None):
         }
         
         return jsonify({
-            "metrics": {k: round(v, 2) for k, v in metrics.items() if not k.startswith(("monthly_", "down_", "loan_", "total_"))},
+            "metrics": {
+                "monthly_cash_flow": round(metrics["monthly_cash_flow"], 2),
+                "annual_cash_flow": round(metrics["annual_cash_flow"], 2),
+                "roi_percent": round(metrics["roi_percent"], 2),
+                "cap_rate_percent": round(metrics["cap_rate_percent"], 2),
+                "cash_on_cash_percent": round(metrics["cash_on_cash_percent"], 2),
+                "break_even_rent": round(metrics["break_even_rent"], 2),
+                "rent_coverage_ratio": round(metrics["rent_coverage_ratio"], 2)
+            },
             "monthly_breakdown": {k: round(v, 2) for k, v in monthly_breakdown.items()},
             "annual_breakdown": {k: round(v, 2) for k, v in annual_breakdown.items()},
             "loan_details": {

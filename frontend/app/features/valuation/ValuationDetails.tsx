@@ -1520,6 +1520,47 @@ export default function ValuationDetailPage() {
                             : "-"}
                         </div>
                       </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          Rent Coverage Ratio (x){" "}
+                          <InfoTooltip
+                            label={
+                              <svg
+                                width="16"
+                                height="16"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                className="inline-block align-middle text-gray-400 hover:text-gray-700"
+                              >
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  strokeWidth="2"
+                                />
+                                <text
+                                  x="12"
+                                  y="16"
+                                  textAnchor="middle"
+                                  fontSize="12"
+                                  fill="currentColor"
+                                >
+                                  i
+                                </text>
+                              </svg>
+                            }
+                            tooltip="How well rental income covers expenses. Calculated as Monthly Rent ÷ Total Monthly Expenses. A ratio above 1.0 means positive cash flow."
+                          />
+                        </div>
+                        <div
+                          className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.rent_coverage_ratio > 1 ? 1 : -1)}`}
+                        >
+                          {Number.isFinite(rentalAnalysis.metrics.rent_coverage_ratio)
+                            ? rentalAnalysis.metrics.rent_coverage_ratio.toFixed(2)
+                            : "-"}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
