@@ -171,8 +171,8 @@ def test_portfolio_irr_no_valuations(client):
     data = resp.get_json()
     assert "error" in data
 
-def test_monte_carlo_stream_endpoint(client):
-    """Test that the Monte Carlo streaming endpoint works correctly."""
+def test_monte_carlo_endpoint(client):
+    """Test that the Monte Carlo endpoint works correctly."""
     # Create a test valuation
     valuation_data = {
         "initial_investment": 200000,
@@ -198,42 +198,31 @@ def test_monte_carlo_stream_endpoint(client):
     valuation_response = client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
     valuation_id = valuation_response.json["id"]
     
-    # Test Monte Carlo streaming with smaller number for speed
-    params = {
-        "num_simulations": "1000",  # Smaller number for testing
-        "annual_rent_growth": quote(json.dumps({"distribution": "normal", "mean": 2, "stddev": 1})),
-        "discount_rate": quote(json.dumps({"distribution": "normal", "mean": 15, "stddev": 2})),
-        "interest_rate": quote(json.dumps({"distribution": "normal", "mean": 5, "stddev": 1})),
-        # Remove scalar values for these keys from the query string
-        **{k: str(v) for k, v in valuation_data.items() if k not in ["annual_rent_growth", "discount_rate", "interest_rate"]}
+    # Test Monte Carlo with smaller number for speed
+    monte_carlo_data = {
+        "num_simulations": 1000,  # Smaller number for testing
+        "annual_rent_growth": {"distribution": "normal", "mean": 2, "stddev": 1},
+        "discount_rate": {"distribution": "normal", "mean": 15, "stddev": 2},
+        "interest_rate": {"distribution": "normal", "mean": 5, "stddev": 1},
+        **{k: v for k, v in valuation_data.items() if k not in ["annual_rent_growth", "discount_rate", "interest_rate"]}
     }
     
-    response = client.get("/api/valuations/monte-carlo-stream", query_string=params)
+    response = client.post("/api/valuations/monte-carlo", json=monte_carlo_data)
     assert response.status_code == 200
-    assert response.mimetype == "text/event-stream"
     
-    # Parse the streaming response
-    lines = response.data.decode().strip().split('\n')
-    data_events = [line for line in lines if line.startswith('data: ')]
+    data = response.get_json()
+    assert "npv_results" in data
+    assert "irr_results" in data
+    assert "summary" in data
     
-    # Should have at least one progress update and one final summary
-    assert len(data_events) >= 2
-    
-    # Check the final summary
-    final_data = json.loads(data_events[-1][6:])  # Remove 'data: ' prefix
-    assert final_data["done"] is True
-    assert "summary" in final_data
-    assert "npvs" in final_data
-    assert "irrs" in final_data
-    
-    summary = final_data["summary"]
+    summary = data["summary"]
     assert "npv_mean" in summary
     assert "irr_mean" in summary
     assert "probability_npv_positive" in summary
     
     # Check that we got the expected number of results
-    assert len(final_data["npvs"]) == 1000
-    assert len(final_data["irrs"]) == 1000
+    assert len(data["npv_results"]) == 1000
+    assert len(data["irr_results"]) == 1000
 
 def test_rental_analysis_endpoint(client):
     """Test that the rental analysis endpoint works correctly and all metrics are accurate."""
@@ -280,7 +269,7 @@ def test_rental_analysis_endpoint(client):
     loan_amount = purchase_price * ltv  # 320,000
     down_payment = purchase_price - loan_amount  # 80,000
     monthly_rate = interest_rate / 12
-    num_payments = rental_data.get('holding_period', 30) * 12
+    num_payments = 25 * 12  # Use default holding period of 25 years
     monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
     monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
     monthly_cash_flow = monthly_rent - monthly_expenses
@@ -295,7 +284,7 @@ def test_rental_analysis_endpoint(client):
     rent_coverage_ratio = monthly_rent / monthly_expenses
     
     # Assert values (allowing for small floating point error)
-    assert abs(metrics["monthly_cash_flow"] - monthly_cash_flow) < 0.1
+    assert abs(monthly["cash_flow"] - monthly_cash_flow) < 0.1
     assert abs(metrics["annual_cash_flow"] - annual_cash_flow) < 1
     assert abs(metrics["roi_percent"] - roi) < 0.01
     assert abs(metrics["cap_rate_percent"] - cap_rate) < 0.01

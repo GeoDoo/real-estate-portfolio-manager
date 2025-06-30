@@ -1,5 +1,5 @@
 from fractions import Fraction
-from flask import Flask, request, jsonify, abort, Response
+from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
 import uuid
 from datetime import datetime, timezone
@@ -7,12 +7,99 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from scipy.optimize import brentq
 import numpy as np
-import json
-from urllib.parse import unquote
 import math
 
 db = SQLAlchemy()
 PORT = int(os.environ.get("BACKEND_PORT", 5050))
+
+# --- Utility Functions ---
+def validate_required_field(data, field_name, field_type=(int, float), min_value=0):
+    """Validate a required field in request data."""
+    value = data.get(field_name)
+    if value is None or not isinstance(value, field_type) or value <= min_value:
+        return False, f"{field_name.replace('_', ' ').capitalize()} is required and must be a positive number."
+    return True, value
+
+def validate_optional_field(data, field_name, field_type=(int, float), min_value=0):
+    """Validate an optional field in request data."""
+    value = data.get(field_name)
+    if value is not None and (not isinstance(value, field_type) or value < min_value):
+        return False, f"{field_name.replace('_', ' ').capitalize()} cannot be negative."
+    return True, value
+
+def validate_property_address(address, existing_property=None):
+    """Validate property address with uniqueness check."""
+    if not address:
+        return False, "Address is required"
+    
+    if existing_property and address == existing_property.address:
+        return True, address
+    
+    if db.session.query(Property).filter_by(address=address).first():
+        return False, "Property with this address already exists"
+    
+    return True, address
+
+def create_valuation_from_data(data, property_id=None, valuation_id=None):
+    """Create or update a valuation object from request data."""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    if valuation_id:
+        # Update existing valuation
+        valuation = db.session.get(Valuation, valuation_id)
+        if not valuation:
+            return None, "Valuation not found"
+        
+        for key, value in data.items():
+            if hasattr(valuation, key):
+                setattr(valuation, key, value)
+        valuation.created_at = now
+        return valuation, None
+    else:
+        # Create new valuation
+        val_id = str(uuid.uuid4())
+        valuation = Valuation(
+            id=val_id,
+            property_id=property_id,
+            created_at=now,
+            initial_investment=data.get("initial_investment", 0),
+            annual_rental_income=data.get("annual_rental_income", 0),
+            service_charge=data.get("service_charge", 0),
+            ground_rent=data.get("ground_rent", 0),
+            maintenance=data.get("maintenance", 0),
+            property_tax=data.get("property_tax", 0),
+            insurance=data.get("insurance", 0),
+            management_fees=data.get("management_fees", 0),
+            transaction_costs=data.get("transaction_costs", 0),
+            annual_rent_growth=data.get("annual_rent_growth", 0),
+            discount_rate=data.get("discount_rate", 0),
+            holding_period=data.get("holding_period", 0),
+            ltv=data.get("ltv", 0),
+            interest_rate=data.get("interest_rate", 0),
+        )
+        return valuation, None
+
+def validate_valuation_data(data):
+    """Validate valuation data with required and optional fields."""
+    required_fields = [
+        "initial_investment", "annual_rental_income", "maintenance", "property_tax",
+        "management_fees", "transaction_costs", "annual_rent_growth", "discount_rate", "holding_period"
+    ]
+    optional_fields = ["service_charge", "ground_rent", "insurance", "ltv", "interest_rate"]
+    
+    # Validate required fields
+    for field in required_fields:
+        is_valid, result = validate_required_field(data, field)
+        if not is_valid:
+            return False, result
+    
+    # Validate optional fields
+    for field in optional_fields:
+        is_valid, result = validate_optional_field(data, field)
+        if not is_valid:
+            return False, result
+    
+    return True, None
 
 # --- Models ---
 class Portfolio(db.Model):
@@ -78,7 +165,53 @@ class Valuation(db.Model):
         }
 
 # --- Utility Functions ---
+def calculate_mortgage_payment(initial_investment, ltv, interest_rate, holding_period):
+    """Calculate monthly mortgage payment."""
+    if ltv <= 0 or interest_rate <= 0:
+        return Fraction(0)
+    
+    mortgage_amount = initial_investment * (ltv / 100)
+    monthly_rate = interest_rate / 100 / 12
+    num_payments = holding_period * 12
+    
+    if monthly_rate > 0:
+        # Standard mortgage payment formula
+        return mortgage_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
+    else:
+        # Simple interest-free loan
+        return mortgage_amount / num_payments
+
+def calculate_year_cash_flow(year, annual_rental_income, annual_rent_growth, service_charge, 
+                           ground_rent, maintenance, insurance, management_fees, 
+                           annual_mortgage_payment, discount_rate):
+    """Calculate cash flow for a specific year."""
+    if year == 0:
+        return {
+            "revenue": 0,
+            "totalExpenses": 0,
+            "netCashFlow": 0,
+            "presentValue": 0,
+        }
+    
+    revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
+    management_fee = revenue * management_fees / 100
+    total_expenses = (
+        service_charge + ground_rent + maintenance + insurance + 
+        management_fee + annual_mortgage_payment
+    )
+    net_cash_flow = revenue - total_expenses
+    denominator = (1 + discount_rate / 100) ** year
+    present_value = net_cash_flow / denominator
+    
+    return {
+        "revenue": revenue,
+        "totalExpenses": total_expenses,
+        "netCashFlow": net_cash_flow,
+        "presentValue": present_value,
+    }
+
 def calculate_cash_flows(input):
+    """Calculate cash flows for property investment analysis."""
     # Provide defaults for all expected fields
     input = {
         "initial_investment": input.get("initial_investment", 0),
@@ -96,6 +229,8 @@ def calculate_cash_flows(input):
         "ltv": input.get("ltv", 0),
         "interest_rate": input.get("interest_rate", 0),
     }
+    
+    # Convert to Fraction for precision
     initial_investment = Fraction(str(input["initial_investment"]))
     annual_rental_income = Fraction(str(input["annual_rental_income"]))
     service_charge = Fraction(str(input["service_charge"]))
@@ -111,62 +246,48 @@ def calculate_cash_flows(input):
     ltv = Fraction(str(input.get("ltv", 0) or 0))
     interest_rate = Fraction(str(input.get("interest_rate", 0) or 0))
 
-    # Calculate mortgage payment if LTV > 0
-    monthly_mortgage_payment = Fraction(0)
-    if ltv > 0 and interest_rate > 0:
-        mortgage_amount = initial_investment * (ltv / 100)
-        monthly_rate = interest_rate / 100 / 12
-        num_payments = holding_period * 12
-        
-        if monthly_rate > 0:
-            # Standard mortgage payment formula
-            monthly_mortgage_payment = mortgage_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
-        else:
-            # Simple interest-free loan
-            monthly_mortgage_payment = mortgage_amount / num_payments
-    
+    # Calculate mortgage payment
+    monthly_mortgage_payment = calculate_mortgage_payment(
+        initial_investment, ltv, interest_rate, holding_period
+    )
     annual_mortgage_payment = monthly_mortgage_payment * 12
 
     rows = []
     cumulative_pv = Fraction(0)
 
-    # Year 0
+    # Year 0 (initial investment)
     year0_revenue = -initial_investment
     year0_expenses = transaction_costs + property_tax
     year0_net_cash_flow = year0_revenue - year0_expenses
     year0_pv = year0_net_cash_flow
     cumulative_pv += year0_pv
-    rows.append(
-        {
-            "year": 0,
-            "revenue": float(f"{float(year0_revenue):.2f}"),
-            "totalExpenses": float(f"{float(year0_expenses):.2f}"),
-            "netCashFlow": float(f"{float(year0_net_cash_flow):.2f}"),
-            "presentValue": float(f"{float(year0_pv):.2f}"),
-            "cumulativePV": float(f"{float(cumulative_pv):.2f}"),
-        }
-    )
+    rows.append({
+        "year": 0,
+        "revenue": float(f"{float(year0_revenue):.2f}"),
+        "totalExpenses": float(f"{float(year0_expenses):.2f}"),
+        "netCashFlow": float(f"{float(year0_net_cash_flow):.2f}"),
+        "presentValue": float(f"{float(year0_pv):.2f}"),
+        "cumulativePV": float(f"{float(cumulative_pv):.2f}"),
+    })
 
+    # Years 1 to holding_period
     for year in range(1, holding_period + 1):
-        revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
-        management_fee = revenue * management_fees / 100
-        total_expenses = (
-            service_charge + ground_rent + maintenance + insurance + management_fee + annual_mortgage_payment
+        cash_flow = calculate_year_cash_flow(
+            year, annual_rental_income, annual_rent_growth, service_charge,
+            ground_rent, maintenance, insurance, management_fees,
+            annual_mortgage_payment, discount_rate
         )
-        net_cash_flow = revenue - total_expenses
-        denominator = (1 + discount_rate / 100) ** year
-        present_value = net_cash_flow / denominator
-        cumulative_pv += present_value
-        rows.append(
-            {
-                "year": year,
-                "revenue": float(f"{float(revenue):.2f}"),
-                "totalExpenses": float(f"{float(total_expenses):.2f}"),
-                "netCashFlow": float(f"{float(net_cash_flow):.2f}"),
-                "presentValue": float(f"{float(present_value):.2f}"),
-                "cumulativePV": float(f"{float(cumulative_pv):.2f}"),
-            }
-        )
+        cumulative_pv += cash_flow["presentValue"]
+        
+        rows.append({
+            "year": year,
+            "revenue": float(f"{float(cash_flow['revenue']):.2f}"),
+            "totalExpenses": float(f"{float(cash_flow['totalExpenses']):.2f}"),
+            "netCashFlow": float(f"{float(cash_flow['netCashFlow']):.2f}"),
+            "presentValue": float(f"{float(cash_flow['presentValue']):.2f}"),
+            "cumulativePV": float(f"{float(cumulative_pv):.2f}"),
+        })
+    
     return rows
 
 def calculate_irr(cash_flows):
@@ -281,6 +402,58 @@ def safe_irr_stats(irrs):
         float(np.nanpercentile(irrs, 5)),
         float(np.nanpercentile(irrs, 95)),
     )
+
+def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate, 
+                           property_tax, insurance, maintenance, management_fees, 
+                           transaction_costs, holding_period_years):
+    """Calculate key rental investment metrics."""
+    # Calculate loan details
+    loan_amount = purchase_price * (ltv / 100)
+    down_payment = purchase_price - loan_amount
+    monthly_rate = interest_rate / 100 / 12
+    num_payments = holding_period_years * 12
+    
+    # Calculate monthly mortgage payment
+    if monthly_rate > 0:
+        monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
+    else:
+        monthly_mortgage = loan_amount / num_payments
+    
+    # Calculate monthly expenses
+    monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
+    monthly_cash_flow = monthly_rent - monthly_expenses
+    annual_cash_flow = monthly_cash_flow * 12
+    
+    # Calculate key metrics
+    total_investment = down_payment + transaction_costs
+    roi = (annual_cash_flow / total_investment) * 100 if total_investment > 0 else 0
+    
+    # Cap Rate
+    annual_rental_income = monthly_rent * 12
+    annual_expenses_no_mortgage = (property_tax + insurance + maintenance + management_fees) * 12
+    net_operating_income = annual_rental_income - annual_expenses_no_mortgage
+    cap_rate = (net_operating_income / purchase_price) * 100 if purchase_price > 0 else 0
+    
+    # Cash-on-Cash Return
+    cash_on_cash = (annual_cash_flow / total_investment) * 100 if total_investment > 0 else 0
+    
+    # Break-even analysis
+    break_even_rent = monthly_expenses
+    rent_coverage_ratio = monthly_rent / monthly_expenses if monthly_expenses > 0 else 0
+    
+    return {
+        "monthly_cash_flow": monthly_cash_flow,
+        "annual_cash_flow": annual_cash_flow,
+        "roi_percent": roi,
+        "cap_rate_percent": cap_rate,
+        "cash_on_cash_percent": cash_on_cash,
+        "break_even_rent": break_even_rent,
+        "rent_coverage_ratio": rent_coverage_ratio,
+        "monthly_mortgage": monthly_mortgage,
+        "down_payment": down_payment,
+        "loan_amount": loan_amount,
+        "total_investment": total_investment
+    }
 
 # --- App Factory ---
 def create_app(test_config=None):
@@ -404,16 +577,18 @@ def create_app(test_config=None):
             return jsonify([p.to_dict() for p in props])
         elif request.method == "POST":
             data = request.json
-            address = data.get("address")
-            if not address:
-                return jsonify({"error": "Address is required"}), 400
-            if Property.query.filter_by(address=address).first():
-                return jsonify({"error": "Property with this address already exists"}), 400
+            
+            # Validate address
+            is_valid, result = validate_property_address(data.get("address"))
+            if not is_valid:
+                return jsonify({"error": result}), 400
+            
+            # Create property
             prop_id = str(uuid.uuid4())
             now = datetime.now(timezone.utc).isoformat()
             prop = Property(
                 id=prop_id,
-                address=address,
+                address=result,
                 created_at=now,
                 listing_link=data.get("listing_link"),
             )
@@ -431,49 +606,33 @@ def create_app(test_config=None):
             return jsonify(clean_for_json(prop.to_dict()))
         elif request.method == "PUT":
             data = request.json
-            address = data.get("address")
-            if not address:
-                return jsonify({"error": "Address is required"}), 400
+            
+            # Validate address
+            is_valid, result = validate_property_address(data.get("address"), prop)
+            if not is_valid:
+                return jsonify({"error": result}), 400
 
-            # Check if address is being changed and if it conflicts with existing property
-            if (
-                address != prop.address
-                and db.session.get(Property, address)
-            ):
-                return jsonify({"error": "Property with this address already exists"}), 400
-
-            prop.address = address
+            prop.address = result
             prop.listing_link = data.get("listing_link")
             db.session.commit()
             return jsonify(clean_for_json(prop.to_dict()))
         elif request.method == "PATCH":
             data = request.json
             
-            # Handle address updates (with validation)
+            # Handle address updates
             if "address" in data:
-                address = data["address"]
-                if not address:
-                    return jsonify({"error": "Address is required"}), 400
-                
-                # Check if address is being changed and if it conflicts with existing property
-                if (
-                    address != prop.address
-                    and db.session.get(Property, address)
-                ):
-                    return jsonify({"error": "Property with this address already exists"}), 400
-                
-                prop.address = address
+                is_valid, result = validate_property_address(data["address"], prop)
+                if not is_valid:
+                    return jsonify({"error": result}), 400
+                prop.address = result
             
             # Handle other field updates
             if "listing_link" in data:
                 prop.listing_link = data["listing_link"]
             
             if "portfolio_id" in data:
-                # Allow removing from portfolio by setting to None if null is sent
-                if data["portfolio_id"] is None:
-                    prop.portfolio_id = None
-                else:
-                    prop.portfolio_id = data["portfolio_id"]
+                # Allow removing from portfolio by setting to None
+                prop.portfolio_id = data["portfolio_id"] if data["portfolio_id"] is not None else None
             
             db.session.commit()
             return jsonify(clean_for_json(prop.to_dict()))
@@ -484,6 +643,7 @@ def create_app(test_config=None):
         prop = db.session.get(Property, prop_id)
         if not prop:
             abort(404)
+            
         if request.method == "GET":
             val = db.session.query(Valuation).filter_by(property_id=prop_id).first()
             if not val:
@@ -491,88 +651,77 @@ def create_app(test_config=None):
             return jsonify(clean_for_json(val.to_dict()))
         elif request.method in ["POST", "PUT"]:
             data = request.json
-            # Backend validation: required fields must be positive, optional fields can be 0 or positive
-            required_fields = [
-                "initial_investment", "annual_rental_income", "maintenance", "property_tax",
-                "management_fees", "transaction_costs", "annual_rent_growth", "discount_rate", "holding_period"
-            ]
-            optional_fields = ["service_charge", "ground_rent", "insurance", "ltv", "interest_rate"]
-            for field in required_fields:
-                value = data.get(field)
-                if value is None or not isinstance(value, (int, float)) or value <= 0:
-                    return jsonify({"error": f"{field.replace('_', ' ').capitalize()} is required and must be a positive number."}), 400
-            for field in optional_fields:
-                value = data.get(field)
-                if value is not None and value < 0:
-                    return jsonify({"error": f"{field.replace('_', ' ').capitalize()} cannot be negative."}), 400
-            val = db.session.query(Valuation).filter_by(property_id=prop_id).first()
-            now = datetime.now(timezone.utc).isoformat()
-            if val:
-                # Update existing valuation
-                for key, value in data.items():
-                    if hasattr(val, key):
-                        setattr(val, key, value)
-                val.created_at = now
-            else:
-                # Create new valuation
-                val_id = str(uuid.uuid4())
-                val = Valuation(
-                    id=val_id,
-                    property_id=prop_id,
-                    created_at=now,
-                    initial_investment=data.get("initial_investment", 0),
-                    annual_rental_income=data.get("annual_rental_income", 0),
-                    service_charge=data.get("service_charge", 0),
-                    ground_rent=data.get("ground_rent", 0),
-                    maintenance=data.get("maintenance", 0),
-                    property_tax=data.get("property_tax", 0),
-                    insurance=data.get("insurance", 0),
-                    management_fees=data.get("management_fees", 0),
-                    transaction_costs=data.get("transaction_costs", 0),
-                    annual_rent_growth=data.get("annual_rent_growth", 0),
-                    discount_rate=data.get("discount_rate", 0),
-                    holding_period=data.get("holding_period", 0),
-                    ltv=data.get("ltv", 0),
-                    interest_rate=data.get("interest_rate", 0),
-                )
-                db.session.add(val)
+            
+            # Validate valuation data
+            is_valid, error_msg = validate_valuation_data(data)
+            if not is_valid:
+                return jsonify({"error": error_msg}), 400
+            
+            # Get existing valuation or create new one
+            existing_val = db.session.query(Valuation).filter_by(property_id=prop_id).first()
+            val_id = existing_val.id if existing_val else None
+            
+            # Create or update valuation
+            valuation, error_msg = create_valuation_from_data(data, prop_id, val_id)
+            if not valuation:
+                return jsonify({"error": error_msg}), 400
+            
+            if not existing_val:
+                db.session.add(valuation)
+            
             db.session.commit()
-            return jsonify(clean_for_json(val.to_dict())), 201
+            return jsonify(clean_for_json(valuation.to_dict())), 201
 
     @app.route("/api/valuations/monte-carlo", methods=["POST"])
     def monte_carlo_valuation():
+        """Run Monte Carlo simulation for property valuation."""
         data = request.json
-        num_simulations = max(10000, data.get("num_simulations", 1000))
-        rent_growth_dist = data.get(
-            "annual_rent_growth", {"distribution": "normal", "mean": 2, "stddev": 1}
-        )
-        discount_rate_dist = data.get(
-            "discount_rate", {"distribution": "normal", "mean": 15, "stddev": 2}
-        )
-        interest_rate_dist = data.get(
-            "interest_rate", {"distribution": "normal", "mean": 5, "stddev": 1}
-        )
+        num_simulations = max(1000, min(50000, data.get("num_simulations", 10000)))  # Reasonable limits
+        
+        # Extract distribution parameters with defaults
+        rent_growth_dist = data.get("annual_rent_growth", {"distribution": "normal", "mean": 2, "stddev": 1})
+        discount_rate_dist = data.get("discount_rate", {"distribution": "normal", "mean": 15, "stddev": 2})
+        interest_rate_dist = data.get("interest_rate", {"distribution": "normal", "mean": 5, "stddev": 1})
+        
+        # Base input excludes distribution parameters
         base_input = {
-            k: v
-            for k, v in data.items()
+            k: v for k, v in data.items()
             if k not in ["annual_rent_growth", "discount_rate", "interest_rate", "num_simulations"]
         }
-        # Vectorized random draws
-        if rent_growth_dist["distribution"] == "normal":
-            rent_growths = np.random.normal(rent_growth_dist["mean"], rent_growth_dist["stddev"], num_simulations)
-        else:
-            rent_growths = np.full(num_simulations, rent_growth_dist["mean"])
-        if discount_rate_dist["distribution"] == "normal":
-            discount_rates = np.random.normal(discount_rate_dist["mean"], discount_rate_dist["stddev"], num_simulations)
-        else:
-            discount_rates = np.full(num_simulations, discount_rate_dist["mean"])
-        if interest_rate_dist["distribution"] == "normal":
-            interest_rates = np.random.normal(interest_rate_dist["mean"], interest_rate_dist["stddev"], num_simulations)
-        else:
-            interest_rates = np.full(num_simulations, interest_rate_dist["mean"])
+        
+        # Generate random variables
+        rent_growths = _generate_random_variable(rent_growth_dist, num_simulations)
+        discount_rates = _generate_random_variable(discount_rate_dist, num_simulations)
+        interest_rates = _generate_random_variable(interest_rate_dist, num_simulations)
+        
+        # Calculate results
         npvs, irrs = calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, interest_rates)
+        
+        # Calculate summary statistics
+        summary = _calculate_monte_carlo_summary(npvs, irrs)
+        
+        return jsonify({
+            "npv_results": clean_for_json(npvs.tolist()),
+            "irr_results": clean_for_json(irrs.tolist()),
+            "summary": summary
+        })
+
+    def _generate_random_variable(distribution_config, num_simulations):
+        """Generate random variables based on distribution configuration."""
+        if distribution_config.get("distribution") == "normal":
+            return np.random.normal(
+                distribution_config["mean"], 
+                distribution_config["stddev"], 
+                num_simulations
+            )
+        else:
+            return np.full(num_simulations, distribution_config.get("mean", 0))
+
+    def _calculate_monte_carlo_summary(npvs, irrs):
+        """Calculate summary statistics for Monte Carlo results."""
         irr_mean, irr_5th, irr_95th = safe_irr_stats(irrs)
-        summary = {
+        
+        return {
             "npv_mean": float(np.nanmean(npvs)),
             "npv_5th_percentile": float(np.nanpercentile(npvs, 5)),
             "npv_95th_percentile": float(np.nanpercentile(npvs, 95)),
@@ -581,82 +730,6 @@ def create_app(test_config=None):
             "irr_95th_percentile": irr_95th,
             "probability_npv_positive": float(np.mean(npvs > 0)),
         }
-        return jsonify({"npv_results": npvs.tolist(), "irr_results": irrs.tolist(), "summary": summary})
-
-    @app.route("/api/valuations/monte-carlo-stream", methods=["GET"])
-    def monte_carlo_stream():
-        num_simulations = int(request.args.get("num_simulations", 10000))
-        rent_growth_dist = json.loads(
-            unquote(request.args.get("annual_rent_growth", "%7B%7D"))
-        )
-        discount_rate_dist = json.loads(
-            unquote(request.args.get("discount_rate", "%7B%7D"))
-        )
-        interest_rate_dist = json.loads(
-            unquote(request.args.get("interest_rate", "%7B%7D"))
-        )
-        # All other fields as base_input
-        base_input = {}
-        for k in request.args:
-            if k not in ["annual_rent_growth", "discount_rate", "interest_rate", "num_simulations"]:
-                try:
-                    base_input[k] = float(request.args[k])
-                except ValueError:
-                    base_input[k] = request.args[k]
-
-        def event_stream():
-            # Generate all random variables upfront (vectorized)
-            if rent_growth_dist["distribution"] == "normal":
-                rent_growths = np.random.normal(
-                    rent_growth_dist["mean"], rent_growth_dist["stddev"], num_simulations
-                )
-            else:
-                rent_growths = np.full(num_simulations, rent_growth_dist["mean"])
-            
-            if discount_rate_dist["distribution"] == "normal":
-                discount_rates = np.random.normal(
-                    discount_rate_dist["mean"], discount_rate_dist["stddev"], num_simulations
-                )
-            else:
-                discount_rates = np.full(num_simulations, discount_rate_dist["mean"])
-            
-            if interest_rate_dist["distribution"] == "normal":
-                interest_rates = np.random.normal(
-                    interest_rate_dist["mean"], interest_rate_dist["stddev"], num_simulations
-                )
-            else:
-                interest_rates = np.full(num_simulations, interest_rate_dist["mean"])
-            
-            # Use vectorized calculation for all simulations at once
-            npvs, irrs = calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, interest_rates)
-            
-            # Stream results in batches for progress updates
-            batch_size = 1000
-            for i in range(0, num_simulations, batch_size):
-                end_idx = min(i + batch_size, num_simulations)
-                progress = end_idx
-                partial = {
-                    "progress": progress,
-                    "total": num_simulations,
-                    "npvs": npvs[:end_idx].tolist(),
-                    "irrs": irrs[:end_idx].tolist(),
-                }
-                yield f"data: {json.dumps(clean_for_json(partial))}\n\n"
-            
-            # Final summary
-            irr_mean, irr_5th, irr_95th = safe_irr_stats(irrs)
-            summary = {
-                "npv_mean": float(np.nanmean(npvs)),
-                "npv_5th_percentile": float(np.nanpercentile(npvs, 5)),
-                "npv_95th_percentile": float(np.nanpercentile(npvs, 95)),
-                "irr_mean": irr_mean,
-                "irr_5th_percentile": irr_5th,
-                "irr_95th_percentile": irr_95th,
-                "probability_npv_positive": float(np.mean(npvs > 0)),
-            }
-            yield f"data: {json.dumps(clean_for_json({'done': True, 'summary': summary, 'npvs': npvs.tolist(), 'irrs': irrs.tolist()}))}\n\n"
-
-        return Response(event_stream(), mimetype="text/event-stream")
 
     # Minimal Portfolio CRUD endpoints (KISS, DRY, YAGNI)
     @app.route("/api/portfolios", methods=["GET", "POST"])
@@ -739,7 +812,7 @@ def create_app(test_config=None):
         """Calculate rental investment metrics for a property."""
         data = request.json
         
-        # Extract input data - ONLY use existing fields
+        # Extract input data
         purchase_price = float(data.get("initial_investment", 0))
         monthly_rent = float(data.get("annual_rental_income", 0)) / 12
         ltv = float(data.get("ltv", 0))
@@ -749,87 +822,49 @@ def create_app(test_config=None):
         maintenance = float(data.get("maintenance", 0)) / 12
         management_fees = float(data.get("management_fees", 0)) / 100 * monthly_rent
         transaction_costs = float(data.get("transaction_costs", 0))
+        holding_period_years = int(data.get("holding_period", 25))  # Default to 25 years
         
-        # Calculate loan details using LTV
-        loan_amount = purchase_price * (ltv / 100)
-        down_payment = purchase_price - loan_amount
-        monthly_rate = interest_rate / 100 / 12
-        holding_period_years = int(data["holding_period"])
-        num_payments = holding_period_years * 12
+        # Calculate metrics
+        metrics = calculate_rental_metrics(
+            purchase_price, monthly_rent, ltv, interest_rate,
+            property_tax, insurance, maintenance, management_fees,
+            transaction_costs, holding_period_years
+        )
         
-        # Calculate monthly mortgage payment
-        if monthly_rate > 0:
-            monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
-        else:
-            monthly_mortgage = loan_amount / num_payments
-        
-        # Calculate monthly expenses
-        monthly_expenses = monthly_mortgage + property_tax + insurance + maintenance + management_fees
-        
-        # Calculate cash flow
-        monthly_cash_flow = monthly_rent - monthly_expenses
-        annual_cash_flow = monthly_cash_flow * 12
-        
-        # Calculate key metrics
-        total_investment = down_payment + transaction_costs
-        
-        # ROI (Return on Investment)
-        roi = (annual_cash_flow / total_investment) * 100 if total_investment > 0 else 0
-        
-        # Cap Rate (Capitalization Rate)
+        # Prepare response
         annual_rental_income = monthly_rent * 12
-        annual_expenses_no_mortgage = (property_tax + insurance + maintenance + management_fees) * 12
-        net_operating_income = annual_rental_income - annual_expenses_no_mortgage
-        cap_rate = (net_operating_income / purchase_price) * 100 if purchase_price > 0 else 0
-        
-        # Cash-on-Cash Return
-        cash_on_cash = (annual_cash_flow / total_investment) * 100 if total_investment > 0 else 0
-        
-        # Break-even analysis
-        break_even_rent = monthly_expenses
-        rent_coverage_ratio = monthly_rent / monthly_expenses if monthly_expenses > 0 else 0
-        
-        # Monthly breakdown
+        monthly_expenses = metrics["monthly_mortgage"] + property_tax + insurance + maintenance + management_fees
         monthly_breakdown = {
             "rental_income": monthly_rent,
-            "mortgage_payment": monthly_mortgage,
+            "mortgage_payment": metrics["monthly_mortgage"],
             "property_tax": property_tax,
             "insurance": insurance,
             "maintenance": maintenance,
             "property_management": management_fees,
             "total_expenses": monthly_expenses,
-            "cash_flow": monthly_cash_flow
+            "cash_flow": metrics["monthly_cash_flow"]
         }
         
-        # Annual breakdown
         annual_breakdown = {
             "rental_income": annual_rental_income,
-            "mortgage_payments": monthly_mortgage * 12,
+            "mortgage_payments": metrics["monthly_mortgage"] * 12,
             "property_tax": property_tax * 12,
             "insurance": insurance * 12,
             "maintenance": maintenance * 12,
             "property_management": management_fees * 12,
             "total_expenses": monthly_expenses * 12,
-            "cash_flow": annual_cash_flow
+            "cash_flow": metrics["annual_cash_flow"]
         }
         
         return jsonify({
-            "metrics": {
-                "monthly_cash_flow": round(monthly_cash_flow, 2),
-                "annual_cash_flow": round(annual_cash_flow, 2),
-                "roi_percent": round(roi, 2),
-                "cap_rate_percent": round(cap_rate, 2),
-                "cash_on_cash_percent": round(cash_on_cash, 2),
-                "break_even_rent": round(break_even_rent, 2),
-                "rent_coverage_ratio": round(rent_coverage_ratio, 2)
-            },
+            "metrics": {k: round(v, 2) for k, v in metrics.items() if not k.startswith(("monthly_", "down_", "loan_", "total_"))},
             "monthly_breakdown": {k: round(v, 2) for k, v in monthly_breakdown.items()},
             "annual_breakdown": {k: round(v, 2) for k, v in annual_breakdown.items()},
             "loan_details": {
-                "down_payment": round(down_payment, 2),
-                "loan_amount": round(loan_amount, 2),
-                "monthly_mortgage": round(monthly_mortgage, 2),
-                "total_investment": round(total_investment, 2)
+                "down_payment": round(metrics["down_payment"], 2),
+                "loan_amount": round(metrics["loan_amount"], 2),
+                "monthly_mortgage": round(metrics["monthly_mortgage"], 2),
+                "total_investment": round(metrics["total_investment"], 2)
             }
         })
 

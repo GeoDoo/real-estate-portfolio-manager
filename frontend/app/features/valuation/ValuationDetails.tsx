@@ -1,4 +1,3 @@
-/* global URLSearchParams */
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -285,67 +284,59 @@ export default function ValuationDetailPage() {
     setMcTotal(mcNumSim);
     setMcResults([]);
     setMcSummary(null);
-    const paramsObj: Record<string, string> = {
-      ...Object.fromEntries(
-        Object.entries(valuation).map(([k, v]) => [k, String(v)])
-      ),
-      annual_rent_growth: encodeURIComponent(
-        JSON.stringify({
-          distribution: "normal",
-          mean: mcRentGrowthMean,
-          stddev: mcRentGrowthStd,
-        })
-      ),
-      discount_rate: encodeURIComponent(
-        JSON.stringify({
-          distribution: "normal",
-          mean: mcDiscountMean,
-          stddev: mcDiscountStd,
-        })
-      ),
-      num_simulations: String(mcNumSim),
+    // Prepare the request body for POST
+    const body: Record<string, any> = {
+      ...valuation,
+      annual_rent_growth: {
+        distribution: "normal",
+        mean: mcRentGrowthMean,
+        stddev: mcRentGrowthStd,
+      },
+      discount_rate: {
+        distribution: "normal",
+        mean: mcDiscountMean,
+        stddev: mcDiscountStd,
+      },
+      num_simulations: mcNumSim,
     };
     if (parseFloat(String(valuation.ltv ?? "")) > 0) {
-      paramsObj.interest_rate = encodeURIComponent(
-        JSON.stringify({
-          distribution: "normal",
-          mean: mcInterestMean,
-          stddev: mcInterestStd,
-        })
-      );
+      body.interest_rate = {
+        distribution: "normal",
+        mean: mcInterestMean,
+        stddev: mcInterestStd,
+      };
     } else {
-      // If no mortgage, set interest_rate to 0
-      paramsObj.interest_rate = encodeURIComponent(
-        JSON.stringify({
-          distribution: "normal",
-          mean: 0,
-          stddev: 0,
-        })
-      );
+      body.interest_rate = {
+        distribution: "normal",
+        mean: 0,
+        stddev: 0,
+      };
     }
-    const params = new URLSearchParams(paramsObj);
-    const url = `${config.apiBaseUrl}/api/valuations/monte-carlo-stream?${params.toString()}`;
-    const es = new window.EventSource(url);
-    let allNPVs: number[] = [];
-    es.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.done) {
-        setMcResults(data.npvs);
-        setMcSummary(data.summary);
-        setMcProgress(mcNumSim);
-        setMcRunning(false);
-        es.close();
-      } else {
-        setMcProgress(data.progress);
-        setMcTotal(data.total);
-        allNPVs = data.npvs;
-        setMcResults([...allNPVs]);
+    try {
+      const response = await fetch(
+        `${config.apiBaseUrl}/api/valuations/monte-carlo`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        setError(`Failed to run simulation: ${response.status} ${errorText}`);
+        console.error("Simulation error:", response.status, errorText);
+        return;
       }
-    };
-    es.onerror = () => {
+      const data = await response.json();
+      setMcResults(data.npv_results);
+      setMcSummary(data.summary);
+      setMcProgress(mcNumSim);
+    } catch (err) {
+      setError("Failed to run simulation (network or JS error)");
+      console.error("Simulation JS/network error:", err);
+    } finally {
       setMcRunning(false);
-      es.close();
-    };
+    }
   };
 
   const runRentalAnalysis = async () => {
@@ -1321,7 +1312,9 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.monthly_cash_flow)}`}
                         >
-                          {rentalAnalysis.metrics.monthly_cash_flow.toLocaleString()}
+                          {Number.isFinite(rentalAnalysis.metrics.monthly_cash_flow)
+                            ? rentalAnalysis.metrics.monthly_cash_flow.toLocaleString()
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1360,7 +1353,9 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.annual_cash_flow)}`}
                         >
-                          {rentalAnalysis.metrics.annual_cash_flow.toLocaleString()}
+                          {Number.isFinite(rentalAnalysis.metrics.annual_cash_flow)
+                            ? rentalAnalysis.metrics.annual_cash_flow.toLocaleString()
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1399,7 +1394,9 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.roi_percent)}`}
                         >
-                          {rentalAnalysis.metrics.roi_percent.toFixed(2)}
+                          {Number.isFinite(rentalAnalysis.metrics.roi_percent)
+                            ? rentalAnalysis.metrics.roi_percent.toFixed(2)
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1438,7 +1435,9 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cap_rate_percent)}`}
                         >
-                          {rentalAnalysis.metrics.cap_rate_percent.toFixed(2)}
+                          {Number.isFinite(rentalAnalysis.metrics.cap_rate_percent)
+                            ? rentalAnalysis.metrics.cap_rate_percent.toFixed(2)
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1477,9 +1476,9 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cash_on_cash_percent)}`}
                         >
-                          {rentalAnalysis.metrics.cash_on_cash_percent.toFixed(
-                            2
-                          )}
+                          {Number.isFinite(rentalAnalysis.metrics.cash_on_cash_percent)
+                            ? rentalAnalysis.metrics.cash_on_cash_percent.toFixed(2)
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1516,7 +1515,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-xl font-bold text-gray-800">
-                          {rentalAnalysis.metrics.break_even_rent.toLocaleString()}
+                          {Number.isFinite(rentalAnalysis.metrics.break_even_rent)
+                            ? rentalAnalysis.metrics.break_even_rent.toLocaleString()
+                            : "-"}
                         </div>
                       </div>
                     </div>
@@ -1743,7 +1744,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {rentalAnalysis.loan_details.down_payment.toLocaleString()}
+                          {Number.isFinite(rentalAnalysis.loan_details.down_payment)
+                            ? rentalAnalysis.loan_details.down_payment.toLocaleString()
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1780,7 +1783,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {rentalAnalysis.loan_details.loan_amount.toLocaleString()}
+                          {Number.isFinite(rentalAnalysis.loan_details.loan_amount)
+                            ? rentalAnalysis.loan_details.loan_amount.toLocaleString()
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1817,7 +1822,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {rentalAnalysis.loan_details.monthly_mortgage.toLocaleString()}
+                          {Number.isFinite(rentalAnalysis.loan_details.monthly_mortgage)
+                            ? rentalAnalysis.loan_details.monthly_mortgage.toLocaleString()
+                            : "-"}
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1854,7 +1861,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {rentalAnalysis.loan_details.total_investment.toLocaleString()}
+                          {Number.isFinite(rentalAnalysis.loan_details.total_investment)
+                            ? rentalAnalysis.loan_details.total_investment.toLocaleString()
+                            : "-"}
                         </div>
                       </div>
                     </div>
