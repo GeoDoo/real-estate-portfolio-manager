@@ -1032,7 +1032,9 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(mcSummary.irr_mean),
                               }}
                             >
-                              {(mcSummary.irr_mean * 100).toFixed(2)}%
+                              {Number.isFinite(mcSummary.irr_mean) && mcSummary.irr_mean !== null && mcSummary.irr_mean !== undefined
+                                ? (mcSummary.irr_mean * 100).toFixed(2) + "%"
+                                : "N/A"}
                             </span>
                           </td>
                         </tr>
