@@ -81,7 +81,7 @@ def test_performance_comparison():
         if len(valid_irrs) > 0:
             assert np.all(np.isfinite(valid_irrs)), "All valid IRRs should be finite"
         
-        print(f"   ✅ Results match and performance improved!")
+        print("   ✅ Results match and performance improved!")
 
 def test_large_simulation_performance():
     """Test performance with a moderate number of simulations - optimized for speed."""
@@ -126,7 +126,7 @@ def test_large_simulation_performance():
     # Performance assertion - should complete in reasonable time (reduced from 10s to 2s)
     assert total_time < 2, f"Moderate simulation took too long: {total_time:.3f}s"
     
-    print(f"   ✅ Moderate simulation completed successfully!")
+    print("   ✅ Moderate simulation completed successfully!")
 
 if __name__ == "__main__":
     # Run performance tests directly

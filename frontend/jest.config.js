@@ -2,7 +2,7 @@
 module.exports = {
   testEnvironment: "jsdom",
   transform: {
-    "^.+\\.(ts|tsx|js|jsx)$": "babel-jest"
+    "^.+\\.(ts|tsx|js|jsx)$": "@swc/jest"
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/app/$1',

@@ -1,67 +1,68 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
-import { propertiesAPI } from './properties';
+
+const mockApiRequest = jest.fn();
 
 jest.mock('@/lib/api', () => ({
-  apiRequest: jest.fn(),
+  apiRequest: mockApiRequest,
   config: { apiBaseUrl: 'http://localhost:5050' },
 }));
-import { apiRequest } from '@/lib/api';
 
 describe('propertiesAPI', () => {
   afterEach(() => {
     jest.clearAllMocks();
+    jest.resetModules();
   });
 
   it('getAll fetches all properties', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (apiRequest as any).mockResolvedValue([{ id: '1', address: 'A' }]);
+    mockApiRequest.mockResolvedValue([{ id: '1', address: 'A' }]);
+    const { propertiesAPI } = await import('./properties');
     const result = await propertiesAPI.getAll();
-    expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties');
+    expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties');
     expect(result).toEqual([{ id: '1', address: 'A' }]);
   });
 
   it('create posts new property', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (apiRequest as any).mockResolvedValue({ id: '2', address: 'B' });
+    mockApiRequest.mockResolvedValue({ id: '2', address: 'B' });
+    const { propertiesAPI } = await import('./properties');
     const data = { address: 'B', listing_link: 'link' };
     const result = await propertiesAPI.create(data);
-    expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties', expect.objectContaining({ method: 'POST' }));
+    expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties', expect.objectContaining({ method: 'POST' }));
     expect(result).toEqual({ id: '2', address: 'B' });
   });
 
   it('update puts property', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (apiRequest as any).mockResolvedValue({ id: '3', address: 'C' });
+    mockApiRequest.mockResolvedValue({ id: '3', address: 'C' });
+    const { propertiesAPI } = await import('./properties');
     const result = await propertiesAPI.update('3', { address: 'C' });
-    expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/3', expect.objectContaining({ method: 'PUT' }));
+    expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/3', expect.objectContaining({ method: 'PUT' }));
     expect(result).toEqual({ id: '3', address: 'C' });
   });
 
   it('getById fetches property by id', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (apiRequest as any).mockResolvedValue({ id: '4', address: 'D' });
+    mockApiRequest.mockResolvedValue({ id: '4', address: 'D' });
+    const { propertiesAPI } = await import('./properties');
     const result = await propertiesAPI.getById('4');
-    expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/4');
+    expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/4');
     expect(result).toEqual({ id: '4', address: 'D' });
   });
 
   it('delete calls delete endpoint', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (apiRequest as any).mockResolvedValue(undefined);
+    mockApiRequest.mockResolvedValue(undefined);
+    const { propertiesAPI } = await import('./properties');
     await propertiesAPI.delete('5');
-    expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/5', expect.objectContaining({ method: 'DELETE' }));
+    expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/5', expect.objectContaining({ method: 'DELETE' }));
   });
 
   it('assignToPortfolio patches property', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (apiRequest as any).mockResolvedValue({});
+    mockApiRequest.mockResolvedValue({});
+    const { propertiesAPI } = await import('./properties');
     await propertiesAPI.assignToPortfolio('6', '7');
-    expect(apiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/6', expect.objectContaining({ method: 'PATCH' }));
+    expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/6', expect.objectContaining({ method: 'PATCH' }));
   });
 
   it('handles errors from apiRequest', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (apiRequest as any).mockRejectedValue(new Error('fail'));
+    mockApiRequest.mockRejectedValue(new Error('fail'));
+    const { propertiesAPI } = await import('./properties');
     await expect(propertiesAPI.getAll()).rejects.toThrow('fail');
     await expect(propertiesAPI.create({ address: 'X' })).rejects.toThrow('fail');
     await expect(propertiesAPI.update('id', { address: 'Y' })).rejects.toThrow('fail');

@@ -190,8 +190,7 @@ def test_monte_carlo_endpoint(client):
     }
     
     # Create property and valuation
-    property_response = client.post("/api/properties", json={"address": "123 Test St"})
-    property_id = property_response.json["id"]
+    client.post("/api/properties", json={"address": "123 Test St"})
     
     # Test Monte Carlo with smaller number for speed
     monte_carlo_data = {
