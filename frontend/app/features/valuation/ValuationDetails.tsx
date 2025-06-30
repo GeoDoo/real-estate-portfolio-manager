@@ -102,15 +102,15 @@ export default function ValuationDetailPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [mcDist, setMcDist] = useState<'normal' | 'pareto'>('normal');
-  const [mcRentGrowthMean, setMcRentGrowthMean] = useState(2);
+  const [mcRentGrowthMean, setMcRentGrowthMean] = useState(3);
   const [mcRentGrowthStd, setMcRentGrowthStd] = useState(1);
-  const [mcRentGrowthShape, setMcRentGrowthShape] = useState(2);
-  const [mcDiscountMean, setMcDiscountMean] = useState(15);
+  const [mcRentGrowthShape, setMcRentGrowthShape] = useState(4);
+  const [mcDiscountMean, setMcDiscountMean] = useState(8);
   const [mcDiscountStd, setMcDiscountStd] = useState(2);
-  const [mcDiscountShape, setMcDiscountShape] = useState(2);
+  const [mcDiscountShape, setMcDiscountShape] = useState(2.5);
   const [mcInterestMean, setMcInterestMean] = useState(5);
   const [mcInterestStd, setMcInterestStd] = useState(1);
-  const [mcInterestShape, setMcInterestShape] = useState(2);
+  const [mcInterestShape, setMcInterestShape] = useState(4);
   const [mcNumSim, setMcNumSim] = useState(10000);
   const [mcResults, setMcResults] = useState<number[]>([]);
   const [mcSummary, setMcSummary] = useState<MonteCarloSummary | null>(null);
@@ -121,6 +121,7 @@ export default function ValuationDetailPage() {
     null
   );
   const [rentalLoading, setRentalLoading] = useState(false);
+  const [marketScenario, setMarketScenario] = useState<'custom' | 'bullish' | 'bearish'>('custom');
 
   useEffect(() => {
     async function fetchValuation() {
@@ -435,6 +436,25 @@ export default function ValuationDetailPage() {
     return n.toLocaleString();
   }
 
+  // Helper to set scenario values
+  function setScenarioValues(scenario: 'bullish' | 'bearish') {
+    if (scenario === 'bullish') {
+      setMcRentGrowthMean(4.5);
+      setMcRentGrowthShape(6.5);
+      setMcDiscountMean(6.5);
+      setMcDiscountShape(4.5);
+      setMcInterestMean(3.75);
+      setMcInterestShape(7.5);
+    } else if (scenario === 'bearish') {
+      setMcRentGrowthMean(0.5);
+      setMcRentGrowthShape(2.5);
+      setMcDiscountMean(10.5);
+      setMcDiscountShape(2.5);
+      setMcInterestMean(7);
+      setMcInterestShape(2.5);
+    }
+  }
+
   return (
     <PageContainer>
       <Breadcrumbs propertyId={propertyId} last="Valuation" />
@@ -684,17 +704,38 @@ export default function ValuationDetailPage() {
           {!isEditing && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-xl font-bold mb-4">Monte Carlo Simulation ({mcDist === 'normal' ? 'Gaussian' : 'Pareto'})</h2>
-              <div className="flex items-center gap-2 mb-6">
-                <label className="text-base font-semibold">Distribution</label>
-                <select
-                  value={mcDist}
-                  onChange={e => setMcDist(e.target.value as 'normal' | 'pareto')}
-                  className="border rounded p-2 text-base"
-                  disabled={mcRunning}
-                >
-                  <option value="normal">Normal (Gaussian)</option>
-                  <option value="pareto">Pareto (Power-law)</option>
-                </select>
+              <div className="flex items-center gap-8 mb-6">
+                <div>
+                  <label className="text-base font-semibold mr-2">Distribution</label>
+                  <select
+                    value={mcDist}
+                    onChange={e => setMcDist(e.target.value as 'normal' | 'pareto')}
+                    className="border rounded p-2 text-base"
+                    disabled={mcRunning}
+                  >
+                    <option value="normal">Normal (Gaussian)</option>
+                    <option value="pareto">Pareto (Power-law)</option>
+                  </select>
+                </div>
+                {mcDist === 'pareto' && (
+                  <div>
+                    <label className="text-base font-semibold mr-2">Market Scenario</label>
+                    <select
+                      value={marketScenario}
+                      onChange={e => {
+                        const val = e.target.value as 'custom' | 'bullish' | 'bearish';
+                        setMarketScenario(val);
+                        if (val !== 'custom') setScenarioValues(val);
+                      }}
+                      className="border rounded p-2 text-base"
+                      disabled={mcRunning}
+                    >
+                      <option value="custom">Custom</option>
+                      <option value="bullish">Bullish Cycle</option>
+                      <option value="bearish">Bearish Cycle</option>
+                    </select>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 <div>
@@ -731,9 +772,10 @@ export default function ValuationDetailPage() {
                   <input
                     type="number"
                     value={mcRentGrowthMean}
-                    onChange={(e) =>
-                      setMcRentGrowthMean(Number(e.target.value))
-                    }
+                    onChange={(e) => {
+                      setMcRentGrowthMean(Number(e.target.value));
+                      setMarketScenario('custom');
+                    }}
                     className="w-full p-2 border rounded mb-2"
                     disabled={mcRunning}
                   />
@@ -769,7 +811,10 @@ export default function ValuationDetailPage() {
                       <input
                         type="number"
                         value={mcRentGrowthStd}
-                        onChange={(e) => setMcRentGrowthStd(Number(e.target.value))}
+                        onChange={(e) => {
+                          setMcRentGrowthStd(Number(e.target.value));
+                          setMarketScenario('custom');
+                        }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
                       />
@@ -808,7 +853,10 @@ export default function ValuationDetailPage() {
                         value={mcRentGrowthShape}
                         min={1.01}
                         step={0.01}
-                        onChange={e => setMcRentGrowthShape(Number(e.target.value))}
+                        onChange={(e) => {
+                          setMcRentGrowthShape(Number(e.target.value));
+                          setMarketScenario('custom');
+                        }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
                       />
@@ -849,7 +897,10 @@ export default function ValuationDetailPage() {
                   <input
                     type="number"
                     value={mcDiscountMean}
-                    onChange={(e) => setMcDiscountMean(Number(e.target.value))}
+                    onChange={(e) => {
+                      setMcDiscountMean(Number(e.target.value));
+                      setMarketScenario('custom');
+                    }}
                     className="w-full p-2 border rounded mb-2"
                     disabled={mcRunning}
                   />
@@ -885,7 +936,10 @@ export default function ValuationDetailPage() {
                       <input
                         type="number"
                         value={mcDiscountStd}
-                        onChange={(e) => setMcDiscountStd(Number(e.target.value))}
+                        onChange={(e) => {
+                          setMcDiscountStd(Number(e.target.value));
+                          setMarketScenario('custom');
+                        }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
                       />
@@ -924,7 +978,10 @@ export default function ValuationDetailPage() {
                         value={mcDiscountShape}
                         min={1.01}
                         step={0.01}
-                        onChange={e => setMcDiscountShape(Number(e.target.value))}
+                        onChange={(e) => {
+                          setMcDiscountShape(Number(e.target.value));
+                          setMarketScenario('custom');
+                        }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
                       />
@@ -968,9 +1025,10 @@ export default function ValuationDetailPage() {
                       <input
                         type="number"
                         value={mcInterestMean}
-                        onChange={(e) =>
-                          setMcInterestMean(Number(e.target.value))
-                        }
+                        onChange={(e) => {
+                          setMcInterestMean(Number(e.target.value));
+                          setMarketScenario('custom');
+                        }}
                         className="w-full p-2 border rounded mb-2"
                         disabled={mcRunning}
                       />
@@ -1006,9 +1064,10 @@ export default function ValuationDetailPage() {
                           <input
                             type="number"
                             value={mcInterestStd}
-                            onChange={(e) =>
-                              setMcInterestStd(Number(e.target.value))
-                            }
+                            onChange={(e) => {
+                              setMcInterestStd(Number(e.target.value));
+                              setMarketScenario('custom');
+                            }}
                             className="w-full p-2 border rounded"
                             disabled={mcRunning}
                           />
@@ -1047,7 +1106,10 @@ export default function ValuationDetailPage() {
                             value={mcInterestShape}
                             min={1.01}
                             step={0.01}
-                            onChange={e => setMcInterestShape(Number(e.target.value))}
+                            onChange={(e) => {
+                              setMcInterestShape(Number(e.target.value));
+                              setMarketScenario('custom');
+                            }}
                             className="w-full p-2 border rounded"
                             disabled={mcRunning}
                           />
