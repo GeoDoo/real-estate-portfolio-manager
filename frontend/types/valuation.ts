@@ -1,6 +1,7 @@
 export interface ValuationBase {
   initial_investment: number;
   annual_rental_income: number;
+  vacancy_rate?: number;
   service_charge: number;
   ground_rent: number;
   maintenance: number;

@@ -36,7 +36,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="initial_investment"
-              value={form.initial_investment}
+              value={form.initial_investment ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -53,7 +53,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="transaction_costs"
-              value={form.transaction_costs}
+              value={form.transaction_costs ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -70,7 +70,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="property_tax"
-              value={form.property_tax}
+              value={form.property_tax ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -96,13 +96,30 @@ export default function ValuationForm({
             <input
               type="text"
               name="annual_rental_income"
-              value={form.annual_rental_income}
+              value={form.annual_rental_income ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
                 { "--tw-ring-color": "var(--primary)" } as React.CSSProperties
               }
               placeholder="0"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vacancy Rate (%)
+            </label>
+            <input
+              type="text"
+              name="vacancy_rate"
+              value={form.vacancy_rate ?? ""}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={
+                { "--tw-ring-color": "var(--primary)" } as React.CSSProperties
+              }
+              placeholder="e.g. 5"
               disabled={disabled}
             />
           </div>
@@ -122,7 +139,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="service_charge"
-              value={form.service_charge}
+              value={form.service_charge ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -139,7 +156,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="ground_rent"
-              value={form.ground_rent}
+              value={form.ground_rent ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -156,7 +173,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="maintenance"
-              value={form.maintenance}
+              value={form.maintenance ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -173,7 +190,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="insurance"
-              value={form.insurance}
+              value={form.insurance ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -190,7 +207,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="management_fees"
-              value={form.management_fees}
+              value={form.management_fees ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={
@@ -216,7 +233,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="annual_rent_growth"
-              value={form.annual_rent_growth}
+              value={form.annual_rent_growth ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={{
@@ -233,7 +250,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="discount_rate"
-              value={form.discount_rate}
+              value={form.discount_rate ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={{
@@ -250,7 +267,7 @@ export default function ValuationForm({
             <input
               type="text"
               name="holding_period"
-              value={form.holding_period}
+              value={form.holding_period ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
               style={{

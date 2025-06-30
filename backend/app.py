@@ -65,6 +65,7 @@ def create_valuation_from_data(data, property_id=None, valuation_id=None):
             created_at=now,
             initial_investment=data.get("initial_investment", 0),
             annual_rental_income=data.get("annual_rental_income", 0),
+            vacancy_rate=data.get("vacancy_rate", 0),
             service_charge=data.get("service_charge", 0),
             ground_rent=data.get("ground_rent", 0),
             maintenance=data.get("maintenance", 0),
@@ -131,6 +132,7 @@ class Valuation(db.Model):
     created_at = db.Column(db.String)
     initial_investment = db.Column(db.Float)
     annual_rental_income = db.Column(db.Float)
+    vacancy_rate = db.Column(db.Float, default=0)
     service_charge = db.Column(db.Float)
     ground_rent = db.Column(db.Float)
     maintenance = db.Column(db.Float)
@@ -151,6 +153,7 @@ class Valuation(db.Model):
             "created_at": self.created_at,
             "initial_investment": self.initial_investment,
             "annual_rental_income": self.annual_rental_income,
+            "vacancy_rate": self.vacancy_rate,
             "service_charge": self.service_charge,
             "ground_rent": self.ground_rent,
             "maintenance": self.maintenance,
@@ -184,31 +187,32 @@ def calculate_mortgage_payment(initial_investment, ltv, interest_rate, holding_p
 
 def calculate_year_cash_flow(year, annual_rental_income, annual_rent_growth, service_charge, 
                            ground_rent, maintenance, insurance, management_fees, 
-                           annual_mortgage_payment, discount_rate):
+                           annual_mortgage_payment, discount_rate, vacancy_rate=0):
     """Calculate cash flow for a specific year."""
     if year == 0:
         return {
-            "revenue": 0,
+            "gross_revenue": 0,
+            "effective_revenue": 0,
             "totalExpenses": 0,
             "netCashFlow": 0,
             "presentValue": 0,
         }
-    
-    revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
-    management_fee = revenue * management_fees / 100
+    gross_revenue = annual_rental_income * (1 + annual_rent_growth / 100) ** (year - 1)
+    effective_revenue = gross_revenue * (1 - vacancy_rate / 100)
+    management_fee = effective_revenue * management_fees / 100
     total_expenses = (
         service_charge + ground_rent + maintenance + insurance + 
         management_fee + annual_mortgage_payment
     )
-    net_cash_flow = revenue - total_expenses
+    net_cash_flow = effective_revenue - total_expenses
     denominator = (1 + discount_rate / 100) ** year
     present_value = net_cash_flow / denominator
-    
     return {
-        "revenue": revenue,
-        "totalExpenses": total_expenses,
-        "netCashFlow": net_cash_flow,
-        "presentValue": present_value,
+        "gross_revenue": float(gross_revenue),
+        "effective_revenue": float(effective_revenue),
+        "totalExpenses": float(total_expenses),
+        "netCashFlow": float(net_cash_flow),
+        "presentValue": float(present_value),
     }
 
 def calculate_cash_flows(input):
@@ -217,6 +221,7 @@ def calculate_cash_flows(input):
     input = {
         "initial_investment": input.get("initial_investment", 0),
         "annual_rental_income": input.get("annual_rental_income", 0),
+        "vacancy_rate": input.get("vacancy_rate", 0),
         "service_charge": input.get("service_charge", 0),
         "ground_rent": input.get("ground_rent", 0),
         "maintenance": input.get("maintenance", 0),
@@ -234,6 +239,8 @@ def calculate_cash_flows(input):
     # Convert to Fraction for precision
     initial_investment = Fraction(str(input["initial_investment"]))
     annual_rental_income = Fraction(str(input["annual_rental_income"]))
+    vacancy_val = input.get("vacancy_rate")
+    vacancy_rate = Fraction(str(vacancy_val if vacancy_val is not None else 0))
     service_charge = Fraction(str(input["service_charge"]))
     ground_rent = Fraction(str(input["ground_rent"]))
     maintenance = Fraction(str(input["maintenance"]))
@@ -276,13 +283,14 @@ def calculate_cash_flows(input):
         cash_flow = calculate_year_cash_flow(
             year, annual_rental_income, annual_rent_growth, service_charge,
             ground_rent, maintenance, insurance, management_fees,
-            annual_mortgage_payment, discount_rate
+            annual_mortgage_payment, discount_rate, vacancy_rate
         )
         cumulative_pv += cash_flow["presentValue"]
         
         rows.append({
             "year": year,
-            "revenue": float(f"{float(cash_flow['revenue']):.2f}"),
+            "gross_revenue": float(f"{float(cash_flow['gross_revenue']):.2f}"),
+            "effective_revenue": float(f"{float(cash_flow['effective_revenue']):.2f}"),
             "totalExpenses": float(f"{float(cash_flow['totalExpenses']):.2f}"),
             "netCashFlow": float(f"{float(cash_flow['netCashFlow']):.2f}"),
             "presentValue": float(f"{float(cash_flow['presentValue']):.2f}"),
@@ -495,6 +503,7 @@ def create_app(test_config=None):
                 created_at=now,
                 initial_investment=data.get("initial_investment", 0),
                 annual_rental_income=data.get("annual_rental_income", 0),
+                vacancy_rate=data.get("vacancy_rate", 0),
                 service_charge=data.get("service_charge", 0),
                 ground_rent=data.get("ground_rent", 0),
                 maintenance=data.get("maintenance", 0),

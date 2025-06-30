@@ -86,6 +86,7 @@ export default function ValuationDetailPage() {
   const [form, setForm] = useState({
     initial_investment: "",
     annual_rental_income: "",
+    vacancy_rate: "",
     service_charge: "",
     ground_rent: "",
     maintenance: "",
@@ -136,6 +137,7 @@ export default function ValuationDetailPage() {
           setForm({
             initial_investment: String(json.initial_investment ?? ""),
             annual_rental_income: String(json.annual_rental_income ?? ""),
+            vacancy_rate: String(json.vacancy_rate ?? ""),
             service_charge: String(json.service_charge ?? ""),
             ground_rent: String(json.ground_rent ?? ""),
             maintenance: String(json.maintenance ?? ""),
@@ -204,6 +206,7 @@ export default function ValuationDetailPage() {
     setForm({
       initial_investment: String(valuation.initial_investment ?? ""),
       annual_rental_income: String(valuation.annual_rental_income ?? ""),
+      vacancy_rate: String(valuation.vacancy_rate ?? ""),
       service_charge: String(valuation.service_charge ?? ""),
       ground_rent: String(valuation.ground_rent ?? ""),
       maintenance: String(valuation.maintenance ?? ""),
@@ -238,6 +241,7 @@ export default function ValuationDetailPage() {
     const data = {
       initial_investment: parseFloat(form.initial_investment) || 0,
       annual_rental_income: parseFloat(form.annual_rental_income) || 0,
+      vacancy_rate: parseFloat(form.vacancy_rate) || 0,
       service_charge: parseFloat(form.service_charge) || 0,
       ground_rent: parseFloat(form.ground_rent) || 0,
       maintenance: parseFloat(form.maintenance) || 0,
@@ -262,6 +266,7 @@ export default function ValuationDetailPage() {
         annual_rental_income: String(
           updatedValuation.annual_rental_income ?? ""
         ),
+        vacancy_rate: String(updatedValuation.vacancy_rate ?? ""),
         service_charge: String(updatedValuation.service_charge ?? ""),
         ground_rent: String(updatedValuation.ground_rent ?? ""),
         maintenance: String(updatedValuation.maintenance ?? ""),
@@ -624,7 +629,12 @@ export default function ValuationDetailPage() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="py-2 px-4 text-left">Year</th>
-                      <th className="py-2 px-4 text-right">Revenue ($)</th>
+                      <th className="py-2 px-4 text-right">
+                        Gross Rent ($)
+                      </th>
+                      <th className="py-2 px-4 text-right">
+                        Effective Rent ($)
+                      </th>
                       <th className="py-2 px-4 text-right">Expenses ($)</th>
                       <th className="py-2 px-4 text-right">
                         Net Cash Flow ($)
@@ -647,9 +657,17 @@ export default function ValuationDetailPage() {
                         <td className="py-2 px-4 text-right">
                           <span
                             className="font-bold"
-                            style={{ color: getNumberColor(row.revenue) }}
+                            style={{ color: getNumberColor(row.gross_revenue) }}
                           >
-                            {row.revenue.toLocaleString()}
+                            {Number.isFinite(row.gross_revenue) ? row.gross_revenue.toLocaleString() : "-"}
+                          </span>
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          <span
+                            className="font-bold"
+                            style={{ color: getNumberColor(row.effective_revenue) }}
+                          >
+                            {Number.isFinite(row.effective_revenue) ? row.effective_revenue.toLocaleString() : "-"}
                           </span>
                         </td>
                         <td className="py-2 px-4 text-right">

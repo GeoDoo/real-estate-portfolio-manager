@@ -5,6 +5,7 @@ export interface DCFRow extends ValuationBase {
   created_at: string;
   initial_investment: number;
   annual_rental_income: number;
+  vacancy_rate?: number;
   service_charge: number;
   ground_rent: number;
   maintenance: number;
@@ -19,7 +20,8 @@ export interface DCFRow extends ValuationBase {
 
 export interface CashFlowRow {
   year: number;
-  revenue: number;
+  gross_revenue: number;
+  effective_revenue: number;
   totalExpenses: number;
   netCashFlow: number;
   presentValue: number;
