@@ -50,7 +50,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
       <span
         ref={labelRef}
         className="cursor-pointer inline-block"
-        style={{marginBottom: '-2px'}}
+        style={{marginBottom: '-2px', outline: 'none'}}
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
         onFocus={() => setShow(true)}
