@@ -134,4 +134,42 @@ describe('ValuationDetails API Integration', () => {
     const result = await valuationsAPI.calculateIRR(netCashFlows);
     expect(result).toBeNull();
   });
+
+  it('should include CapEx in cash flow calculations', async () => {
+    const result = await valuationsAPI.calculateCashFlows(mockValuation);
+    // Check that CapEx is included in the cash flows
+    expect(result[0].capex).toBe(500); // Year 0 CapEx
+    expect(result[1].capex).toBe(0); // Year 1 CapEx (no annual CapEx in this example)
+  });
+
+  it('should handle vacancy rate in calculations', async () => {
+    const result = await valuationsAPI.calculateCashFlows(mockValuation);
+    // Check that vacancy rate is properly applied
+    expect(result[1].gross_rent).toBe(12000);
+    expect(result[1].vacancy_loss).toBe(600); // 12000 * 0.05
+    expect(result[1].effective_rent).toBe(11400); // 12000 - 600
+  });
+
+  it('should calculate NOI correctly', async () => {
+    const result = await valuationsAPI.calculateCashFlows(mockValuation);
+    // Check that NOI is calculated correctly (effective rent - operating expenses excluding mortgage and CapEx)
+    expect(result[1].noi).toBe(8000); // 11400 - (1000 + 500 + 1000 + 600 + 300 + 1140)
+  });
+
+  it('should calculate net cash flow correctly', async () => {
+    const result = await valuationsAPI.calculateCashFlows(mockValuation);
+    // Check that net cash flow includes NOI, CapEx, and mortgage
+    expect(result[1].net_cash_flow).toBe(8000); // NOI - CapEx - mortgage
+  });
+
+  it('should validate valuation data structure', async () => {
+    const result = await valuationsAPI.getByPropertyId('test-property-id');
+    expect(result).toHaveProperty('id');
+    expect(result).toHaveProperty('property_id');
+    expect(result).toHaveProperty('initial_investment');
+    expect(result).toHaveProperty('annual_rental_income');
+    expect(result).toHaveProperty('vacancy_rate');
+    expect(result).toHaveProperty('capex');
+    expect(result).toHaveProperty('created_at');
+  });
 }); 

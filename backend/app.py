@@ -366,6 +366,7 @@ def calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, in
     transaction_costs = float(base_input.get("transaction_costs", 0))
     holding_period = int(base_input.get("holding_period", 0))
     ltv = float(base_input.get("ltv", 0) or 0)
+    capex = float(base_input.get("capex", 0))  # Add CapEx extraction
     # All vector inputs must be np arrays
     rent_growths = np.asarray(rent_growths)
     discount_rates = np.asarray(discount_rates)
@@ -402,10 +403,13 @@ def calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, in
     gross_revenue = annual_rental_income * (1 + rent_growths[:, None] / 100) ** (years[None, :] - 1)
     effective_revenue = gross_revenue * (1 - vacancy_rate / 100)
     management_fee = effective_revenue * management_fees / 100
-    total_expenses = (
-        service_charge + ground_rent + maintenance + insurance + management_fee + annual_mortgage_payment[:, None]
-    )
-    net_cash = effective_revenue - total_expenses
+    
+    # Calculate NOI (Net Operating Income) - excludes mortgage and CapEx
+    operating_expenses_no_mortgage = service_charge + ground_rent + maintenance + insurance + management_fee
+    noi = effective_revenue - operating_expenses_no_mortgage
+    
+    # Calculate net cash flow including CapEx and mortgage
+    net_cash = noi - capex - annual_mortgage_payment[:, None]
     net_cash_flows[:, 1:] = net_cash
 
     # Present value discounting
