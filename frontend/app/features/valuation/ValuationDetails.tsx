@@ -476,13 +476,13 @@ export default function ValuationDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div className="text-center">
                   <span
-                    className={
+                    className={`text-2xl font-bold ${
                       cashFlows[cashFlows.length - 1].cumulativePV > 0
                         ? "text-green-700"
                         : cashFlows[cashFlows.length - 1].cumulativePV < 0
                           ? "text-red-600"
                           : "text-gray-900"
-                    }
+                    }`}
                   >
                     $
                     {cashFlows[
@@ -526,13 +526,13 @@ export default function ValuationDetailPage() {
                 </div>
                 <div className="text-center">
                   <span
-                    className={
+                    className={`text-2xl font-bold ${
                       irr && irr > 0
                         ? "text-green-700"
                         : irr && irr < 0
                           ? "text-red-600"
                           : "text-gray-900"
-                    }
+                    }`}
                   >
                     {irr ? `${irr.toFixed(2)}%` : "N/A"}
                   </span>
