@@ -709,12 +709,17 @@ def create_app(test_config=None):
 
     def _generate_random_variable(distribution_config, num_simulations):
         """Generate random variables based on distribution configuration."""
-        if distribution_config.get("distribution") == "normal":
+        dist = distribution_config.get("distribution")
+        if dist == "normal":
             return np.random.normal(
                 distribution_config["mean"], 
                 distribution_config["stddev"], 
                 num_simulations
             )
+        elif dist == "pareto":
+            a = distribution_config.get("shape", 2)
+            min_val = distribution_config.get("mean", 1)
+            return min_val * (1 + np.random.pareto(a, num_simulations))
         else:
             return np.full(num_simulations, distribution_config.get("mean", 0))
 

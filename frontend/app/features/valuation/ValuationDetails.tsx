@@ -101,18 +101,22 @@ export default function ValuationDetailPage() {
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mcDist, setMcDist] = useState<'normal' | 'pareto'>('normal');
   const [mcRentGrowthMean, setMcRentGrowthMean] = useState(2);
   const [mcRentGrowthStd, setMcRentGrowthStd] = useState(1);
+  const [mcRentGrowthShape, setMcRentGrowthShape] = useState(2);
   const [mcDiscountMean, setMcDiscountMean] = useState(15);
   const [mcDiscountStd, setMcDiscountStd] = useState(2);
+  const [mcDiscountShape, setMcDiscountShape] = useState(2);
+  const [mcInterestMean, setMcInterestMean] = useState(5);
+  const [mcInterestStd, setMcInterestStd] = useState(1);
+  const [mcInterestShape, setMcInterestShape] = useState(2);
   const [mcNumSim, setMcNumSim] = useState(10000);
   const [mcResults, setMcResults] = useState<number[]>([]);
   const [mcSummary, setMcSummary] = useState<MonteCarloSummary | null>(null);
   const [mcProgress, setMcProgress] = useState(0);
   const [mcTotal, setMcTotal] = useState(0);
   const [mcRunning, setMcRunning] = useState(false);
-  const [mcInterestMean, setMcInterestMean] = useState(5);
-  const [mcInterestStd, setMcInterestStd] = useState(1);
   const [rentalAnalysis, setRentalAnalysis] = useState<RentalAnalysis | null>(
     null
   );
@@ -289,27 +293,48 @@ export default function ValuationDetailPage() {
     // Prepare the request body for POST
     const body: Record<string, unknown> = {
       ...valuation,
-      annual_rent_growth: {
-        distribution: "normal",
-        mean: mcRentGrowthMean,
-        stddev: mcRentGrowthStd,
-      },
-      discount_rate: {
-        distribution: "normal",
-        mean: mcDiscountMean,
-        stddev: mcDiscountStd,
-      },
+      annual_rent_growth:
+        mcDist === 'normal'
+          ? {
+              distribution: 'normal',
+              mean: mcRentGrowthMean,
+              stddev: mcRentGrowthStd,
+            }
+          : {
+              distribution: 'pareto',
+              mean: mcRentGrowthMean,
+              shape: mcRentGrowthShape,
+            },
+      discount_rate:
+        mcDist === 'normal'
+          ? {
+              distribution: 'normal',
+              mean: mcDiscountMean,
+              stddev: mcDiscountStd,
+            }
+          : {
+              distribution: 'pareto',
+              mean: mcDiscountMean,
+              shape: mcDiscountShape,
+            },
       num_simulations: mcNumSim,
     };
     if (parseFloat(String(valuation.ltv ?? "")) > 0) {
-      body.interest_rate = {
-        distribution: "normal",
-        mean: mcInterestMean,
-        stddev: mcInterestStd,
-      };
+      body.interest_rate =
+        mcDist === 'normal'
+          ? {
+              distribution: 'normal',
+              mean: mcInterestMean,
+              stddev: mcInterestStd,
+            }
+          : {
+              distribution: 'pareto',
+              mean: mcInterestMean,
+              shape: mcInterestShape,
+            };
     } else {
       body.interest_rate = {
-        distribution: "normal",
+        distribution: 'normal',
         mean: 0,
         stddev: 0,
       };
@@ -658,12 +683,19 @@ export default function ValuationDetailPage() {
           {/* Monte Carlo Simulation */}
           {!isEditing && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">Monte Carlo Simulation (Gaussian)</h2>
-              <p className="text-gray-600 mb-6">
-                Simulate thousands of possible outcomes for this property based
-                on your assumptions. Adjust the values below and click Run
-                Simulation to see the range of possible results.
-              </p>
+              <h2 className="text-xl font-bold mb-4">Monte Carlo Simulation ({mcDist === 'normal' ? 'Gaussian' : 'Pareto'})</h2>
+              <div className="flex items-center gap-2 mb-6">
+                <label className="text-base font-semibold">Distribution</label>
+                <select
+                  value={mcDist}
+                  onChange={e => setMcDist(e.target.value as 'normal' | 'pareto')}
+                  className="border rounded p-2 text-base"
+                  disabled={mcRunning}
+                >
+                  <option value="normal">Normal (Gaussian)</option>
+                  <option value="pareto">Pareto (Power-law)</option>
+                </select>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-2">
@@ -705,39 +737,83 @@ export default function ValuationDetailPage() {
                     className="w-full p-2 border rounded mb-2"
                     disabled={mcRunning}
                   />
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    Stddev (%){" "}
-                    <InfoTooltip
-                      label={
-                        <svg
-                          width="16"
-                          height="16"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          className="inline-block align-baseline text-gray-400 hover:text-gray-700"
-                        >
-                          <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                          <text
-                            x="12"
-                            y="16"
-                            textAnchor="middle"
-                            fontSize="12"
-                            fill="currentColor"
-                          >
-                            i
-                          </text>
-                        </svg>
-                      }
-                      tooltip="The standard deviation of rent growth. Higher values indicate more uncertainty in future rent increases."
-                    />
-                  </div>
-                  <input
-                    type="number"
-                    value={mcRentGrowthStd}
-                    onChange={(e) => setMcRentGrowthStd(Number(e.target.value))}
-                    className="w-full p-2 border rounded"
-                  />
+                  {mcDist === 'normal' ? (
+                    <>
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        Stddev (%){" "}
+                        <InfoTooltip
+                          label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-baseline text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          }
+                          tooltip="The standard deviation of rent growth. Higher values indicate more uncertainty in future rent increases."
+                        />
+                      </div>
+                      <input
+                        type="number"
+                        value={mcRentGrowthStd}
+                        onChange={(e) => setMcRentGrowthStd(Number(e.target.value))}
+                        className="w-full p-2 border rounded"
+                        disabled={mcRunning}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        Shape (α) {" "}
+                        <InfoTooltip
+                          label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-baseline text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          }
+                          tooltip="The shape parameter α controls how 'wild' the distribution is. Lower values (closer to 1) mean more extreme rent growth rates and fatter tails. Typical values: 1.1–3."
+                        />
+                      </div>
+                      <input
+                        type="number"
+                        value={mcRentGrowthShape}
+                        min={1.01}
+                        step={0.01}
+                        onChange={e => setMcRentGrowthShape(Number(e.target.value))}
+                        className="w-full p-2 border rounded"
+                        disabled={mcRunning}
+                      />
+                    </>
+                  )}
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-2">
@@ -775,40 +851,85 @@ export default function ValuationDetailPage() {
                     value={mcDiscountMean}
                     onChange={(e) => setMcDiscountMean(Number(e.target.value))}
                     className="w-full p-2 border rounded mb-2"
+                    disabled={mcRunning}
                   />
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    Stddev (%){" "}
-                    <InfoTooltip
-                      label={
-                        <svg
-                          width="16"
-                          height="16"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          className="inline-block align-baseline text-gray-400 hover:text-gray-700"
-                        >
-                          <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                          <text
-                            x="12"
-                            y="16"
-                            textAnchor="middle"
-                            fontSize="12"
-                            fill="currentColor"
-                          >
-                            i
-                          </text>
-                        </svg>
-                      }
-                      tooltip="The standard deviation of the discount rate. Higher values indicate more uncertainty in the required rate of return."
-                    />
-                  </div>
-                  <input
-                    type="number"
-                    value={mcDiscountStd}
-                    onChange={(e) => setMcDiscountStd(Number(e.target.value))}
-                    className="w-full p-2 border rounded"
-                  />
+                  {mcDist === 'normal' ? (
+                    <>
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        Stddev (%){" "}
+                        <InfoTooltip
+                          label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-baseline text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          }
+                          tooltip="The standard deviation of the discount rate. Higher values indicate more uncertainty in the required rate of return."
+                        />
+                      </div>
+                      <input
+                        type="number"
+                        value={mcDiscountStd}
+                        onChange={(e) => setMcDiscountStd(Number(e.target.value))}
+                        className="w-full p-2 border rounded"
+                        disabled={mcRunning}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        Shape (α) {" "}
+                        <InfoTooltip
+                          label={
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              className="inline-block align-baseline text-gray-400 hover:text-gray-700"
+                            >
+                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                              <text
+                                x="12"
+                                y="16"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="currentColor"
+                              >
+                                i
+                              </text>
+                            </svg>
+                          }
+                          tooltip="The shape parameter α controls how 'wild' the distribution is. Lower values (closer to 1) mean more extreme discount rates and fatter tails. Typical values: 1.1–3."
+                        />
+                      </div>
+                      <input
+                        type="number"
+                        value={mcDiscountShape}
+                        min={1.01}
+                        step={0.01}
+                        onChange={e => setMcDiscountShape(Number(e.target.value))}
+                        className="w-full p-2 border rounded"
+                        disabled={mcRunning}
+                      />
+                    </>
+                  )}
                 </div>
                 <div>
                   {/* Interest Rate (only if LTV > 0) */}
@@ -851,42 +972,87 @@ export default function ValuationDetailPage() {
                           setMcInterestMean(Number(e.target.value))
                         }
                         className="w-full p-2 border rounded mb-2"
+                        disabled={mcRunning}
                       />
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        Stddev (%){" "}
-                        <InfoTooltip
-                          label={
-                            <svg
-                              width="16"
-                              height="16"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              className="inline-block align-baseline text-gray-400 hover:text-gray-700"
-                            >
-                              <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                              <text
-                                x="12"
-                                y="16"
-                                textAnchor="middle"
-                                fontSize="12"
-                                fill="currentColor"
-                              >
-                                i
-                              </text>
-                            </svg>
-                          }
-                          tooltip="The standard deviation of interest rates. Higher values indicate more uncertainty in future interest rate changes."
-                        />
-                      </div>
-                      <input
-                        type="number"
-                        value={mcInterestStd}
-                        onChange={(e) =>
-                          setMcInterestStd(Number(e.target.value))
-                        }
-                        className="w-full p-2 border rounded"
-                      />
+                      {mcDist === 'normal' ? (
+                        <>
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            Stddev (%){" "}
+                            <InfoTooltip
+                              label={
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  className="inline-block align-baseline text-gray-400 hover:text-gray-700"
+                                >
+                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <text
+                                    x="12"
+                                    y="16"
+                                    textAnchor="middle"
+                                    fontSize="12"
+                                    fill="currentColor"
+                                  >
+                                    i
+                                  </text>
+                                </svg>
+                              }
+                              tooltip="The standard deviation of interest rates. Higher values indicate more uncertainty in future interest rate changes."
+                            />
+                          </div>
+                          <input
+                            type="number"
+                            value={mcInterestStd}
+                            onChange={(e) =>
+                              setMcInterestStd(Number(e.target.value))
+                            }
+                            className="w-full p-2 border rounded"
+                            disabled={mcRunning}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            Shape (α) {" "}
+                            <InfoTooltip
+                              label={
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  className="inline-block align-baseline text-gray-400 hover:text-gray-700"
+                                >
+                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <text
+                                    x="12"
+                                    y="16"
+                                    textAnchor="middle"
+                                    fontSize="12"
+                                    fill="currentColor"
+                                  >
+                                    i
+                                  </text>
+                                </svg>
+                              }
+                              tooltip="The shape parameter α controls how 'wild' the distribution is. Lower values (closer to 1) mean more extreme interest rates and fatter tails. Typical values: 1.1–3."
+                            />
+                          </div>
+                          <input
+                            type="number"
+                            value={mcInterestShape}
+                            min={1.01}
+                            step={0.01}
+                            onChange={e => setMcInterestShape(Number(e.target.value))}
+                            className="w-full p-2 border rounded"
+                            disabled={mcRunning}
+                          />
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
