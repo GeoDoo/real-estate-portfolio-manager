@@ -83,11 +83,11 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
               yearMap.set(row.year, { ...row });
             } else {
               const agg = yearMap.get(row.year)!;
-              agg.effective_revenue += row.effective_revenue;
-              agg.totalExpenses += row.totalExpenses;
-              agg.netCashFlow += row.netCashFlow;
-              agg.presentValue += row.presentValue;
-              agg.cumulativePV += row.cumulativePV;
+              agg.effective_rent += row.effective_rent;
+              agg.operating_expenses += row.operating_expenses;
+              agg.net_cash_flow += row.net_cash_flow;
+              agg.present_value += row.present_value;
+              agg.cumulative_pv += row.cumulative_pv;
             }
           }
         }
@@ -109,7 +109,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
   }, [id]);
 
   const projectedRow = aggregateRows.find((r) => r.year === targetYear);
-  const projectedNetWorth = projectedRow ? projectedRow.cumulativePV : 0;
+  const projectedNetWorth = projectedRow ? projectedRow.cumulative_pv : 0;
   const gap = targetNetWorth - projectedNetWorth;
 
   return (
@@ -282,33 +282,33 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
                   <td style={{ color: "var(--foreground)" }}>{row.year}</td>
                   <td
                     className="text-right font-bold"
-                    style={{ color: getNumberColor(row.effective_revenue) }}
+                    style={{ color: getNumberColor(row.effective_rent) }}
                   >
-                    {formatCurrency(row.effective_revenue)}
+                    {formatCurrency(row.effective_rent)}
                   </td>
                   <td
                     className="text-right font-bold"
-                    style={{ color: getNumberColor(row.totalExpenses) }}
+                    style={{ color: getNumberColor(row.operating_expenses) }}
                   >
-                    {formatCurrency(row.totalExpenses)}
+                    {formatCurrency(row.operating_expenses)}
                   </td>
                   <td
                     className="text-right font-bold"
-                    style={{ color: getNumberColor(row.netCashFlow) }}
+                    style={{ color: getNumberColor(row.net_cash_flow) }}
                   >
-                    {formatCurrency(row.netCashFlow)}
+                    {formatCurrency(row.net_cash_flow)}
                   </td>
                   <td
                     className="text-right font-bold"
-                    style={{ color: getNumberColor(row.presentValue) }}
+                    style={{ color: getNumberColor(row.present_value) }}
                   >
-                    {formatCurrency(row.presentValue)}
+                    {formatCurrency(row.present_value)}
                   </td>
                   <td
                     className="text-right font-bold"
-                    style={{ color: getNumberColor(row.cumulativePV) }}
+                    style={{ color: getNumberColor(row.cumulative_pv) }}
                   >
-                    {formatCurrency(row.cumulativePV)}
+                    {formatCurrency(row.cumulative_pv)}
                   </td>
                 </tr>
               ))}

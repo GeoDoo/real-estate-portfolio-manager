@@ -1,5 +1,5 @@
 from fractions import Fraction
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort, send_file
 from flask_cors import CORS
 import uuid
 from datetime import datetime, timezone
@@ -9,6 +9,7 @@ from scipy.optimize import brentq
 import numpy as np
 import math
 import numpy_financial as npf
+import json
 
 db = SQLAlchemy()
 PORT = int(os.environ.get("BACKEND_PORT", 5050))

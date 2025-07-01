@@ -86,3 +86,5 @@ This project uses industry-standard formulas for real estate investment analysis
 - Floating point rounding is handled with small tolerances in tests.
 
 For any questions or to audit the formulas, see the backend code in `backend/app.py`.
+
+# Cap rates are now set manually by the user. There is no automated fetching or updating of cap rates. Please enter cap rates manually in the UI.

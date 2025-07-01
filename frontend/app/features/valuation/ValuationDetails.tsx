@@ -15,6 +15,7 @@ import {
   hasValidValuation,
 } from "../properties/validation";
 import InfoTooltip from "@/components/InfoTooltip";
+import { formatCurrency } from "@/lib/utils";
 
 interface MonteCarloSummary {
   npv_mean: number;
@@ -72,9 +73,9 @@ function renderCell(value: number, colorFn: (n: number) => string) {
   return (
     <span
       className="font-bold"
-      style={{ color: isZero ? '#6B7280' : colorFn(value) }} // Tailwind gray-500
+      style={{ color: isZero ? "#6B7280" : colorFn(value) }} // Tailwind gray-500
     >
-      {isZero ? '0' : value.toLocaleString()}
+      {isZero ? "0" : value.toLocaleString()}
     </span>
   );
 }
@@ -108,7 +109,7 @@ export default function ValuationDetailPage() {
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [mcDist, setMcDist] = useState<'normal' | 'pareto'>('normal');
+  const [mcDist, setMcDist] = useState<"normal" | "pareto">("normal");
   const [mcRentGrowthMean, setMcRentGrowthMean] = useState(3);
   const [mcRentGrowthStd, setMcRentGrowthStd] = useState(1);
   const [mcRentGrowthShape, setMcRentGrowthShape] = useState(4);
@@ -128,7 +129,10 @@ export default function ValuationDetailPage() {
     null
   );
   const [rentalLoading, setRentalLoading] = useState(false);
-  const [marketScenario, setMarketScenario] = useState<'custom' | 'bullish' | 'bearish'>('custom');
+  const [marketScenario, setMarketScenario] = useState<
+    "custom" | "bullish" | "bearish"
+  >("custom");
+  const [capRate, setCapRate] = useState(4.5);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -310,26 +314,26 @@ export default function ValuationDetailPage() {
     const body: Record<string, unknown> = {
       ...valuation,
       annual_rent_growth:
-        mcDist === 'normal'
+        mcDist === "normal"
           ? {
-              distribution: 'normal',
+              distribution: "normal",
               mean: mcRentGrowthMean,
               stddev: mcRentGrowthStd,
             }
           : {
-              distribution: 'pareto',
+              distribution: "pareto",
               mean: mcRentGrowthMean,
               shape: mcRentGrowthShape,
             },
       discount_rate:
-        mcDist === 'normal'
+        mcDist === "normal"
           ? {
-              distribution: 'normal',
+              distribution: "normal",
               mean: mcDiscountMean,
               stddev: mcDiscountStd,
             }
           : {
-              distribution: 'pareto',
+              distribution: "pareto",
               mean: mcDiscountMean,
               shape: mcDiscountShape,
             },
@@ -337,20 +341,20 @@ export default function ValuationDetailPage() {
     };
     if (parseFloat(String(valuation.ltv ?? "")) > 0) {
       body.interest_rate =
-        mcDist === 'normal'
+        mcDist === "normal"
           ? {
-              distribution: 'normal',
+              distribution: "normal",
               mean: mcInterestMean,
               stddev: mcInterestStd,
             }
           : {
-              distribution: 'pareto',
+              distribution: "pareto",
               mean: mcInterestMean,
               shape: mcInterestShape,
             };
     } else {
       body.interest_rate = {
-        distribution: 'normal',
+        distribution: "normal",
         mean: 0,
         stddev: 0,
       };
@@ -452,15 +456,15 @@ export default function ValuationDetailPage() {
   }
 
   // Helper to set scenario values
-  function setScenarioValues(scenario: 'bullish' | 'bearish') {
-    if (scenario === 'bullish') {
+  function setScenarioValues(scenario: "bullish" | "bearish") {
+    if (scenario === "bullish") {
       setMcRentGrowthMean(4.5);
       setMcRentGrowthShape(6.5);
       setMcDiscountMean(6.5);
       setMcDiscountShape(4.5);
       setMcInterestMean(3.75);
       setMcInterestShape(7.5);
-    } else if (scenario === 'bearish') {
+    } else if (scenario === "bearish") {
       setMcRentGrowthMean(0.5);
       setMcRentGrowthShape(2.5);
       setMcDiscountMean(10.5);
@@ -469,6 +473,12 @@ export default function ValuationDetailPage() {
       setMcInterestShape(2.5);
     }
   }
+
+  // Compute first-year NOI from cashFlows (if available)
+  const firstYearNOI =
+    cashFlows && cashFlows.length > 1 ? cashFlows[1].noi : null;
+  const directCapValue =
+    firstYearNOI && capRate > 0 ? firstYearNOI / (capRate / 100) : null;
 
   return (
     <PageContainer>
@@ -593,7 +603,7 @@ export default function ValuationDetailPage() {
                         ? "text-green-700"
                         : irr && irr < 0
                           ? "text-red-600"
-                        : "text-gray-900"
+                          : "text-gray-900"
                     }`}
                   >
                     {irr ? `${irr.toFixed(2)}%` : "N/A"}
@@ -641,14 +651,24 @@ export default function ValuationDetailPage() {
                       <th className="py-2 px-4 text-left">Year</th>
                       <th className="py-2 px-4 text-right">Gross Rent (£)</th>
                       <th className="py-2 px-4 text-right">Vacancy Loss (£)</th>
-                      <th className="py-2 px-4 text-right">Effective Rent (£)</th>
-                      <th className="py-2 px-4 text-right">Operating Expenses (£)</th>
+                      <th className="py-2 px-4 text-right">
+                        Effective Rent (£)
+                      </th>
+                      <th className="py-2 px-4 text-right">
+                        Operating Expenses (£)
+                      </th>
                       <th className="py-2 px-4 text-right">NOI (£)</th>
                       <th className="py-2 px-4 text-right">CapEx (£)</th>
-                      <th className="py-2 px-4 text-right">Net Cash Flow (£)</th>
+                      <th className="py-2 px-4 text-right">
+                        Net Cash Flow (£)
+                      </th>
                       <th className="py-2 px-4 text-right">Discount Factor</th>
-                      <th className="py-2 px-4 text-right">Present Value (£)</th>
-                      <th className="py-2 px-4 text-right">Cumulative PV (£)</th>
+                      <th className="py-2 px-4 text-right">
+                        Present Value (£)
+                      </th>
+                      <th className="py-2 px-4 text-right">
+                        Cumulative PV (£)
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -658,22 +678,52 @@ export default function ValuationDetailPage() {
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                       >
                         <td className="py-2 px-4">{row.year}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(row.gross_rent, getNumberColor)}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(-row.vacancy_loss, getNumberColor)}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(row.effective_rent, getNumberColor)}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(-row.operating_expenses, getNumberColor)}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(row.noi, getNumberColor)}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(-row.capex, getNumberColor)}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(row.net_cash_flow, getNumberColor)}</td>
                         <td className="py-2 px-4 text-right">
-                          <span className="font-bold" style={{ color: (Number(row.discount_factor) === 0 || Object.is(row.discount_factor, -0)) ? '#6B7280' : undefined }}>
-                            {Number(row.discount_factor) === 0 || Object.is(row.discount_factor, -0)
-                              ? '0'
-                              : row.discount_factor.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                          {renderCell(row.gross_rent, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(-row.vacancy_loss, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(row.effective_rent, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(-row.operating_expenses, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(row.noi, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(-row.capex, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(row.net_cash_flow, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          <span
+                            className="font-bold"
+                            style={{
+                              color:
+                                Number(row.discount_factor) === 0 ||
+                                Object.is(row.discount_factor, -0)
+                                  ? "#6B7280"
+                                  : undefined,
+                            }}
+                          >
+                            {Number(row.discount_factor) === 0 ||
+                            Object.is(row.discount_factor, -0)
+                              ? "0"
+                              : row.discount_factor.toLocaleString(undefined, {
+                                  maximumFractionDigits: 6,
+                                })}
                           </span>
                         </td>
-                        <td className="py-2 px-4 text-right">{renderCell(row.present_value, getNumberColor)}</td>
-                        <td className="py-2 px-4 text-right">{renderCell(row.cumulative_pv, getNumberColor)}</td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(row.present_value, getNumberColor)}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {renderCell(row.cumulative_pv, getNumberColor)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -685,13 +735,20 @@ export default function ValuationDetailPage() {
           {/* Monte Carlo Simulation */}
           {!isEditing && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">Monte Carlo Simulation ({mcDist === 'normal' ? 'Gaussian' : 'Pareto'})</h2>
+              <h2 className="text-xl font-bold mb-4">
+                Monte Carlo Simulation (
+                {mcDist === "normal" ? "Gaussian" : "Pareto"})
+              </h2>
               <div className="flex items-center gap-8 mb-6">
                 <div>
-                  <label className="text-base font-semibold mr-2">Distribution</label>
+                  <label className="text-base font-semibold mr-2">
+                    Distribution
+                  </label>
                   <select
                     value={mcDist}
-                    onChange={e => setMcDist(e.target.value as 'normal' | 'pareto')}
+                    onChange={(e) =>
+                      setMcDist(e.target.value as "normal" | "pareto")
+                    }
                     className="border rounded p-2 text-base"
                     disabled={mcRunning}
                   >
@@ -699,15 +756,20 @@ export default function ValuationDetailPage() {
                     <option value="pareto">Pareto (Power-law)</option>
                   </select>
                 </div>
-                {mcDist === 'pareto' && (
+                {mcDist === "pareto" && (
                   <div>
-                    <label className="text-base font-semibold mr-2">Market Scenario</label>
+                    <label className="text-base font-semibold mr-2">
+                      Market Scenario
+                    </label>
                     <select
                       value={marketScenario}
-                      onChange={e => {
-                        const val = e.target.value as 'custom' | 'bullish' | 'bearish';
+                      onChange={(e) => {
+                        const val = e.target.value as
+                          | "custom"
+                          | "bullish"
+                          | "bearish";
                         setMarketScenario(val);
-                        if (val !== 'custom') setScenarioValues(val);
+                        if (val !== "custom") setScenarioValues(val);
                       }}
                       className="border rounded p-2 text-base"
                       disabled={mcRunning}
@@ -756,12 +818,12 @@ export default function ValuationDetailPage() {
                     value={mcRentGrowthMean}
                     onChange={(e) => {
                       setMcRentGrowthMean(Number(e.target.value));
-                      setMarketScenario('custom');
+                      setMarketScenario("custom");
                     }}
                     className="w-full p-2 border rounded mb-2"
                     disabled={mcRunning}
                   />
-                  {mcDist === 'normal' ? (
+                  {mcDist === "normal" ? (
                     <>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         Stddev (%){" "}
@@ -795,7 +857,7 @@ export default function ValuationDetailPage() {
                         value={mcRentGrowthStd}
                         onChange={(e) => {
                           setMcRentGrowthStd(Number(e.target.value));
-                          setMarketScenario('custom');
+                          setMarketScenario("custom");
                         }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
@@ -804,7 +866,7 @@ export default function ValuationDetailPage() {
                   ) : (
                     <>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
-                        Shape (α) {" "}
+                        Shape (α){" "}
                         <InfoTooltip
                           label={
                             <svg
@@ -837,7 +899,7 @@ export default function ValuationDetailPage() {
                         step={0.01}
                         onChange={(e) => {
                           setMcRentGrowthShape(Number(e.target.value));
-                          setMarketScenario('custom');
+                          setMarketScenario("custom");
                         }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
@@ -881,12 +943,12 @@ export default function ValuationDetailPage() {
                     value={mcDiscountMean}
                     onChange={(e) => {
                       setMcDiscountMean(Number(e.target.value));
-                      setMarketScenario('custom');
+                      setMarketScenario("custom");
                     }}
                     className="w-full p-2 border rounded mb-2"
                     disabled={mcRunning}
                   />
-                  {mcDist === 'normal' ? (
+                  {mcDist === "normal" ? (
                     <>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         Stddev (%){" "}
@@ -920,7 +982,7 @@ export default function ValuationDetailPage() {
                         value={mcDiscountStd}
                         onChange={(e) => {
                           setMcDiscountStd(Number(e.target.value));
-                          setMarketScenario('custom');
+                          setMarketScenario("custom");
                         }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
@@ -929,7 +991,7 @@ export default function ValuationDetailPage() {
                   ) : (
                     <>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
-                        Shape (α) {" "}
+                        Shape (α){" "}
                         <InfoTooltip
                           label={
                             <svg
@@ -962,7 +1024,7 @@ export default function ValuationDetailPage() {
                         step={0.01}
                         onChange={(e) => {
                           setMcDiscountShape(Number(e.target.value));
-                          setMarketScenario('custom');
+                          setMarketScenario("custom");
                         }}
                         className="w-full p-2 border rounded"
                         disabled={mcRunning}
@@ -1009,12 +1071,12 @@ export default function ValuationDetailPage() {
                         value={mcInterestMean}
                         onChange={(e) => {
                           setMcInterestMean(Number(e.target.value));
-                          setMarketScenario('custom');
+                          setMarketScenario("custom");
                         }}
                         className="w-full p-2 border rounded mb-2"
                         disabled={mcRunning}
                       />
-                      {mcDist === 'normal' ? (
+                      {mcDist === "normal" ? (
                         <>
                           <div className="flex items-center gap-1 text-sm text-gray-600">
                             Stddev (%){" "}
@@ -1028,7 +1090,12 @@ export default function ValuationDetailPage() {
                                   stroke="currentColor"
                                   className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                                 >
-                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    strokeWidth="2"
+                                  />
                                   <text
                                     x="12"
                                     y="16"
@@ -1048,7 +1115,7 @@ export default function ValuationDetailPage() {
                             value={mcInterestStd}
                             onChange={(e) => {
                               setMcInterestStd(Number(e.target.value));
-                              setMarketScenario('custom');
+                              setMarketScenario("custom");
                             }}
                             className="w-full p-2 border rounded"
                             disabled={mcRunning}
@@ -1057,7 +1124,7 @@ export default function ValuationDetailPage() {
                       ) : (
                         <>
                           <div className="flex items-center gap-1 text-sm text-gray-600">
-                            Shape (α) {" "}
+                            Shape (α){" "}
                             <InfoTooltip
                               label={
                                 <svg
@@ -1068,7 +1135,12 @@ export default function ValuationDetailPage() {
                                   stroke="currentColor"
                                   className="inline-block align-baseline text-gray-400 hover:text-gray-700"
                                 >
-                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    strokeWidth="2"
+                                  />
                                   <text
                                     x="12"
                                     y="16"
@@ -1090,7 +1162,7 @@ export default function ValuationDetailPage() {
                             step={0.01}
                             onChange={(e) => {
                               setMcInterestShape(Number(e.target.value));
-                              setMarketScenario('custom');
+                              setMarketScenario("custom");
                             }}
                             className="w-full p-2 border rounded"
                             disabled={mcRunning}
@@ -1143,7 +1215,9 @@ export default function ValuationDetailPage() {
                   <Button
                     onClick={runMonteCarlo}
                     className="w-full mt-8 px-4 py-3"
-                    disabled={mcRunning || !hasValidValuation(valuation as DCFRow)}
+                    disabled={
+                      mcRunning || !hasValidValuation(valuation as DCFRow)
+                    }
                   >
                     {mcRunning
                       ? `Running... (${mcProgress}/${mcTotal})`
@@ -1206,7 +1280,12 @@ export default function ValuationDetailPage() {
                                   stroke="currentColor"
                                   className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
                                 >
-                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    strokeWidth="2"
+                                  />
                                   <text
                                     x="12"
                                     y="16"
@@ -1219,7 +1298,8 @@ export default function ValuationDetailPage() {
                                 </svg>
                               }
                               tooltip="The 95th percentile of simulated Net Present Value (NPV) outcomes. Only 5% of simulations are above this value. This is an optimistic estimate of upside potential."
-                            />:
+                            />
+                            :
                           </td>
                           <td>
                             <span
@@ -1250,7 +1330,12 @@ export default function ValuationDetailPage() {
                                   stroke="currentColor"
                                   className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
                                 >
-                                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    strokeWidth="2"
+                                  />
                                   <text
                                     x="12"
                                     y="16"
@@ -1263,7 +1348,8 @@ export default function ValuationDetailPage() {
                                 </svg>
                               }
                               tooltip="The 5th percentile of simulated Net Present Value (NPV) outcomes. 95% of simulations are above this value. This is a conservative estimate of downside risk."
-                            />:
+                            />
+                            :
                           </td>
                           <td>
                             <span
@@ -1292,7 +1378,9 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(mcSummary.irr_mean),
                               }}
                             >
-                              {Number.isFinite(mcSummary.irr_mean) && mcSummary.irr_mean !== null && mcSummary.irr_mean !== undefined
+                              {Number.isFinite(mcSummary.irr_mean) &&
+                              mcSummary.irr_mean !== null &&
+                              mcSummary.irr_mean !== undefined
                                 ? (mcSummary.irr_mean * 100).toFixed(2)
                                 : "N/A"}
                             </span>
@@ -1303,20 +1391,35 @@ export default function ValuationDetailPage() {
                             IRR Mean (Valid Only, %):
                           </td>
                           <td>
-                            <span className="font-bold" style={{ color: getNumberColor(Number.isFinite(mcSummary.mean_valid_irr) ? mcSummary.mean_valid_irr! : 0) }}>
-                              {Number.isFinite(mcSummary.mean_valid_irr) && mcSummary.mean_valid_irr !== null && mcSummary.mean_valid_irr !== undefined
+                            <span
+                              className="font-bold"
+                              style={{
+                                color: getNumberColor(
+                                  Number.isFinite(mcSummary.mean_valid_irr)
+                                    ? mcSummary.mean_valid_irr!
+                                    : 0
+                                ),
+                              }}
+                            >
+                              {Number.isFinite(mcSummary.mean_valid_irr) &&
+                              mcSummary.mean_valid_irr !== null &&
+                              mcSummary.mean_valid_irr !== undefined
                                 ? (mcSummary.mean_valid_irr * 100).toFixed(2)
                                 : "N/A"}
                             </span>
                           </td>
                         </tr>
                         <tr>
-                          <td className="font-bold text-right pr-4" style={{ color: "var(--foreground)" }}>
+                          <td
+                            className="font-bold text-right pr-4"
+                            style={{ color: "var(--foreground)" }}
+                          >
                             % of Valid IRR Scenarios:
                           </td>
                           <td>
                             <span className="font-bold">
-                              {mcSummary.percent_valid_irr !== null && mcSummary.percent_valid_irr !== undefined
+                              {mcSummary.percent_valid_irr !== null &&
+                              mcSummary.percent_valid_irr !== undefined
                                 ? mcSummary.percent_valid_irr.toFixed(1)
                                 : "N/A"}
                             </span>
@@ -1598,7 +1701,9 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.monthly_cash_flow)}`}
                         >
-                          {Number.isFinite(rentalAnalysis.metrics.monthly_cash_flow)
+                          {Number.isFinite(
+                            rentalAnalysis.metrics.monthly_cash_flow
+                          )
                             ? rentalAnalysis.metrics.monthly_cash_flow.toLocaleString()
                             : "-"}
                         </div>
@@ -1639,7 +1744,9 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.annual_cash_flow)}`}
                         >
-                          {Number.isFinite(rentalAnalysis.metrics.annual_cash_flow)
+                          {Number.isFinite(
+                            rentalAnalysis.metrics.annual_cash_flow
+                          )
                             ? rentalAnalysis.metrics.annual_cash_flow.toLocaleString()
                             : "-"}
                         </div>
@@ -1684,48 +1791,7 @@ export default function ValuationDetailPage() {
                             ? rentalAnalysis.metrics.roi_percent.toFixed(2)
                             : "-"}
                         </div>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          Cap Rate (%){" "}
-                          <InfoTooltip
-                            label={
-                              <svg
-                                width="16"
-                                height="16"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                className="inline-block align-baseline text-gray-400 hover:text-gray-700"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  strokeWidth="2"
-                                />
-                                <text
-                                  x="12"
-                                  y="16"
-                                  textAnchor="middle"
-                                  fontSize="12"
-                                  fill="currentColor"
-                                >
-                                  i
-                                </text>
-                              </svg>
-                            }
-                            tooltip="Capitalization Rate. Calculated as (Net Operating Income / Property Value) × 100. Measures the property's unlevered return."
-                          />
-                        </div>
-                        <div
-                          className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cap_rate_percent)}`}
-                        >
-                          {Number.isFinite(rentalAnalysis.metrics.cap_rate_percent)
-                            ? rentalAnalysis.metrics.cap_rate_percent.toFixed(2)
-                            : "-"}
-                        </div>
-                      </div>
+                      </div>                      
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
                           Cash-on-Cash Return (%){" "}
@@ -1762,8 +1828,12 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cash_on_cash_percent)}`}
                         >
-                          {Number.isFinite(rentalAnalysis.metrics.cash_on_cash_percent)
-                            ? rentalAnalysis.metrics.cash_on_cash_percent.toFixed(2)
+                          {Number.isFinite(
+                            rentalAnalysis.metrics.cash_on_cash_percent
+                          )
+                            ? rentalAnalysis.metrics.cash_on_cash_percent.toFixed(
+                                2
+                              )
                             : "-"}
                         </div>
                       </div>
@@ -1801,7 +1871,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-xl font-bold text-gray-800">
-                          {Number.isFinite(rentalAnalysis.metrics.break_even_rent)
+                          {Number.isFinite(
+                            rentalAnalysis.metrics.break_even_rent
+                          )
                             ? rentalAnalysis.metrics.break_even_rent.toLocaleString()
                             : "-"}
                         </div>
@@ -1842,8 +1914,12 @@ export default function ValuationDetailPage() {
                         <div
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.rent_coverage_ratio > 1 ? 1 : -1)}`}
                         >
-                          {Number.isFinite(rentalAnalysis.metrics.rent_coverage_ratio)
-                            ? rentalAnalysis.metrics.rent_coverage_ratio.toFixed(2)
+                          {Number.isFinite(
+                            rentalAnalysis.metrics.rent_coverage_ratio
+                          )
+                            ? rentalAnalysis.metrics.rent_coverage_ratio.toFixed(
+                                2
+                              )
                             : "-"}
                         </div>
                       </div>
@@ -1876,7 +1952,8 @@ export default function ValuationDetailPage() {
                               className="px-4 py-2 text-right text-sm font-medium"
                               style={{
                                 color: getNumberColor(
-                                  rentalAnalysis.monthly_breakdown.gross_rental_income
+                                  rentalAnalysis.monthly_breakdown
+                                    .gross_rental_income
                                 ),
                               }}
                             >
@@ -1894,7 +1971,8 @@ export default function ValuationDetailPage() {
                               className="px-4 py-2 text-right text-sm font-medium"
                               style={{
                                 color: getNumberColor(
-                                  rentalAnalysis.monthly_breakdown.effective_rental_income
+                                  rentalAnalysis.monthly_breakdown
+                                    .effective_rental_income
                                 ),
                               }}
                             >
@@ -2108,7 +2186,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {Number.isFinite(rentalAnalysis.loan_details.down_payment)
+                          {Number.isFinite(
+                            rentalAnalysis.loan_details.down_payment
+                          )
                             ? rentalAnalysis.loan_details.down_payment.toLocaleString()
                             : "-"}
                         </div>
@@ -2147,7 +2227,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {Number.isFinite(rentalAnalysis.loan_details.loan_amount)
+                          {Number.isFinite(
+                            rentalAnalysis.loan_details.loan_amount
+                          )
                             ? rentalAnalysis.loan_details.loan_amount.toLocaleString()
                             : "-"}
                         </div>
@@ -2186,7 +2268,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {Number.isFinite(rentalAnalysis.loan_details.monthly_mortgage)
+                          {Number.isFinite(
+                            rentalAnalysis.loan_details.monthly_mortgage
+                          )
                             ? rentalAnalysis.loan_details.monthly_mortgage.toLocaleString()
                             : "-"}
                         </div>
@@ -2225,7 +2309,9 @@ export default function ValuationDetailPage() {
                           />
                         </div>
                         <div className="text-lg font-bold text-gray-800">
-                          {Number.isFinite(rentalAnalysis.loan_details.total_investment)
+                          {Number.isFinite(
+                            rentalAnalysis.loan_details.total_investment
+                          )
                             ? rentalAnalysis.loan_details.total_investment.toLocaleString()
                             : "-"}
                         </div>
@@ -2236,6 +2322,104 @@ export default function ValuationDetailPage() {
               )}
             </div>
           )}
+
+          {/* Direct Capitalization Value */}
+          <div className="mt-8 mb-8 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="flex items-center mb-2">
+              <span className="font-bold text-lg mr-2">
+                Direct Capitalization Value
+              </span>
+              <InfoTooltip
+                label={
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
+                  >
+                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                    <text
+                      x="12"
+                      y="16"
+                      textAnchor="middle"
+                      fontSize="12"
+                      fill="currentColor"
+                    >
+                      i
+                    </text>
+                  </svg>
+                }
+                tooltip="The Direct Capitalization Method estimates value as NOI divided by Cap Rate. Common for quick market value checks."
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-1 mb-2">
+              <label className="font-medium">Cap Rate (%)</label>
+              <InfoTooltip
+                className="mr-4"
+                label={
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
+                  >
+                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                    <text
+                      x="12"
+                      y="16"
+                      textAnchor="middle"
+                      fontSize="12"
+                      fill="currentColor"
+                    >
+                      i
+                    </text>
+                  </svg>
+                }
+                tooltip="Cap rate is the expected yield for this property type. Typical values: London flats 3.5–4.5%, regional offices 5–6%."
+              />
+              <input
+                type="number"
+                min={1}
+                max={15}
+                step={0.01}
+                value={capRate}
+                onChange={(e) => setCapRate(Number(e.target.value))}
+                className="p-1 border rounded text-left"
+              />
+            </div>
+            <div className="mb-2">
+              <span className="font-medium text-gray-700">Year 1 NOI:</span>
+              <span
+                className="ml-1 font-bold"
+                style={{ color: getNumberColor(firstYearNOI ?? 0) }}
+              >
+                {firstYearNOI !== null ? (
+                  formatCurrency(firstYearNOI)
+                ) : (
+                  <span className="text-gray-400">N/A</span>
+                )}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700">
+                Direct Cap Value:
+              </span>
+              <span
+                className="ml-1 font-bold text-lg"
+                style={{ color: getNumberColor(directCapValue ?? 0) }}
+              >
+                {directCapValue !== null ? (
+                  formatCurrency(directCapValue)
+                ) : (
+                  <span className="text-gray-400">N/A</span>
+                )}
+              </span>
+            </div>
+          </div>
         </>
       )}
     </PageContainer>

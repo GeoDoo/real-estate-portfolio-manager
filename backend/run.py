@@ -35,7 +35,7 @@ def start_dev_server():
     print("🚀 Starting development server...")
     print("📝 Server will be available at: http://localhost:5000")
     print("⏹️  Press Ctrl+C to stop")
-    
+
     try:
         subprocess.run([PYTHON_BIN, "app.py"], check=True)
     except KeyboardInterrupt:

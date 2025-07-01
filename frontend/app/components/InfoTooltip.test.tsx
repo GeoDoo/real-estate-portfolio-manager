@@ -22,9 +22,7 @@ describe('InfoTooltip', () => {
   describe('rendering', () => {
     it('renders label correctly', () => {
       render(
-        <InfoTooltip label="Click me" tooltip="This is a tooltip">
-          Click me
-        </InfoTooltip>
+        <InfoTooltip label="Click me" tooltip="This is a tooltip" />
       );
 
       expect(screen.getByText('Click me')).toBeInTheDocument();
@@ -63,9 +61,7 @@ describe('InfoTooltip', () => {
     it('shows tooltip on mouse enter', async () => {
       const user = userEvent.setup();
       render(
-        <InfoTooltip label="Hover me" tooltip="Tooltip content">
-          Hover me
-        </InfoTooltip>
+        <InfoTooltip label="Hover me" tooltip="Tooltip content" />
       );
 
       const label = screen.getByText('Hover me');
@@ -77,9 +73,7 @@ describe('InfoTooltip', () => {
     it('hides tooltip on mouse leave', async () => {
       const user = userEvent.setup();
       render(
-        <InfoTooltip label="Hover me" tooltip="Tooltip content">
-          Hover me
-        </InfoTooltip>
+        <InfoTooltip label="Hover me" tooltip="Tooltip content" />
       );
 
       const label = screen.getByText('Hover me');
@@ -92,9 +86,7 @@ describe('InfoTooltip', () => {
 
     it('shows tooltip on focus', () => {
       render(
-        <InfoTooltip label="Focus me" tooltip="Tooltip content">
-          Focus me
-        </InfoTooltip>
+        <InfoTooltip label="Focus me" tooltip="Tooltip content" />
       );
 
       const label = screen.getByText('Focus me');
@@ -105,9 +97,7 @@ describe('InfoTooltip', () => {
 
     it('hides tooltip on blur', () => {
       render(
-        <InfoTooltip label="Focus me" tooltip="Tooltip content">
-          Focus me
-        </InfoTooltip>
+        <InfoTooltip label="Focus me" tooltip="Tooltip content" />
       );
 
       const label = screen.getByText('Focus me');
@@ -122,9 +112,7 @@ describe('InfoTooltip', () => {
   describe('accessibility', () => {
     it('has proper tabindex for keyboard navigation', () => {
       render(
-        <InfoTooltip label="Accessible" tooltip="Tooltip">
-          Accessible
-        </InfoTooltip>
+        <InfoTooltip label="Accessible" tooltip="Tooltip" />
       );
 
       const label = screen.getByText('Accessible');
@@ -133,9 +121,7 @@ describe('InfoTooltip', () => {
 
     it('supports keyboard navigation', () => {
       render(
-        <InfoTooltip label="Keyboard" tooltip="Tooltip">
-          Keyboard
-        </InfoTooltip>
+        <InfoTooltip label="Keyboard" tooltip="Tooltip" />
       );
 
       const label = screen.getByText('Keyboard');
@@ -147,9 +133,7 @@ describe('InfoTooltip', () => {
     it('positions tooltip correctly', async () => {
       const user = userEvent.setup();
       render(
-        <InfoTooltip label="Position test" tooltip="Positioned tooltip">
-          Position test
-        </InfoTooltip>
+        <InfoTooltip label="Position test" tooltip="Positioned tooltip" />
       );
 
       const label = screen.getByText('Position test');
@@ -167,9 +151,7 @@ describe('InfoTooltip', () => {
       const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
       
       render(
-        <InfoTooltip label="Test" tooltip="Tooltip">
-          Test
-        </InfoTooltip>
+        <InfoTooltip label="Test" tooltip="Tooltip" />
       );
 
       const label = screen.getByText('Test');

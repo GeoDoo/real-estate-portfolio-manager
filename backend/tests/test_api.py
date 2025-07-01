@@ -3,6 +3,8 @@ import math
 import uuid
 from datetime import datetime, timezone
 from app import Portfolio, Property, Valuation, db
+import os
+import json
 
 def create_property_with_valuation(app, portfolio_id, address, valuation_data):
     with app.app_context():
