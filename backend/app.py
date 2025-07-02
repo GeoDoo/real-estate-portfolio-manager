@@ -623,6 +623,15 @@ def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate,
         "total_investment": total_investment
     }
 
+# Helper to safely convert to float, treating None as default
+def safe_float(val, default=0):
+    try:
+        if val is None:
+            return default
+        return float(val)
+    except (TypeError, ValueError):
+        return default
+
 # --- App Factory ---
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -1013,22 +1022,22 @@ def create_app(test_config=None):
         data = request.json
         
         # Extract input data
-        purchase_price = float(data.get("initial_investment", 0))
-        annual_rental_income = float(data.get("annual_rental_income", 0))
-        vacancy_rate = float(data.get("vacancy_rate", 0))
-        ltv = float(data.get("ltv", 0))
-        interest_rate = float(data.get("interest_rate", 5))
-        property_tax = float(data.get("property_tax", 0)) / 12
-        insurance = float(data.get("insurance", 0)) / 12
-        maintenance = float(data.get("maintenance", 0)) / 12
-        capex = float(data.get("capex", 0)) / 12  # Add CapEx as monthly
-        transaction_costs = float(data.get("transaction_costs", 0))
-        holding_period_years = int(data.get("holding_period", 25))  # Default to 25 years
+        purchase_price = safe_float(data.get("initial_investment"), 0)
+        annual_rental_income = safe_float(data.get("annual_rental_income"), 0)
+        vacancy_rate = safe_float(data.get("vacancy_rate"), 0)
+        ltv = safe_float(data.get("ltv"), 0)
+        interest_rate = safe_float(data.get("interest_rate"), 5)
+        property_tax = safe_float(data.get("property_tax"), 0) / 12
+        insurance = safe_float(data.get("insurance"), 0) / 12
+        maintenance = safe_float(data.get("maintenance"), 0) / 12
+        capex = safe_float(data.get("capex"), 0) / 12  # Add CapEx as monthly
+        transaction_costs = safe_float(data.get("transaction_costs"), 0)
+        holding_period_years = int(safe_float(data.get("holding_period"), 25))  # Default to 25 years
         
         # Calculate gross and effective rent
         gross_monthly_rent = annual_rental_income / 12
         effective_monthly_rent = gross_monthly_rent * (1 - vacancy_rate / 100)
-        management_fees = effective_monthly_rent * float(data.get("management_fees", 0)) / 100
+        management_fees = effective_monthly_rent * safe_float(data.get("management_fees"), 0) / 100
         
         # Calculate metrics using effective rent
         metrics = calculate_rental_metrics(

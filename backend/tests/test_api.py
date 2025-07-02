@@ -8,7 +8,7 @@ import json
 
 def create_property_with_valuation(app, portfolio_id, address, valuation_data):
     with app.app_context():
-        prop = Property(id=str(uuid.uuid4()), address=address, portfolio_id=portfolio_id)
+        prop = Property(id=str(uuid.uuid4()), address=address, postcode="TEST1 1AA", portfolio_id=portfolio_id)
         db.session.add(prop)
         db.session.commit()
         val = Valuation(
@@ -163,7 +163,7 @@ def test_portfolio_irr_no_valuations(client):
     app = client.application
     portfolio_id = str(uuid.uuid4())
     with app.app_context():
-        prop = Property(id=str(uuid.uuid4()), address=f"789 Empty St {uuid.uuid4().hex[:8]}", portfolio_id=portfolio_id)
+        prop = Property(id=str(uuid.uuid4()), address=f"789 Empty St {uuid.uuid4().hex[:8]}", postcode="TEST2 2BB", portfolio_id=portfolio_id)
         db.session.add(prop)
         db.session.commit()
     resp = client.get(f"/api/portfolios/{portfolio_id}/irr")
@@ -202,7 +202,7 @@ def test_monte_carlo_endpoint(client):
         "ltv": 80,
         "interest_rate": 5,
     }
-    client.post("/api/properties", json={"address": "123 Test St"})
+    client.post("/api/properties", json={"address": "123 Test St", "postcode": "TEST3 3CC"})
     monte_carlo_data = {
         "num_simulations": 1000,
         "annual_rent_growth": {"distribution": "normal", "mean": 2, "stddev": 1},
@@ -281,7 +281,7 @@ def test_monte_carlo_irr_valid(client):
         "ltv": 0,
         "interest_rate": 0,
     }
-    property_response = client.post("/api/properties", json={"address": "999 IRR Test St"})
+    property_response = client.post("/api/properties", json={"address": "999 IRR Test St", "postcode": "TEST4 4DD"})
     property_id = property_response.json["id"]
     client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
     monte_carlo_data = {
@@ -302,7 +302,7 @@ def test_monte_carlo_irr_valid(client):
 def test_valuation_with_vacancy_rate(client):
     """Test that valuation API correctly handles vacancy rate."""
     # Create property
-    property_response = client.post("/api/properties", json={"address": "123 Vacancy Test St"})
+    property_response = client.post("/api/properties", json={"address": "123 Vacancy Test St", "postcode": "TEST5 5EE"})
     property_id = property_response.json["id"]
     
     # Create valuation with vacancy rate
@@ -384,7 +384,7 @@ def test_rental_analysis_with_vacancy_rate(client):
 
 def test_monte_carlo_with_vacancy_rate(client):
     """Test that Monte Carlo API correctly handles vacancy rate."""
-    property_response = client.post("/api/properties", json={"address": "456 MC Vacancy Test St"})
+    property_response = client.post("/api/properties", json={"address": "456 MC Vacancy Test St", "postcode": "TEST6 6FF"})
     property_id = property_response.json["id"]
     valuation_data = {
         "initial_investment": 200000,

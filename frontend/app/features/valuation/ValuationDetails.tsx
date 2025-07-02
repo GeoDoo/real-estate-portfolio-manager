@@ -7,7 +7,7 @@ import { PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import ValuationForm from "@/components/ValuationForm";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { valuationsAPI } from "@/lib/api/valuations";
-import { marketDataAPI, ComparableSale, MarketDataResponse } from "@/lib/api/marketData";
+import { marketDataAPI, ComparableSale } from "@/lib/api/marketData";
 import Button from "@/components/Button";
 import PageContainer from "@/components/PageContainer";
 import { getNumberColor, formatCurrency } from "@/lib/utils";
@@ -139,7 +139,6 @@ export default function ValuationDetailPage() {
   
   // Comparable sales state
   const [comparableSales, setComparableSales] = useState<ComparableSale[]>([]);
-  const [marketDataSummary, setMarketDataSummary] = useState<MarketDataResponse['summary'] | null>(null);
   const [comparableLoading, setComparableLoading] = useState(false);
   const [comparableError, setComparableError] = useState<string | null>(null);
 
@@ -460,7 +459,6 @@ export default function ValuationDetailPage() {
     setComparableLoading(true);
     setComparableError(null);
     setComparableSales([]);
-    setMarketDataSummary(null);
     
     try {
       // Use postcode field directly
@@ -471,7 +469,6 @@ export default function ValuationDetailPage() {
       }
       const response = await marketDataAPI.getComparableSales(postcode, 20);
       setComparableSales(response.sales);
-      setMarketDataSummary(response.summary);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch comparable sales";
@@ -2511,39 +2508,6 @@ export default function ValuationDetailPage() {
                   </div>
                 )}
               </div>
-              {marketDataSummary && (
-                <div className="mb-6">
-                  <h3 className="font-bold mb-3 text-lg">Market Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Total Sales</div>
-                      <div className="text-lg font-bold text-gray-800">
-                        {marketDataSummary.total_sales.toLocaleString()}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Average Price (£)</div>
-                      <div className="text-lg font-bold text-gray-900">
-                        {formatCurrency(marketDataSummary.average_price, "")}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Price Range (£)</div>
-                      <div className="text-lg font-bold text-gray-900">
-                        {formatCurrency(marketDataSummary.price_range, "")}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Min - Max (£)</div>
-                      <div className="text-lg font-bold text-gray-900">
-                        <span>{formatCurrency(marketDataSummary.min_price, "")}</span>
-                        <span className="mx-1 text-gray-500">-</span>
-                        <span>{formatCurrency(marketDataSummary.max_price, "")}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               {comparableSales.length > 0 && (
                 <div>
                   <h3 className="font-bold mb-3 text-lg">Recent Sales</h3>
@@ -2587,6 +2551,47 @@ export default function ValuationDetailPage() {
                       Showing 10 of {comparableSales.length} sales
                     </div>
                   )}
+                  {/* Average Price by Year (years with >1 sale) */}
+                  {(() => {
+                    // Group sales by year
+                    const yearGroups = comparableSales.reduce((acc, sale) => {
+                      const year = new Date(sale.sale_date).getFullYear();
+                      if (!acc[year]) acc[year] = [];
+                      acc[year].push(sale);
+                      return acc;
+                    }, {} as Record<number, typeof comparableSales>);
+                    // Filter to years with >1 sale
+                    const yearsWithMultiple = Object.entries(yearGroups)
+                      .filter(([, sales]) => sales.length > 1)
+                      .sort((a, b) => Number(b[0]) - Number(a[0]));
+                    if (yearsWithMultiple.length === 0) return null;
+                    return (
+                      <div className="mt-6">
+                        <h4 className="font-bold mb-2 text-md">Average Price by Year (years with &gt;1 sale)</h4>
+                        <table className="min-w-max w-auto text-base border-separate border-spacing-y-2">
+                          <thead>
+                            <tr>
+                              <th className="text-left pr-4">Year</th>
+                              <th className="text-right">Average Price (£)</th>
+                              <th className="text-right">Number of Sales</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {yearsWithMultiple.map(([year, sales]) => {
+                              const avg = sales.reduce((sum, s) => sum + s.sale_price, 0) / sales.length;
+                              return (
+                                <tr key={year}>
+                                  <td className="pr-4 font-bold">{year}</td>
+                                  <td className="text-right font-bold">{formatCurrency(avg, "")}</td>
+                                  <td className="text-right text-gray-600">{sales.length}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
