@@ -125,3 +125,5 @@ next-env.d.ts
 # Temporary files
 *.tmp
 *.temp
+
+pp-complete.csv

@@ -11,6 +11,8 @@ import math
 import numpy_financial as npf
 import json
 import requests
+import csv
+from io import StringIO
 
 db = SQLAlchemy()
 PORT = int(os.environ.get("BACKEND_PORT", 5050))
@@ -382,198 +384,191 @@ def safe_irr_stats(irrs):
     )
 
 class LandRegistryAPI:
-    """Land Registry API integration for UK property sales data."""
-    
+    CSV_URL = 'http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-complete.csv'
+    CSV_PATH = 'pp-complete.csv'
+    CSV_MAX_AGE = timedelta(days=1)
+
     def __init__(self):
-        self.base_url = "https://landregistry.data.gov.uk/data/ppi/transaction-record.json"
-        self.cache = {}
-        self.cache_duration = 86400  # 24 hours
-    
-    def get_comparable_sales(self, postcode, limit=50):
-        """Fetch comparable sales data from Land Registry."""
-        cache_key = f"land_registry_{postcode}_{limit}"
-        
-        # Check cache first
-        if cache_key in self.cache:
-            cached_data, timestamp = self.cache[cache_key]
-            if datetime.now() - timestamp < timedelta(seconds=self.cache_duration):
-                return cached_data
-        
-        try:
-            # Clean postcode for API
-            clean_postcode = postcode.replace(' ', '+').upper()
-            
-            # Land Registry API call
-            params = {
-                'postcode': clean_postcode,
-                'limit': limit,
-                '_format': 'json'
-            }
-            
-            response = requests.get(self.base_url, params=params, timeout=30)
-            response.raise_for_status()
-            
-            data = response.json()
-            sales_data = self._parse_land_registry_data(data)
-            
-            # If no real data found, return mock data for testing
-            if not sales_data:
-                sales_data = self._get_mock_sales_data(postcode, limit)
-            
-            # Cache results
-            self.cache[cache_key] = (sales_data, datetime.now())
-            
-            return sales_data
-            
-        except requests.RequestException as e:
-            print(f"Land Registry API error: {e}")
-            # Return mock data on API error
-            return self._get_mock_sales_data(postcode, limit)
-        except Exception as e:
-            print(f"Error processing Land Registry data: {e}")
-            return self._get_mock_sales_data(postcode, limit)
-    
-    def _get_mock_sales_data(self, postcode, limit):
-        """Generate mock comparable sales data for testing."""
-        import random
-        
-        # Generate realistic mock data
-        base_prices = {
-            'M1': 250000,  # Manchester city center
-            'SW1': 850000,  # Central London
-            'WA2': 320000,  # Warrington
-            'NR3': 280000,  # Norwich
-            'WD3': 450000,  # Watford
-            'BS31': 380000,  # Bristol
-            'S70': 220000,  # Barnsley
-        }
-        
-        # Extract area code from postcode
-        area_code = postcode[:2].upper()
-        base_price = base_prices.get(area_code, 300000)
-        
-        mock_sales = []
-        for i in range(min(limit, 8)):  # Max 8 mock sales
-            # Vary price by ±15%
-            price_variation = random.uniform(0.85, 1.15)
-            sale_price = int(base_price * price_variation)
-            
-            # Generate recent dates (last 2 years)
-            days_ago = random.randint(1, 730)
-            sale_date = (datetime.now() - timedelta(days=days_ago)).isoformat()
-            
-            # Property types
-            property_types = ['Terraced', 'Semi-detached', 'Detached', 'Flat']
-            property_type = random.choice(property_types)
-            
-            # Estate types
-            estate_types = ['Freehold', 'Leasehold']
-            estate_type = random.choice(estate_types)
-            
-            # Generate realistic addresses
-            street_numbers = ['12', '25', '8', '15', '42', '7', '19', '33']
-            street_names = ['High Street', 'Church Lane', 'Station Road', 'Victoria Street', 'Park Avenue', 'Queen Street', 'Market Place', 'School Lane']
-            
-            street_number = random.choice(street_numbers)
-            street_name = random.choice(street_names)
-            
-            sale = {
-                'id': f'mock_{i}_{random.randint(1000, 9999)}',
-                'address': f'{street_number} {street_name}',
-                'postcode': postcode,
-                'sale_price': sale_price,
-                'sale_date': sale_date,
-                'property_type': property_type,
-                'new_build': random.choice([True, False]),
-                'estate_type': estate_type,
-                'source': 'land_registry_mock',
-                'latitude': None,
-                'longitude': None
-            }
-            
-            mock_sales.append(sale)
-        
-        # Sort by sale date (most recent first)
-        mock_sales.sort(key=lambda x: x['sale_date'], reverse=True)
-        
-        return mock_sales
-    
-    def _parse_land_registry_data(self, data):
-        """Parse Land Registry response into our format."""
-        sales = []
-        
-        try:
-            items = data.get('result', {}).get('items', [])
-            
-            for item in items:
-                # Extract address components from the new structure
-                property_address = item.get('propertyAddress', {})
-                paon = property_address.get('paon', '')
-                saon = property_address.get('saon', '')
-                street = property_address.get('street', '')
-                postcode = property_address.get('postcode', '')
-                
-                # Build full address
-                address_parts = []
-                if saon:
-                    address_parts.append(saon)
-                if paon:
-                    address_parts.append(paon)
-                if street:
-                    address_parts.append(street)
-                
-                full_address = ' '.join(address_parts).strip()
-                
-                # Parse sale date
-                sale_date = item.get('transactionDate')
-                if sale_date:
-                    try:
-                        # Parse date like "Fri, 17 May 1996"
-                        parsed_date = datetime.strptime(sale_date, '%a, %d %b %Y')
-                        sale_date = parsed_date.isoformat()
-                    except:
-                        pass
-                
-                # Extract property type
-                property_type_obj = item.get('propertyType', {})
-                property_type = 'Unknown'
-                if property_type_obj and 'label' in property_type_obj:
-                    labels = property_type_obj['label']
-                    if labels and len(labels) > 0:
-                        property_type = labels[0].get('_value', 'Unknown')
-                
-                # Extract estate type
-                estate_type_obj = item.get('estateType', {})
-                estate_type = 'Unknown'
-                if estate_type_obj and 'label' in estate_type_obj:
-                    labels = estate_type_obj['label']
-                    if labels and len(labels) > 0:
-                        estate_type = labels[0].get('_value', 'Unknown')
-                
+        self.use_mock = os.environ.get("USE_MOCK_DATA", "false").lower() == "true"
+
+    def ensure_csv(self):
+        """Download the CSV if not present or too old."""
+        if not os.path.exists(self.CSV_PATH) or \
+           datetime.now() - datetime.fromtimestamp(os.path.getmtime(self.CSV_PATH)) > self.CSV_MAX_AGE:
+            print("Downloading latest Land Registry Price Paid Data CSV...")
+            r = requests.get(self.CSV_URL, stream=True)
+            r.raise_for_status()
+            with open(self.CSV_PATH, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print("Download complete.")
+
+    def get_comparable_sales(self, postcode, limit=8):
+        print(f"[DEBUG] Searching for postcode: {postcode}")
+        if self.use_mock:
+            # ... mock data logic unchanged ...
+            import random
+            from datetime import datetime, timedelta
+            addresses = [
+                "8 Queen Street", "33 Queen Street", "19 Victoria Street", "8 Park Avenue",
+                "42 Victoria Street", "12 Church Lane", "8 School Lane", "19 School Lane",
+                "15 Market Place", "8 High Street", "7 School Lane", "25 Station Road",
+                "33 Park Avenue", "12 Station Road", "7 Park Avenue", "19 Park Avenue"
+            ]
+            property_types = ["Flat", "Detached", "Semi-detached", "Terraced"]
+            sales = []
+            for i in range(limit):
                 sale = {
-                    'id': item.get('transactionId', str(uuid.uuid4())),
-                    'address': full_address,
-                    'postcode': postcode,
-                    'sale_price': item.get('pricePaid', 0),
-                    'sale_date': sale_date,
-                    'property_type': property_type,
-                    'new_build': item.get('newBuild', False),
-                    'estate_type': estate_type,
-                    'source': 'land_registry',
-                    'latitude': None,  # Land Registry doesn't provide coordinates
-                    'longitude': None
+                    "id": f"sale_{i}",
+                    "address": random.choice(addresses),
+                    "postcode": postcode,
+                    "sale_price": random.randint(250000, 350000),
+                    "sale_date": (datetime.now() - timedelta(days=random.randint(0, 1000))).strftime("%d %b %Y"),
+                    "property_type": random.choice(property_types),
+                    "new_build": random.choice([True, False]),
+                    "estate_type": "Freehold",
+                    "source": "mock"
                 }
-                
-                # Only include sales with valid data
-                if sale['sale_price'] > 0 and sale['address']:
-                    sales.append(sale)
-            
-            # Sort by sale date (most recent first)
-            sales.sort(key=lambda x: x['sale_date'] or '', reverse=True)
-            
-        except Exception as e:
-            print(f"Error parsing Land Registry data: {e}")
-        
+                sales.append(sale)
+            return sales
+        # Use local CSV for real data
+        self.ensure_csv()
+        sales = []
+        matches = 0
+        area = postcode.replace(" ", "").upper()[:2]
+        area_matches = 0
+        sector = postcode.replace(" ", "").upper()[:5]
+        property_type_map = {
+            'F': 'flat maisonette',
+            'T': 'terraced',
+            'S': 'semi-detached',
+            'D': 'detached',
+            'O': 'other',
+            'M': 'maisonette',
+        }
+        # First, try exact matches: return all rows with this postcode, no grouping
+        with open(self.CSV_PATH, newline='', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile)
+            header = next(reader, None)
+            if header and header[3].lower() != 'postcode':
+                # Not a header, rewind
+                csvfile.seek(0)
+                reader = csv.reader(csvfile)
+            for row in reader:
+                if len(row) > 9:
+                    row_postcode = row[3].replace(" ", "").upper()
+                    if row_postcode == postcode.replace(" ", "").upper():
+                        flat = row[8].strip() if row[8] else ''
+                        building = row[7].strip() if row[7] else ''
+                        street = row[9].strip() if row[9] else ''
+                        town = row[11].strip() if row[11] else ''
+                        postcode_disp = row[3].strip() if row[3] else ''
+                        # Compose full address for display
+                        address_parts = []
+                        if flat:
+                            address_parts.append(flat)
+                        if building:
+                            address_parts.append(building)
+                        if street:
+                            address_parts.append(street)
+                        if town:
+                            address_parts.append(town)
+                        if postcode_disp:
+                            address_parts.append(postcode_disp)
+                        full_address = ', '.join(address_parts)
+                        # Map property type code to full Land Registry name
+                        prop_type_code = row[4].strip().upper() if row[4] else ''
+                        property_type = property_type_map.get(prop_type_code, prop_type_code)
+                        # Map estate type code to lowercase
+                        estate_type_code = row[6].strip().upper() if row[6] else ''
+                        estate_type = 'freehold' if estate_type_code == 'F' else 'leasehold' if estate_type_code == 'L' else estate_type_code.lower()
+                        # New build as boolean (revert to previous logic)
+                        new_build = row[10].strip().upper() == 'Y' if row[10] else False
+                        # Sale date
+                        sale_date = row[2].strip() if row[2] else ''
+                        sales.append({
+                            "id": row[0],
+                            "address": full_address,
+                            "postcode": row[3],
+                            "sale_price": int(float(row[1])),
+                            "sale_date": sale_date,
+                            "property_type": property_type,
+                            "new_build": new_build,
+                            "estate_type": estate_type,
+                            "source": "land_registry"
+                        })
+            # Sort by sale_date (parse to date if possible), limit
+            from datetime import datetime
+            def parse_date(d):
+                for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d", "%d %b %Y"):
+                    try:
+                        return datetime.strptime(d.split()[0], fmt)
+                    except Exception:
+                        continue
+                return d  # fallback: string
+            sales.sort(key=lambda x: parse_date(x["sale_date"]), reverse=True)
+            sales = sales[:limit]
+        # If no exact matches, try sector match and group by (building, street, postcode)
+        if not sales:
+            print(f"[DEBUG] No exact matches, trying sector: {sector}")
+            all_sector_sales = []
+            with open(self.CSV_PATH, newline='', encoding='utf-8') as csvfile:
+                reader = csv.reader(csvfile)
+                header = next(reader, None)
+                if header and header[3].lower() != 'postcode':
+                    csvfile.seek(0)
+                    reader = csv.reader(csvfile)
+                from collections import defaultdict
+                grouped = defaultdict(list)
+                for row in reader:
+                    if len(row) > 13:
+                        row_postcode = row[3].replace(" ", "").upper()
+                        if row_postcode.startswith(sector):
+                            building = row[7].strip() if row[7] else ''
+                            street = row[9].strip() if row[9] else ''
+                            postcode_disp = row[3].strip() if row[3] else ''
+                            group_key = f"{building}|{street}|{postcode_disp}".upper()
+                            flat = row[8].strip() if row[8] else ''
+                            town = row[11].strip() if row[11] else ''
+                            # Compose full address for display
+                            address_parts = []
+                            if flat:
+                                address_parts.append(flat)
+                            if building:
+                                address_parts.append(building)
+                            if street:
+                                address_parts.append(street)
+                            if town:
+                                address_parts.append(town)
+                            if postcode_disp:
+                                address_parts.append(postcode_disp)
+                            full_address = ', '.join(address_parts)
+                            # Map property type code to full name
+                            prop_type_code = row[4].strip().upper() if row[4] else ''
+                            property_type = property_type_map.get(prop_type_code, prop_type_code)
+                            # Map estate type code
+                            estate_type_code = row[6].strip().upper() if row[6] else ''
+                            estate_type = 'Freehold' if estate_type_code == 'F' else 'Leasehold' if estate_type_code == 'L' else estate_type_code
+                            # New build
+                            new_build = row[10].strip().upper() == 'Y' if row[10] else False
+                            # Sale date
+                            sale_date = row[2].strip() if row[2] else ''
+                            grouped[group_key].append({
+                                "id": row[0],
+                                "address": full_address,
+                                "postcode": row[3],
+                                "sale_price": int(float(row[1])),
+                                "sale_date": sale_date,
+                                "property_type": property_type,
+                                "new_build": new_build,
+                                "estate_type": estate_type,
+                                "source": "land_registry"
+                            })
+            # Flatten all transactions, sort by date desc, limit
+            all_transactions = [sale for group in grouped.values() for sale in group]
+            all_transactions.sort(key=lambda x: x["sale_date"], reverse=True)
+            sales = all_transactions[:limit]
+        print(f"[DEBUG] Total matches found: {len(sales)}")
         return sales
 
 def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate, 
@@ -1084,8 +1079,8 @@ def create_app(test_config=None):
     def get_comparable_sales(postcode):
         """Get comparable sales for a postcode from Land Registry."""
         try:
-            limit = request.args.get('limit', 50, type=int)
-            limit = min(limit, 100)  # Cap at 100 for performance
+            limit = request.args.get('limit', 8, type=int)
+            limit = min(limit, 50)  # Cap at 50 for performance
             
             sales = land_registry_api.get_comparable_sales(postcode, limit)
             
