@@ -172,7 +172,6 @@ def test_portfolio_irr_no_valuations(client):
     assert "error" in data
 
 def _get_last_sse_event(response):
-    # Helper to extract the last SSE event with 'done': true
     data = response.get_data(as_text=True)
     events = [line for line in data.split('data: ') if line.strip()]
     for event in reversed(events):
@@ -425,3 +424,41 @@ def test_monte_carlo_with_vacancy_rate(client):
     assert payload["summary"]["npv_mean"] is not None
     assert payload["summary"]["irr_mean"] is not None
     assert payload["summary"]["probability_npv_positive"] is not None 
+
+def test_monte_carlo_gaussian_and_pareto_regression(client):
+    """Regression test: Monte Carlo endpoint works for both Gaussian (Normal) and Pareto (Power-law) distributions, streams progress, and returns valid results."""
+    valuation_data = {
+        "initial_investment": 100000,
+        "annual_rental_income": 20000,
+        "service_charge": 1000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 2000,
+        "insurance": 300,
+        "management_fees": 10,
+        "transaction_costs": 2000,
+        "annual_rent_growth": 2,
+        "discount_rate": 8,
+        "holding_period": 5,
+        "ltv": 0,
+        "interest_rate": 0,
+    }
+    for dist, dist_label in [("normal", "Gaussian (Normal)"), ("pareto", "Pareto (Power-law)")]:
+        body = {
+            **valuation_data,
+            "num_simulations": 100,
+            "annual_rent_growth": {"distribution": dist, "mean": 2, "stddev": 1, "shape": 2.5},
+            "discount_rate": {"distribution": dist, "mean": 8, "stddev": 2, "shape": 2.5},
+            "interest_rate": {"distribution": dist, "mean": 0, "stddev": 0, "shape": 2.5},
+        }
+        response = client.post("/api/valuations/monte-carlo", json=body)
+        assert response.status_code == 200, f"{dist_label} simulation failed"
+        payload = _get_last_sse_event(response)
+        assert payload is not None, f"No SSE payload for {dist_label}"
+        assert "npvs" in payload and "irrs" in payload and "summary" in payload, f"Missing results for {dist_label}"
+        assert len(payload["npvs"]) == 100, f"Wrong NPV count for {dist_label}"
+        assert len(payload["irrs"]) == 100, f"Wrong IRR count for {dist_label}"
+        summary = payload["summary"]
+        assert summary["npv_mean"] is not None, f"No NPV mean for {dist_label}"
+        assert summary["irr_mean"] is not None, f"No IRR mean for {dist_label}"
+        assert summary["probability_npv_positive"] is not None, f"No probability for {dist_label}" 

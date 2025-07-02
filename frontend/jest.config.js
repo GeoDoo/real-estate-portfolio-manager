@@ -18,7 +18,5 @@ module.exports = {
     '!app/layout.tsx',
     '!app/page.tsx'
   ],
-  transformIgnorePatterns: [
-    "/node_modules/"
-  ]
+  transformIgnorePatterns: [],
 };

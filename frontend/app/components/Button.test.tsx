@@ -49,6 +49,11 @@ describe('Button', () => {
       expect(button).toBeDisabled();
       expect(button).toHaveClass('disabled:opacity-60');
     });
+
+    it('renders Button without crashing', () => {
+      render(<Button>Test</Button>);
+      expect(true).toBe(true);
+    });
   });
 
   describe('user interactions', () => {
