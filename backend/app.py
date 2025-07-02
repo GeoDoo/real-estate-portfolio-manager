@@ -1,5 +1,5 @@
 from fractions import Fraction
-from flask import Flask, request, jsonify, abort, send_file
+from flask import Flask, request, jsonify, abort, send_file, Response
 from flask_cors import CORS
 import uuid
 from datetime import datetime, timezone
@@ -80,6 +80,8 @@ def create_valuation_from_data(data, property_id=None, valuation_id=None):
             ltv=data.get("ltv", 0),
             interest_rate=data.get("interest_rate", 0),
             capex=data.get("capex", 0),
+            exit_cap_rate=data.get("exit_cap_rate", 0),
+            selling_costs=data.get("selling_costs", 0),
         )
         return valuation, None
 
@@ -148,6 +150,8 @@ class Valuation(db.Model):
     ltv = db.Column(db.Float)  # Loan-to-Value percentage
     interest_rate = db.Column(db.Float)  # Annual interest rate percentage
     capex = db.Column(db.Float, default=0)  # Annual CapEx
+    exit_cap_rate = db.Column(db.Float, default=0)  # Exit capitalization rate percentage
+    selling_costs = db.Column(db.Float, default=0)  # Selling costs as percentage of sale price
 
     def to_dict(self):
         return {
@@ -170,6 +174,8 @@ class Valuation(db.Model):
             "ltv": self.ltv,
             "interest_rate": self.interest_rate,
             "capex": self.capex,
+            "exit_cap_rate": self.exit_cap_rate,
+            "selling_costs": self.selling_costs,
         }
 
 # --- Utility Functions ---
@@ -245,6 +251,8 @@ def calculate_cash_flows(input):
         "ltv": safe_number(input.get("ltv", 0)),
         "interest_rate": safe_number(input.get("interest_rate", 0)),
         "capex": safe_number(input.get("capex", 0)),
+        "exit_cap_rate": safe_number(input.get("exit_cap_rate", 0)),
+        "selling_costs": safe_number(input.get("selling_costs", 0)),
     }
     
     # Convert to Fraction for precision
@@ -265,6 +273,8 @@ def calculate_cash_flows(input):
     ltv = Fraction(str(input.get("ltv", 0) or 0))
     interest_rate = Fraction(str(input.get("interest_rate", 0) or 0))
     capex_value = Fraction(str(input["capex"]))
+    exit_cap_rate = Fraction(str(input["exit_cap_rate"]))
+    selling_costs = Fraction(str(input["selling_costs"]))
 
     # Calculate mortgage payment
     monthly_mortgage_payment = calculate_mortgage_payment(
@@ -306,6 +316,16 @@ def calculate_cash_flows(input):
         )
         capex = capex_value
         net_cash_flow = noi - capex - annual_mortgage_payment
+        
+        # Add terminal sale in the final year
+        if year == holding_period and exit_cap_rate > 0:
+            # Calculate terminal value based on exit cap rate
+            terminal_noi = noi  # Use the final year's NOI
+            terminal_value = terminal_noi / (exit_cap_rate / 100)
+            selling_costs_amount = terminal_value * (selling_costs / 100)
+            net_terminal_value = terminal_value - selling_costs_amount
+            net_cash_flow += net_terminal_value
+        
         discount_factor = float(1 / (1 + discount_rate / 100) ** year)
         present_value = float(net_cash_flow * discount_factor)
         cumulative_pv += present_value
@@ -347,93 +367,6 @@ def clean_for_json(obj):
     elif isinstance(obj, dict):
         return {k: clean_for_json(v) for k, v in obj.items()}
     return obj
-
-def calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, interest_rates):
-    """
-    Vectorized cash flow and NPV/IRR calculation for Monte Carlo simulation.
-    All inputs are numpy arrays of shape (num_simulations,).
-    Returns npvs, irrs arrays.
-    """
-    import numpy as np
-    # Extract scalar inputs
-    initial_investment = float(base_input.get("initial_investment", 0))
-    annual_rental_income = float(base_input.get("annual_rental_income", 0))
-    vacancy_rate = float(base_input.get("vacancy_rate", 0))
-    service_charge = float(base_input.get("service_charge", 0))
-    ground_rent = float(base_input.get("ground_rent", 0))
-    maintenance = float(base_input.get("maintenance", 0))
-    property_tax = float(base_input.get("property_tax", 0))
-    insurance = float(base_input.get("insurance", 0))
-    management_fees = float(base_input.get("management_fees", 0))
-    transaction_costs = float(base_input.get("transaction_costs", 0))
-    holding_period = int(base_input.get("holding_period", 0))
-    ltv = float(base_input.get("ltv", 0) or 0)
-    capex = float(base_input.get("capex", 0))  # Add CapEx extraction
-    # All vector inputs must be np arrays
-    rent_growths = np.asarray(rent_growths)
-    discount_rates = np.asarray(discount_rates)
-    interest_rates = np.asarray(interest_rates)
-    num_sim = rent_growths.shape[0]
-
-    # Mortgage payment calculation (vectorized)
-    monthly_mortgage_payment = np.zeros(num_sim)
-    if ltv > 0:
-        mortgage_amount = initial_investment * (ltv / 100)
-        monthly_rates = interest_rates / 100 / 12
-        num_payments = holding_period * 12
-        # Avoid division by zero
-        with np.errstate(divide='ignore', invalid='ignore'):
-            mask = monthly_rates > 0
-            monthly_mortgage_payment[mask] = mortgage_amount * (
-                monthly_rates[mask] * (1 + monthly_rates[mask]) ** num_payments
-            ) / ((1 + monthly_rates[mask]) ** num_payments - 1)
-            # For zero interest
-            monthly_mortgage_payment[~mask] = mortgage_amount / num_payments if num_payments > 0 else 0
-    annual_mortgage_payment = monthly_mortgage_payment * 12
-
-    # Year 0 cash flows (same for all)
-    year0_revenue = -initial_investment
-    year0_expenses = transaction_costs + property_tax
-    year0_net_cash_flow = year0_revenue - year0_expenses
-    # For each simulation, build cash flow arrays: shape (num_sim, holding_period+1)
-    net_cash_flows = np.zeros((num_sim, holding_period + 1))
-    net_cash_flows[:, 0] = year0_net_cash_flow
-
-    # Precompute per-year factors
-    years = np.arange(1, holding_period + 1)
-    # (num_sim, years) - Calculate gross revenue first, then apply vacancy to get effective revenue
-    gross_revenue = annual_rental_income * (1 + rent_growths[:, None] / 100) ** (years[None, :] - 1)
-    effective_revenue = gross_revenue * (1 - vacancy_rate / 100)
-    management_fee = effective_revenue * management_fees / 100
-    
-    # Calculate NOI (Net Operating Income) - excludes mortgage and CapEx
-    operating_expenses_no_mortgage = service_charge + ground_rent + maintenance + insurance + management_fee
-    noi = effective_revenue - operating_expenses_no_mortgage
-    
-    # Calculate net cash flow including CapEx and mortgage
-    net_cash = noi - capex - annual_mortgage_payment[:, None]
-    net_cash_flows[:, 1:] = net_cash
-
-    # Present value discounting
-    denominators = (1 + discount_rates[:, None] / 100) ** years[None, :]
-    present_values = np.zeros_like(net_cash_flows)
-    present_values[:, 0] = year0_net_cash_flow  # Year 0 not discounted
-    present_values[:, 1:] = net_cash / denominators
-    cumulative_pv = np.sum(present_values, axis=1)
-
-    # IRR calculation (vectorized, but fallback to nan if fails)
-    def try_irr(cf):
-        try:
-            return float(npf.irr(cf))
-        except Exception:
-            return float('nan')
-    # Use numpy's vectorized function if available, else fallback to list comprehension
-    try:
-        irrs = np.array([try_irr(cf) for cf in net_cash_flows])
-    except Exception:
-        irrs = np.full(num_sim, float('nan'))
-
-    return cumulative_pv, irrs
 
 # Helper for safe IRR stats
 def safe_irr_stats(irrs):
@@ -718,9 +651,12 @@ def create_app(test_config=None):
 
     @app.route("/api/valuations/monte-carlo", methods=["POST"])
     def monte_carlo_valuation():
-        """Run Monte Carlo simulation for property valuation."""
+        """Run Monte Carlo simulation for property valuation with SSE progress reporting."""
+        from flask import Response
+        import json
+        import time
         data = request.json
-        num_simulations = max(1000, min(50000, data.get("num_simulations", 10000)))  # Reasonable limits
+        num_simulations = max(1000, min(50000, data.get("num_simulations", 10000)))
         
         # Extract distribution parameters with defaults
         rent_growth_dist = data.get("annual_rent_growth", {"distribution": "normal", "mean": 2, "stddev": 1})
@@ -738,17 +674,28 @@ def create_app(test_config=None):
         discount_rates = _generate_random_variable(discount_rate_dist, num_simulations)
         interest_rates = _generate_random_variable(interest_rate_dist, num_simulations)
         
-        # Calculate results
-        npvs, irrs = calculate_cash_flows_vectorized(base_input, rent_growths, discount_rates, interest_rates)
-        
-        # Calculate summary statistics
-        summary = _calculate_monte_carlo_summary(npvs, irrs)
-        
-        return jsonify({
-            "npv_results": clean_for_json(npvs.tolist()),
-            "irr_results": clean_for_json(irrs.tolist()),
-            "summary": summary
-        })
+        def event_stream():
+            npvs = []
+            irrs = []
+            batch = max(1, num_simulations // 100)  # Send progress every 1%
+            for i in range(num_simulations):
+                sim_input = base_input.copy()
+                sim_input["annual_rent_growth"] = rent_growths[i]
+                sim_input["discount_rate"] = discount_rates[i]
+                sim_input["interest_rate"] = interest_rates[i]
+                cash_flows = calculate_cash_flows(sim_input)
+                npv = cash_flows[-1]["cumulative_pv"]
+                npvs.append(npv)
+                cf_values = [cf["net_cash_flow"] for cf in cash_flows]
+                irr = calculate_irr(cf_values)
+                irrs.append(float('nan') if irr is None else irr)
+                if (i + 1) % batch == 0 or (i + 1) == num_simulations:
+                    progress = int(100 * (i + 1) / num_simulations)
+                    yield f"data: {json.dumps({'progress': progress})}\n\n"
+            # Final results
+            summary = _calculate_monte_carlo_summary(np.array(npvs), np.array(irrs))
+            yield f"data: {json.dumps({'progress': 100, 'npvs': npvs, 'irrs': irrs, 'summary': summary, 'done': True})}\n\n"
+        return Response(event_stream(), mimetype="text/event-stream")
 
     def _generate_random_variable(distribution_config, num_simulations):
         """Generate random variables based on distribution configuration."""

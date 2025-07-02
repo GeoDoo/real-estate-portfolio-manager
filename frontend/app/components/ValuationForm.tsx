@@ -331,6 +331,49 @@ export default function ValuationForm({
         </div>
       </div>
 
+      {/* Terminal Sale */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">
+          Terminal Sale (Reversion)
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Exit Cap Rate (%)
+            </label>
+            <input
+              type="text"
+              name="exit_cap_rate"
+              value={form.exit_cap_rate ?? ""}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
+              placeholder="e.g. 5.5"
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Selling Costs (%)
+            </label>
+            <input
+              type="text"
+              name="selling_costs"
+              value={form.selling_costs ?? ""}
+              onChange={onChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
+              style={{
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
+              placeholder="e.g. 3"
+              disabled={disabled}
+            />
+          </div>
+        </div>
+      </div>
+
       {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
     </form>
   );

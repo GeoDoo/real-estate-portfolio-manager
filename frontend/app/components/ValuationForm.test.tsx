@@ -20,6 +20,9 @@ describe('ValuationForm', () => {
     holding_period: '',
     ltv: '',
     interest_rate: '',
+    capex: '',
+    exit_cap_rate: '',
+    selling_costs: '',
   };
 
   const mockOnChange = jest.fn();
@@ -44,6 +47,7 @@ describe('ValuationForm', () => {
       expect(screen.getByText('Annual Income')).toBeInTheDocument();
       expect(screen.getByText('Annual Expenses')).toBeInTheDocument();
       expect(screen.getByText('Assumptions')).toBeInTheDocument();
+      expect(screen.getByText('Terminal Sale (Reversion)')).toBeInTheDocument();
     });
 
     it('renders all required fields with asterisks', () => {
@@ -77,6 +81,8 @@ describe('ValuationForm', () => {
         initial_investment: '500000',
         annual_rental_income: '30000',
         vacancy_rate: '5',
+        exit_cap_rate: '5.5',
+        selling_costs: '3',
       };
 
       render(
@@ -90,6 +96,8 @@ describe('ValuationForm', () => {
       expect(screen.getByDisplayValue('500000')).toBeInTheDocument();
       expect(screen.getByDisplayValue('30000')).toBeInTheDocument();
       expect(screen.getByDisplayValue('5')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('5.5')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('3')).toBeInTheDocument();
     });
 
     it('renders error message when provided', () => {

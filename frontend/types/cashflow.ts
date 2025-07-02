@@ -19,6 +19,8 @@ export interface DCFRow extends ValuationBase {
   ltv?: number;
   interest_rate?: number;
   capex?: number;
+  exit_cap_rate?: number;
+  selling_costs?: number;
 }
 
 export interface CashFlowRow {

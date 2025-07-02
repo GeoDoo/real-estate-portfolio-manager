@@ -72,8 +72,8 @@ This project uses industry-standard formulas for real estate investment analysis
   Standard industry formulas using annualized values.
 
 ### Monte Carlo Simulation
-- Runs thousands of DCF simulations with random variations in rent growth, discount rate, and interest rate (using normal or pareto distributions).
-- All formulas are identical to the DCF model above, but vectorized for performance.
+- Runs thousands of DCF simulations with random variations in rent growth, discount rate, and interest rate (using Gaussian (Normal) or Pareto (Power-law) distributions).
+- All formulas are identical to the DCF model above, using a precise, loop-based approach for accuracy and maintainability.
 - Summary statistics include mean, percentiles, probability of positive NPV, and valid IRR scenarios.
 
 ### General Assumptions
@@ -86,5 +86,3 @@ This project uses industry-standard formulas for real estate investment analysis
 - Floating point rounding is handled with small tolerances in tests.
 
 For any questions or to audit the formulas, see the backend code in `backend/app.py`.
-
-# Cap rates are now set manually by the user. There is no automated fetching or updating of cap rates. Please enter cap rates manually in the UI.

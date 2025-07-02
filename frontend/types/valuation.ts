@@ -14,6 +14,8 @@ export interface ValuationBase {
   holding_period: number;
   ltv?: number;
   interest_rate?: number;
+  exit_cap_rate?: number;
+  selling_costs?: number;
 }
 
 export interface PropertyValuation extends ValuationBase {

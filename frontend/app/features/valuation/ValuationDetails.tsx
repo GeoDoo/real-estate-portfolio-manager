@@ -1,3 +1,4 @@
+/* global TextDecoder */
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -15,7 +16,6 @@ import {
   hasValidValuation,
 } from "../properties/validation";
 import InfoTooltip from "@/components/InfoTooltip";
-import { formatCurrency } from "@/lib/utils";
 
 interface MonteCarloSummary {
   npv_mean: number;
@@ -106,6 +106,8 @@ export default function ValuationDetailPage() {
     ltv: "",
     interest_rate: "",
     capex: "",
+    exit_cap_rate: "",
+    selling_costs: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -161,6 +163,8 @@ export default function ValuationDetailPage() {
             ltv: String(json.ltv ?? ""),
             interest_rate: String(json.interest_rate ?? ""),
             capex: String(json.capex ?? ""),
+            exit_cap_rate: String(json.exit_cap_rate ?? ""),
+            selling_costs: String(json.selling_costs ?? ""),
           });
           await fetchCashFlows(json);
         } else {
@@ -231,6 +235,8 @@ export default function ValuationDetailPage() {
       ltv: String(valuation.ltv ?? ""),
       interest_rate: String(valuation.interest_rate ?? ""),
       capex: String(valuation.capex ?? ""),
+      exit_cap_rate: String(valuation.exit_cap_rate ?? ""),
+      selling_costs: String(valuation.selling_costs ?? ""),
     });
     setIsEditing(false);
     setFormError(null);
@@ -268,6 +274,8 @@ export default function ValuationDetailPage() {
       interest_rate:
         form.interest_rate !== "" ? parseFloat(form.interest_rate) : 0,
       capex: form.capex !== "" ? parseFloat(form.capex) : 0,
+      exit_cap_rate: form.exit_cap_rate !== "" ? parseFloat(form.exit_cap_rate) : 0,
+      selling_costs: form.selling_costs !== "" ? parseFloat(form.selling_costs) : 0,
     };
 
     try {
@@ -293,6 +301,8 @@ export default function ValuationDetailPage() {
         ltv: String(updatedValuation.ltv ?? ""),
         interest_rate: String(updatedValuation.interest_rate ?? ""),
         capex: String(updatedValuation.capex ?? ""),
+        exit_cap_rate: String(updatedValuation.exit_cap_rate ?? ""),
+        selling_costs: String(updatedValuation.selling_costs ?? ""),
       });
       await fetchCashFlows(updatedValuation);
     } catch (err) {
@@ -310,6 +320,7 @@ export default function ValuationDetailPage() {
     setMcTotal(mcNumSim);
     setMcResults([]);
     setMcSummary(null);
+    const textDecoder = new TextDecoder();
     // Prepare the request body for POST
     const body: Record<string, unknown> = {
       ...valuation,
@@ -368,16 +379,38 @@ export default function ValuationDetailPage() {
           body: JSON.stringify(body),
         }
       );
-      if (!response.ok) {
+      if (!response.ok || !response.body) {
         const errorText = await response.text();
         setError(`Failed to run simulation: ${response.status} ${errorText}`);
         console.error("Simulation error:", response.status, errorText);
         return;
       }
-      const data = await response.json();
-      setMcResults(data.npv_results);
-      setMcSummary(data.summary);
-      setMcProgress(mcNumSim);
+      const reader = response.body.getReader();
+      let buffer = "";
+      setMcProgress(0);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += textDecoder.decode(value);
+        // Split on double newlines (SSE event delimiter)
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
+        for (const event of events) {
+          if (event.startsWith("data: ")) {
+            try {
+              const payload = JSON.parse(event.replace("data: ", ""));
+              if (typeof payload.progress === "number") {
+                setMcProgress(Math.round((payload.progress / 100) * mcNumSim));
+              }
+              if (payload.done) {
+                setMcResults(payload.npvs || []);
+                setMcSummary(payload.summary || null);
+                setMcProgress(mcNumSim);
+              }
+            } catch { /* Ignore parse errors for partial events */ }
+          }
+        }
+      }
     } catch (err) {
       setError("Failed to run simulation (network or JS error)");
       console.error("Simulation JS/network error:", err);
@@ -752,7 +785,7 @@ export default function ValuationDetailPage() {
                     className="border rounded p-2 text-base"
                     disabled={mcRunning}
                   >
-                    <option value="normal">Normal (Gaussian)</option>
+                    <option value="normal">Gaussian (Normal)</option>
                     <option value="pareto">Pareto (Power-law)</option>
                   </select>
                 </div>
@@ -1259,7 +1292,6 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(mcSummary.npv_mean),
                               }}
                             >
-                              {mcSummary.npv_mean > 0 ? "+" : ""}
                               {mcSummary.npv_mean.toLocaleString()}
                             </span>
                           </td>
@@ -2328,34 +2360,10 @@ export default function ValuationDetailPage() {
             <div className="flex items-center mb-2">
               <span className="font-bold text-lg mr-2">
                 Direct Capitalization Value
-              </span>
-              <InfoTooltip
-                label={
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
-                  >
-                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                    <text
-                      x="12"
-                      y="16"
-                      textAnchor="middle"
-                      fontSize="12"
-                      fill="currentColor"
-                    >
-                      i
-                    </text>
-                  </svg>
-                }
-                tooltip="The Direct Capitalization Method estimates value as NOI divided by Cap Rate. Common for quick market value checks."
-              />
+              </span>              
             </div>
             <div className="flex flex-wrap items-center gap-1 mb-2">
-              <label className="font-medium">Cap Rate (%)</label>
+              <label className="font-medium">Cap Rate (%):</label>
               <InfoTooltip
                 className="mr-4"
                 label={
@@ -2392,13 +2400,13 @@ export default function ValuationDetailPage() {
               />
             </div>
             <div className="mb-2">
-              <span className="font-medium text-gray-700">Year 1 NOI:</span>
+              <span className="font-medium text-gray-700">Year 1 NOI (£):</span>
               <span
                 className="ml-1 font-bold"
                 style={{ color: getNumberColor(firstYearNOI ?? 0) }}
               >
                 {firstYearNOI !== null ? (
-                  formatCurrency(firstYearNOI)
+                  firstYearNOI.toFixed(2)
                 ) : (
                   <span className="text-gray-400">N/A</span>
                 )}
@@ -2406,14 +2414,38 @@ export default function ValuationDetailPage() {
             </div>
             <div>
               <span className="font-medium text-gray-700">
-                Direct Cap Value:
+                Direct Cap Value (£):
               </span>
+              <InfoTooltip
+                label={
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
+                  >
+                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                    <text
+                      x="12"
+                      y="16"
+                      textAnchor="middle"
+                      fontSize="12"
+                      fill="currentColor"
+                    >
+                      i
+                    </text>
+                  </svg>
+                }
+                tooltip="The Direct Capitalization Method estimates value as NOI divided by Cap Rate. Common for quick market value checks."
+              />
               <span
                 className="ml-1 font-bold text-lg"
                 style={{ color: getNumberColor(directCapValue ?? 0) }}
               >
                 {directCapValue !== null ? (
-                  formatCurrency(directCapValue)
+                  directCapValue.toFixed(2)
                 ) : (
                   <span className="text-gray-400">N/A</span>
                 )}

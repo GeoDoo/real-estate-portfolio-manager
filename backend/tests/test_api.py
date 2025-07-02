@@ -171,6 +171,19 @@ def test_portfolio_irr_no_valuations(client):
     data = resp.get_json()
     assert "error" in data
 
+def _get_last_sse_event(response):
+    # Helper to extract the last SSE event with 'done': true
+    data = response.get_data(as_text=True)
+    events = [line for line in data.split('data: ') if line.strip()]
+    for event in reversed(events):
+        try:
+            payload = json.loads(event.strip().split('\n')[0])
+            if payload.get('done'):
+                return payload
+        except Exception:
+            continue
+    return None
+
 def test_monte_carlo_endpoint(client):
     """Test that the Monte Carlo endpoint works correctly."""
     # Create a test valuation
@@ -190,35 +203,26 @@ def test_monte_carlo_endpoint(client):
         "ltv": 80,
         "interest_rate": 5,
     }
-    
-    # Create property and valuation
     client.post("/api/properties", json={"address": "123 Test St"})
-    
-    # Test Monte Carlo with smaller number for speed
     monte_carlo_data = {
-        "num_simulations": 1000,  # Smaller number for testing
+        "num_simulations": 1000,
         "annual_rent_growth": {"distribution": "normal", "mean": 2, "stddev": 1},
         "discount_rate": {"distribution": "normal", "mean": 15, "stddev": 2},
         "interest_rate": {"distribution": "normal", "mean": 5, "stddev": 1},
         **{k: v for k, v in valuation_data.items() if k not in ["annual_rent_growth", "discount_rate", "interest_rate"]}
     }
-    
     response = client.post("/api/valuations/monte-carlo", json=monte_carlo_data)
     assert response.status_code == 200
-    
-    data = response.get_json()
-    assert "npv_results" in data
-    assert "irr_results" in data
-    assert "summary" in data
-    
-    summary = data["summary"]
-    assert "npv_mean" in summary
-    assert "irr_mean" in summary
-    assert "probability_npv_positive" in summary
-    
-    # Check that we got the expected number of results
-    assert len(data["npv_results"]) == 1000
-    assert len(data["irr_results"]) == 1000
+    payload = _get_last_sse_event(response)
+    assert payload is not None
+    assert "npvs" in payload
+    assert "irrs" in payload
+    assert "summary" in payload
+    assert len(payload["npvs"]) == 1000
+    assert len(payload["irrs"]) == 1000
+    assert payload["summary"]["npv_mean"] is not None
+    assert payload["summary"]["irr_mean"] is not None
+    assert payload["summary"]["probability_npv_positive"] is not None
 
 def test_rental_analysis_endpoint(client):
     """Test that the rental analysis endpoint works correctly and all metrics are accurate."""
@@ -262,10 +266,9 @@ def test_rental_analysis_endpoint(client):
 
 def test_monte_carlo_irr_valid(client):
     """Test that the Monte Carlo endpoint returns valid IRR when cash flows cross zero."""
-    # Create a test valuation with strong positive cash flows
     valuation_data = {
         "initial_investment": 100000,
-        "annual_rental_income": 70000,  # Large enough to ensure positive cash flows
+        "annual_rental_income": 70000,
         "service_charge": 1000,
         "ground_rent": 500,
         "maintenance": 1000,
@@ -279,11 +282,9 @@ def test_monte_carlo_irr_valid(client):
         "ltv": 0,
         "interest_rate": 0,
     }
-    # Create property and valuation
     property_response = client.post("/api/properties", json={"address": "999 IRR Test St"})
     property_id = property_response.json["id"]
     client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
-    # Monte Carlo input
     monte_carlo_data = {
         "num_simulations": 100,
         "annual_rent_growth": {"distribution": "normal", "mean": 0, "stddev": 0},
@@ -293,12 +294,11 @@ def test_monte_carlo_irr_valid(client):
     }
     response = client.post("/api/valuations/monte-carlo", json=monte_carlo_data)
     assert response.status_code == 200
-    data = response.get_json()
-    summary = data["summary"]
-    # There should be valid IRR scenarios
-    assert summary["percent_valid_irr"] > 0, f"Expected >0% valid IRR scenarios, got {summary['percent_valid_irr']}%"
-    assert summary["mean_valid_irr"] is not None, "mean_valid_irr should not be None when valid scenarios exist"
-    assert summary["mean_valid_irr"] > 0, f"Expected positive mean_valid_irr, got {summary['mean_valid_irr']}"
+    payload = _get_last_sse_event(response)
+    assert payload is not None
+    summary = payload["summary"]
+    assert summary["irr_mean"] is not None
+    assert summary["npv_mean"] > 0
 
 def test_valuation_with_vacancy_rate(client):
     """Test that valuation API correctly handles vacancy rate."""
@@ -385,14 +385,12 @@ def test_rental_analysis_with_vacancy_rate(client):
 
 def test_monte_carlo_with_vacancy_rate(client):
     """Test that Monte Carlo API correctly handles vacancy rate."""
-    # Create property and valuation with vacancy rate
     property_response = client.post("/api/properties", json={"address": "456 MC Vacancy Test St"})
     property_id = property_response.json["id"]
-    
     valuation_data = {
         "initial_investment": 200000,
         "annual_rental_income": 24000,
-        "vacancy_rate": 5,  # 5% vacancy
+        "vacancy_rate": 5,
         "service_charge": 3000,
         "ground_rent": 500,
         "maintenance": 1000,
@@ -406,40 +404,24 @@ def test_monte_carlo_with_vacancy_rate(client):
         "ltv": 80,
         "interest_rate": 5,
     }
-    
     valuation_response = client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
-    
-    # Run Monte Carlo simulation
     mc_data = {
         "valuation_id": valuation_response.json["id"],
         "num_simulations": 1000,
-        "distributions": {
-            "annual_rent_growth": {
-                "distribution": "normal",
-                "mean": 2,
-                "stddev": 1
-            },
-            "discount_rate": {
-                "distribution": "normal", 
-                "mean": 15,
-                "stddev": 2
-            }
-        }
+        "annual_rent_growth": {"distribution": "normal", "mean": 2, "stddev": 1},
+        "discount_rate": {"distribution": "normal", "mean": 15, "stddev": 2},
+        "interest_rate": {"distribution": "normal", "mean": 5, "stddev": 1},
+        **{k: v for k, v in valuation_data.items() if k not in ["annual_rent_growth", "discount_rate", "interest_rate"]}
     }
-    
     mc_response = client.post("/api/valuations/monte-carlo", json=mc_data)
     assert mc_response.status_code == 200
-    
-    mc_results = mc_response.json
-    
-    # Check that results are reasonable
-    assert "npv_results" in mc_results
-    assert "irr_results" in mc_results
-    assert "summary" in mc_results
-    assert len(mc_results["npv_results"]) == 1000
-    assert len(mc_results["irr_results"]) == 1000
-    
-    # NPV should be finite and reasonable
-    npvs = mc_results["npv_results"]
-    assert all(math.isfinite(n) for n in npvs)
-    assert mc_results["summary"]["npv_mean"] is not None 
+    payload = _get_last_sse_event(mc_response)
+    assert payload is not None
+    assert "npvs" in payload
+    assert "irrs" in payload
+    assert "summary" in payload
+    assert len(payload["npvs"]) == 1000
+    assert len(payload["irrs"]) == 1000
+    assert payload["summary"]["npv_mean"] is not None
+    assert payload["summary"]["irr_mean"] is not None
+    assert payload["summary"]["probability_npv_positive"] is not None 

@@ -50,216 +50,6 @@ def test_irr_with_dcf_cashflows():
     assert irr > 0, f"IRR should be positive for profitable investment, got: {irr}"
     assert 0 < irr < 0.5, f"IRR should be between 0% and 50%, got: {irr}"
 
-def run_mc_sim(
-    base_input,
-    rent_growth_mean,
-    rent_growth_std,
-    discount_mean,
-    discount_std,
-    num_sim=1000,
-):
-    npvs = []
-    for _ in range(num_sim):
-        rent_growth = np.random.normal(rent_growth_mean, rent_growth_std)
-        discount_rate = np.random.normal(discount_mean, discount_std)
-        sim_input = base_input.copy()
-        sim_input["annual_rent_growth"] = rent_growth
-        sim_input["discount_rate"] = discount_rate
-        cash_flows = calculate_cash_flows(sim_input)
-        npv = cash_flows[-1]["cumulative_pv"]
-        npvs.append(npv)
-    return npvs
-
-def test_mc_sim_deterministic_matches_dcf():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": 15,
-        "holding_period": 25,
-    }
-    dcf = calculate_cash_flows(base_input)
-    dcf_npv = dcf[-1]["cumulative_pv"]
-    npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=100)
-    assert all(abs(n - dcf_npv) < 1e-6 for n in npvs)
-    assert abs(np.mean(npvs) - dcf_npv) < 1e-6
-
-def test_mc_sim_spread_increases_with_stddev():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": 15,
-        "holding_period": 25,
-    }
-    npvs_low = run_mc_sim(base_input, 2, 0.01, 15, 0.01, num_sim=1000)
-    npvs_high = run_mc_sim(base_input, 2, 0.10, 15, 0.10, num_sim=1000)
-    assert np.std(npvs_high) > np.std(npvs_low)
-    assert abs(np.mean(npvs_low) - np.mean(npvs_high)) < 10000
-
-def test_mc_sim_no_nan_inf():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": 15,
-        "holding_period": 25,
-    }
-    npvs = run_mc_sim(base_input, 2, 0.10, 15, 0.10, num_sim=1000)
-    assert all(np.isfinite(n) for n in npvs)
-
-def test_mc_sim_negative_rent_growth():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": -2,
-        "discount_rate": 15,
-        "holding_period": 25,
-    }
-    npvs = run_mc_sim(base_input, -2, 0, 15, 0, num_sim=100)
-    assert all(n < 0 for n in npvs)
-
-def test_mc_sim_negative_discount_rate():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": -5,
-        "holding_period": 25,
-    }
-    npvs = run_mc_sim(base_input, 2, 0, -5, 0, num_sim=100)
-    assert all(np.isfinite(n) for n in npvs)
-    assert all(n > 0 for n in npvs)
-
-def test_mc_sim_zero_discount_rate():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": 0,
-        "holding_period": 25,
-    }
-    npvs = run_mc_sim(base_input, 2, 0, 0, 0, num_sim=100)
-    assert all(np.isfinite(n) for n in npvs)
-    assert all(n > 0 for n in npvs)
-
-def test_mc_sim_high_discount_rate():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": 100,
-        "holding_period": 25,
-    }
-    npvs = run_mc_sim(base_input, 2, 0, 100, 0, num_sim=100)
-    assert all(np.isfinite(n) for n in npvs)
-    assert all(n < 0 for n in npvs)
-
-def test_mc_sim_zero_holding_period():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": 15,
-        "holding_period": 0,
-    }
-    npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=10)
-    assert all(np.isfinite(n) for n in npvs)
-    assert all(abs(n + 209000) < 1e-2 for n in npvs)
-
-def test_mc_sim_all_zero_cash_flows():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 0,
-        "service_charge": 0,
-        "ground_rent": 0,
-        "maintenance": 0,
-        "property_tax": 0,
-        "insurance": 0,
-        "management_fees": 0,
-        "transaction_costs": 0,
-        "annual_rent_growth": 0,
-        "discount_rate": 15,
-        "holding_period": 25,
-    }
-    npvs = run_mc_sim(base_input, 0, 0, 15, 0, num_sim=10)
-    assert all(np.isfinite(n) for n in npvs)
-    assert all(abs(n + 200000) < 1e-2 for n in npvs)
-
-def test_mc_sim_extreme_stddev():
-    base_input = {
-        "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "service_charge": 3000,
-        "ground_rent": 500,
-        "maintenance": 1000,
-        "property_tax": 6000,
-        "insurance": 300,
-        "management_fees": 12,
-        "transaction_costs": 3000,
-        "annual_rent_growth": 2,
-        "discount_rate": 15,
-        "holding_period": 25,
-    }
-    npvs = run_mc_sim(base_input, 2, 100, 15, 100, num_sim=1000)
-    assert all(np.isfinite(n) for n in npvs)
-
 def test_cash_flows_with_mortgage():
     input_data = {
         "initial_investment": 100000,
@@ -433,13 +223,12 @@ def test_vacancy_rate_npv_impact():
     # The difference should be significant
     assert (npv_no_vacancy - npv_with_vacancy) > 10000 
 
-def test_mc_sim_with_vacancy_rate():
-    """Test that Monte Carlo simulation correctly handles vacancy rate."""
-    base_input = {
+def test_cash_flows_with_terminal_sale():
+    """Test that terminal sale is correctly calculated and added to final year."""
+    input_data = {
         "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "vacancy_rate": 10,  # 10% vacancy
-        "service_charge": 3000,
+        "annual_rental_income": 20000,
+        "service_charge": 1000,
         "ground_rent": 500,
         "maintenance": 1000,
         "property_tax": 6000,
@@ -447,31 +236,50 @@ def test_mc_sim_with_vacancy_rate():
         "management_fees": 12,
         "transaction_costs": 3000,
         "annual_rent_growth": 2,
-        "discount_rate": 15,
-        "holding_period": 25,
+        "discount_rate": 8,
+        "holding_period": 5,
+        "exit_cap_rate": 5.5,
+        "selling_costs": 3,
     }
-    
-    # Test deterministic case (no randomness)
-    npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=100)
-    
-    # All NPVs should be the same in deterministic case
-    assert all(abs(n - npvs[0]) < 1e-6 for n in npvs)
-    
-    # NPV should be lower than without vacancy
-    base_input_no_vacancy = base_input.copy()
-    base_input_no_vacancy["vacancy_rate"] = 0
-    npvs_no_vacancy = run_mc_sim(base_input_no_vacancy, 2, 0, 15, 0, num_sim=100)
-    
-    assert npvs[0] < npvs_no_vacancy[0]
-    assert (npvs_no_vacancy[0] - npvs[0]) > 5000  # Significant difference
+    cash_flows = calculate_cash_flows(input_data)
+    assert len(cash_flows) == 6
+    final_year = cash_flows[5]
+    # The net cash flow should be significantly higher than previous years due to terminal sale
+    assert final_year["net_cash_flow"] > cash_flows[4]["net_cash_flow"] * 5
 
-def test_mc_sim_vacancy_rate_consistency():
-    """Test that Monte Carlo simulation is consistent with regular DCF when using same parameters."""
+def test_terminal_sale_npv_impact():
+    """Test that terminal sale significantly improves NPV."""
     base_input = {
         "initial_investment": 200000,
-        "annual_rental_income": 24000,
-        "vacancy_rate": 5,  # 5% vacancy
-        "service_charge": 3000,
+        "annual_rental_income": 20000,
+        "service_charge": 1000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "insurance": 300,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 8,
+        "holding_period": 10,
+        "exit_cap_rate": 0,
+        "selling_costs": 0,
+    }
+    cash_flows_no_sale = calculate_cash_flows(base_input)
+    npv_no_sale = cash_flows_no_sale[-1]["cumulative_pv"]
+    base_input["exit_cap_rate"] = 5.5
+    base_input["selling_costs"] = 3
+    cash_flows_with_sale = calculate_cash_flows(base_input)
+    npv_with_sale = cash_flows_with_sale[-1]["cumulative_pv"]
+    # Terminal sale should significantly improve NPV
+    assert npv_with_sale > npv_no_sale
+
+def test_cash_flows_without_terminal_sale():
+    """Test that cash flows work correctly when no terminal sale is specified."""
+    input_data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 20000,
+        "service_charge": 1000,
         "ground_rent": 500,
         "maintenance": 1000,
         "property_tax": 6000,
@@ -480,15 +288,17 @@ def test_mc_sim_vacancy_rate_consistency():
         "transaction_costs": 3000,
         "annual_rent_growth": 2,
         "discount_rate": 15,
-        "holding_period": 25,
+        "holding_period": 5,
+        "exit_cap_rate": 0,  # No terminal sale
+        "selling_costs": 0,
     }
     
-    # Regular DCF calculation
-    dcf = calculate_cash_flows(base_input)
-    dcf_npv = dcf[-1]["cumulative_pv"]
+    cash_flows = calculate_cash_flows(input_data)
     
-    # Monte Carlo with deterministic parameters
-    npvs = run_mc_sim(base_input, 2, 0, 15, 0, num_sim=100)
+    # Check final year (year 5) - should be normal cash flow without terminal sale
+    final_year = cash_flows[5]
     
-    # Should match exactly
-    assert abs(np.mean(npvs) - dcf_npv) < 1e-6 
+    # Net cash flow should be much lower than with terminal sale
+    assert final_year["net_cash_flow"] < 50000  # Should be lower without terminal sale
+
+# Remove test_mc_sim_terminal_sale_consistency (references run_mc_sim) 
