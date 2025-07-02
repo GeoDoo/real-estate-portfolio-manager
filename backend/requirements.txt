@@ -6,3 +6,4 @@ numpy
 numpy-financial
 pytest
 alembic
+requests

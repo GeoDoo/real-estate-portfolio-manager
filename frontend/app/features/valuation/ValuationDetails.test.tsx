@@ -183,9 +183,7 @@ describe('ValuationDetails API Integration', () => {
 // Minimal ReadableStream mock for test environment
 if (typeof globalThis.ReadableStream === 'undefined') {
   class MockReadableStream {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor({ start }: { start: (controller: unknown) => void }) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const controller: unknown = {
         enqueue: jest.fn(),
         close: jest.fn(),
@@ -193,6 +191,7 @@ if (typeof globalThis.ReadableStream === 'undefined') {
       start(controller);
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   globalThis.ReadableStream = MockReadableStream as any;
 }
 
@@ -203,7 +202,7 @@ beforeEach(() => {
       // Simulate SSE streaming: progress events, then final event
       const encoder = new TextEncoder();
       const stream = new globalThis.ReadableStream({
-        start(controller: any) {
+        start(controller: { enqueue: (chunk: Uint8Array) => void; close: () => void }) {
           // Progress events
           for (let i = 1; i <= 3; i++) {
             controller.enqueue(encoder.encode(`data: {"progress": ${i * 33}}
@@ -266,6 +265,7 @@ beforeEach(() => {
     }
     // Default mock for other fetches
     return Promise.resolve({ ok: true, json: async () => ({}) });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 });
 

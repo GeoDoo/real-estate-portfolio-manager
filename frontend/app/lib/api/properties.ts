@@ -14,6 +14,7 @@ export const propertiesAPI = {
   // Create a new property
   create: async (data: {
     address: string;
+    postcode: string;
     listing_link?: string;
   }): Promise<Property> => {
     return apiRequest<Property>(`${BASE}/api/properties`, {
@@ -25,7 +26,7 @@ export const propertiesAPI = {
   // Update a property
   update: async (
     id: string,
-    data: { address: string; listing_link?: string },
+    data: { address: string; postcode: string; listing_link?: string },
   ): Promise<Property> => {
     return apiRequest<Property>(`${BASE}/api/properties/${id}`, {
       method: "PUT",

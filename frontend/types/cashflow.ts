@@ -2,6 +2,8 @@ import { ValuationBase } from "./valuation";
 
 export interface DCFRow extends ValuationBase {
   id: string;
+  property_id: string;
+  postcode: string;
   created_at: string;
   initial_investment: number;
   annual_rental_income: number;

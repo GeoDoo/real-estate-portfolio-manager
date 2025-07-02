@@ -5,6 +5,7 @@ import { Property } from "@/types/property";
 import { propertiesAPI } from "@/lib/api/properties";
 import Button from "@/components/Button";
 import PageContainer from "@/components/PageContainer";
+import InfoTooltip from "@/components/InfoTooltip";
 
 interface NewPropertyFormProps {
   property?: Property; // Optional - if provided, we're editing
@@ -15,6 +16,7 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
   const isEditing = !!property;
   const [form, setForm] = useState({
     address: "",
+    postcode: "",
     listing_link: "",
   });
   const [loading, setLoading] = useState(false);
@@ -25,6 +27,7 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
     if (property) {
       setForm({
         address: property.address,
+        postcode: property.postcode || "",
         listing_link: property.listing_link || "",
       });
     }
@@ -85,6 +88,32 @@ export default function NewPropertyForm({ property }: NewPropertyFormProps) {
               placeholder="e.g., 123 Main St, Apt 4B, New York, NY 10001"
               required
               disabled={loading}
+            />
+          </div>
+          <div>
+            <label
+              className="block text-sm font-medium mb-2 flex items-center gap-1"
+              style={{ color: "var(--foreground)" }}
+            >
+              Postcode
+              <InfoTooltip
+                label={<span className="text-gray-400">&#9432;</span>}
+                tooltip={
+                  "Postcode is required to fetch comparable sales from Land Registry and other market data sources. Please enter the full UK postcode."
+                }
+              />
+            </label>
+            <input
+              type="text"
+              name="postcode"
+              value={form.postcode}
+              onChange={handleChange}
+              className="input"
+              placeholder="e.g., W8 4PX"
+              required
+              disabled={loading}
+              pattern="[A-Za-z]{1,2}[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}"
+              title="Please enter a valid UK postcode."
             />
           </div>
           <div>

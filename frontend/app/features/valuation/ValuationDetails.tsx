@@ -7,9 +7,10 @@ import { PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import ValuationForm from "@/components/ValuationForm";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { valuationsAPI } from "@/lib/api/valuations";
+import { marketDataAPI, ComparableSale, MarketDataResponse } from "@/lib/api/marketData";
 import Button from "@/components/Button";
 import PageContainer from "@/components/PageContainer";
-import { getNumberColor } from "@/lib/utils";
+import { getNumberColor, formatCurrency } from "@/lib/utils";
 import { config } from "../../config";
 import {
   isValidValuationForm,
@@ -135,6 +136,12 @@ export default function ValuationDetailPage() {
     "custom" | "bullish" | "bearish"
   >("custom");
   const [capRate, setCapRate] = useState(4.5);
+  
+  // Comparable sales state
+  const [comparableSales, setComparableSales] = useState<ComparableSale[]>([]);
+  const [marketDataSummary, setMarketDataSummary] = useState<MarketDataResponse['summary'] | null>(null);
+  const [comparableLoading, setComparableLoading] = useState(false);
+  const [comparableError, setComparableError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -445,6 +452,34 @@ export default function ValuationDetailPage() {
     } finally {
       setRentalLoading(false);
     }
+  };
+
+  const fetchComparableSales = async () => {
+    if (!valuation) return;
+    
+    setComparableLoading(true);
+    setComparableError(null);
+    setComparableSales([]);
+    setMarketDataSummary(null);
+    
+    try {
+      // Use postcode field directly
+      const postcode = valuation.postcode || '';
+      if (!postcode) {
+        setComparableError("Could not extract postcode from property address");
+        return;
+      }
+      const response = await marketDataAPI.getComparableSales(postcode, 20);
+      setComparableSales(response.sales);
+      setMarketDataSummary(response.summary);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch comparable sales";
+      setComparableError(errorMessage);
+      console.error("Comparable sales error:", err);
+    }
+    
+    setComparableLoading(false);
   };
 
   function getHistogram(data: number[], bins: number) {
@@ -2452,6 +2487,110 @@ export default function ValuationDetailPage() {
               </span>
             </div>
           </div>
+
+          {/* Comparable Sales */}
+          {!isEditing && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Comparable Sales</h2>
+              <p className="text-gray-600 mb-6">
+                View recent property sales in the area to compare with your valuation.
+              </p>
+              <div className="mb-4">
+                <Button
+                  onClick={fetchComparableSales}
+                  className="px-4 py-3"
+                  variant="primary"
+                  size="md"
+                  disabled={comparableLoading || !valuation}
+                >
+                  {comparableLoading ? "Loading..." : "Load Comparable Sales"}
+                </Button>
+                {comparableError && (
+                  <div className="text-sm text-red-500 mt-2">
+                    {comparableError}
+                  </div>
+                )}
+              </div>
+              {marketDataSummary && (
+                <div className="mb-6">
+                  <h3 className="font-bold mb-3 text-lg">Market Summary</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600">Total Sales</div>
+                      <div className="text-lg font-bold text-gray-800">
+                        {marketDataSummary.total_sales.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600">Average Price (£)</div>
+                      <div className="text-lg font-bold text-gray-900">
+                        {formatCurrency(marketDataSummary.average_price, "")}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600">Price Range (£)</div>
+                      <div className="text-lg font-bold text-gray-900">
+                        {formatCurrency(marketDataSummary.price_range, "")}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600">Min - Max (£)</div>
+                      <div className="text-lg font-bold text-gray-900">
+                        <span>{formatCurrency(marketDataSummary.min_price, "")}</span>
+                        <span className="mx-1 text-gray-500">-</span>
+                        <span>{formatCurrency(marketDataSummary.max_price, "")}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {comparableSales.length > 0 && (
+                <div>
+                  <h3 className="font-bold mb-3 text-lg">Recent Sales</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-4">Address</th>
+                          <th className="text-right py-2 px-4">Sale Price (£)</th>
+                          <th className="text-center py-2 px-4">Sale Date</th>
+                          <th className="text-center py-2 px-4">Property Type</th>
+                          <th className="text-center py-2 px-4">New Build</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {comparableSales.slice(0, 10).map((sale) => (
+                          <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-2 px-4 text-sm text-left">
+                              <span className="font-bold text-gray-900">{sale.address}</span>
+                              <div className="text-xs text-gray-500">{sale.postcode}</div>
+                            </td>
+                            <td className="py-2 px-4 text-right font-bold" style={{ color: getNumberColor(sale.sale_price) }}>
+                              {formatCurrency(sale.sale_price, "")}
+                            </td>
+                            <td className="py-2 px-4 text-center text-sm">
+                              {marketDataAPI.formatSaleDate(sale.sale_date)}
+                            </td>
+                            <td className="py-2 px-4 text-center text-sm">
+                              {sale.property_type}
+                            </td>
+                            <td className="py-2 px-4 text-center text-sm">
+                              {sale.new_build ? <span className="text-gray-900 font-bold">Yes</span> : <span className="text-gray-500">No</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {comparableSales.length > 10 && (
+                    <div className="text-sm text-gray-500 mt-2 text-center">
+                      Showing 10 of {comparableSales.length} sales
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </PageContainer>
