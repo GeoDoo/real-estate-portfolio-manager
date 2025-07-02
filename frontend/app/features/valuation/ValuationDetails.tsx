@@ -2406,7 +2406,7 @@ export default function ValuationDetailPage() {
                 style={{ color: getNumberColor(firstYearNOI ?? 0) }}
               >
                 {firstYearNOI !== null ? (
-                  firstYearNOI.toFixed(2)
+                  firstYearNOI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 ) : (
                   <span className="text-gray-400">N/A</span>
                 )}
@@ -2445,7 +2445,7 @@ export default function ValuationDetailPage() {
                 style={{ color: getNumberColor(directCapValue ?? 0) }}
               >
                 {directCapValue !== null ? (
-                  directCapValue.toFixed(2)
+                  directCapValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 ) : (
                   <span className="text-gray-400">N/A</span>
                 )}

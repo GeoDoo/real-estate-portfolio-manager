@@ -656,7 +656,7 @@ def create_app(test_config=None):
         import json
         import time
         data = request.json
-        num_simulations = max(1000, min(50000, data.get("num_simulations", 10000)))
+        num_simulations = max(1, min(50000, int(data.get("num_simulations", 10000))))
         
         # Extract distribution parameters with defaults
         rent_growth_dist = data.get("annual_rent_growth", {"distribution": "normal", "mean": 2, "stddev": 1})

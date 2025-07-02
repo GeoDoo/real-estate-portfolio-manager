@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import ValuationDetailPage from './ValuationDetails';
 import { TextEncoder } from 'util';
 
@@ -183,8 +183,10 @@ describe('ValuationDetails API Integration', () => {
 // Minimal ReadableStream mock for test environment
 if (typeof globalThis.ReadableStream === 'undefined') {
   class MockReadableStream {
-    constructor({ start }: { start: (controller: any) => void }) {
-      const controller = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor({ start }: { start: (controller: unknown) => void }) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const controller: unknown = {
         enqueue: jest.fn(),
         close: jest.fn(),
       };
