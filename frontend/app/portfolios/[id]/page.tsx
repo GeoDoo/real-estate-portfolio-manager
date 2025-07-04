@@ -15,6 +15,8 @@ interface PropertyWithValuation extends Property {
     annual_rental_income: number;
     noi?: number;
     irr?: number | null;
+    transaction_costs?: number;
+    property_tax?: number;
   };
 }
 
@@ -59,7 +61,9 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
                   initial_investment: valuation.initial_investment,
                   annual_rental_income: valuation.annual_rental_income,
                   noi: noi,
-                  irr: null // Will be calculated later if needed
+                  irr: null, // Will be calculated later if needed
+                  transaction_costs: valuation.transaction_costs,
+                  property_tax: valuation.property_tax
                 }
               };
             }
@@ -156,9 +160,10 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
   }, [id]);
 
   // Calculate portfolio totals
-  const totalInvestment = properties.reduce((sum, prop) => 
-    sum + (prop.valuation?.initial_investment || 0), 0
-  );
+  const totalInvestment = properties.reduce((sum, prop) => {
+    const v = prop.valuation;
+    return sum + ((v?.initial_investment || 0) + (v?.transaction_costs || 0) + (v?.property_tax || 0));
+  }, 0);
   // Use DCF cash flows for Year 1 NOI (row with year === 1)
   const totalNOI = aggregateRows.length > 1 ? aggregateRows[1].noi : 0;
   const totalNPV = aggregateRows.length > 0 ? aggregateRows[aggregateRows.length - 1].cumulative_pv : 0;
