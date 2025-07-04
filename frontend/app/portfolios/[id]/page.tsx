@@ -21,7 +21,8 @@ interface PropertyWithValuation extends Property {
 }
 
 // Helper for consistent coloring
-function getSummaryColor(value: number) {
+function getSummaryColor(value: number, type?: string) {
+  if (type === 'investment') return '#111827'; // always neutral for investment
   if (value > 0) return '#10b981'; // green
   if (value < 0) return '#ef4444'; // red
   return '#111827'; // neutral/dark
@@ -188,7 +189,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
             {properties.map((property) => (
               <a
                 key={property.id}
-                href={`/properties/${property.id}`}
+                href={`/properties/${property.id}/valuation`}
                 className="text-blue-600 hover:underline font-medium"
               >
                 {property.address}
@@ -200,8 +201,8 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
             <h3 className="font-semibold text-gray-900 mb-3">Portfolio Summary</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(totalInvestment) }}>
-                  £{formatCurrency(totalInvestment, "")}
+                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(-Math.abs(totalInvestment)) }}>
+                  £{formatCurrency(-Math.abs(totalInvestment), "")}
                 </div>
                 <div className="text-sm text-gray-600">Total Investment</div>
               </div>
