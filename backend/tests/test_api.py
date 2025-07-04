@@ -32,7 +32,7 @@ def sample_portfolio(app):
         portfolio = Portfolio(id=str(uuid.uuid4()), name="Test Portfolio")
         db.session.add(portfolio)
         db.session.commit()
-        return portfolio
+        return portfolio.id
 
 @pytest.fixture
 def sample_property(app, sample_portfolio):
@@ -41,18 +41,18 @@ def sample_property(app, sample_portfolio):
             id=str(uuid.uuid4()),
             address=f"123 Test St {uuid.uuid4().hex[:8]}",
             created_at=datetime.now(timezone.utc).isoformat(),
-            portfolio_id=sample_portfolio.id
+            portfolio_id=sample_portfolio
         )
         db.session.add(property_obj)
         db.session.commit()
-        return property_obj
+        return property_obj.id
 
 @pytest.fixture
 def sample_valuation(app, sample_property):
     with app.app_context():
         valuation = Valuation(
             id=str(uuid.uuid4()),
-            property_id=sample_property.id,
+            property_id=sample_property,
             created_at=datetime.now(timezone.utc).isoformat(),
             initial_investment=200000,
             annual_rental_income=24000,
@@ -71,7 +71,7 @@ def sample_valuation(app, sample_property):
         )
         db.session.add(valuation)
         db.session.commit()
-        return valuation
+        return valuation.id
 
 def create_portfolio_with_properties_and_valuations(app, portfolio_id, props_and_vals):
     with app.app_context():
@@ -699,7 +699,7 @@ def test_valuation_update_with_new_utilities(client, sample_valuation):
         "holding_period": 25,
         "service_charge": 3500,  # updated optional field
     }
-    response = client.put(f"/api/valuations/{sample_valuation.id}", json=data)
+    response = client.put(f"/api/valuations/{sample_valuation}", json=data)
     assert response.status_code == 200
     result = response.get_json()
     assert result["initial_investment"] == 250000
@@ -712,7 +712,7 @@ def test_property_update_with_new_utilities(client, sample_property):
         "postcode": "TEST2 2BB",
         "listing_link": "https://example.com/updated-listing",
     }
-    response = client.put(f"/api/properties/{sample_property.id}", json=data)
+    response = client.put(f"/api/properties/{sample_property}", json=data)
     assert response.status_code == 200
     result = response.get_json()
     assert result["address"] == "456 Updated Street"

@@ -10,28 +10,64 @@ import numpy as np
 import math
 import numpy_financial as npf
 import json
-import requests
-import csv
-from io import StringIO
 import sqlite3
 
 db = SQLAlchemy()
 PORT = int(os.environ.get("BACKEND_PORT", 5050))
 
 # --- Utility Functions ---
-def validate_required_field(data, field_name, field_type=(int, float), min_value=0):
-    """Validate a required field in request data."""
-    value = data.get(field_name)
-    if value is None or not isinstance(value, field_type) or value <= min_value:
-        return False, f"{field_name.replace('_', ' ').capitalize()} is required and must be a positive number."
-    return True, value
+def validate_fields(data, required_fields, optional_fields=None):
+    """Validate required and optional fields in data. Returns (True, cleaned_data) or (False, error_message)."""
+    if optional_fields is None:
+        optional_fields = []
+    cleaned = {}
+    for field, field_type, min_value in required_fields:
+        value = data.get(field)
+        if value is None or not isinstance(value, field_type):
+            type_names = (
+                ', '.join([t.__name__ for t in field_type])
+                if isinstance(field_type, tuple)
+                else field_type.__name__
+            )
+            return False, f"{field.replace('_', ' ').capitalize()} is required and must be a {type_names}."
+        if isinstance(value, str) and isinstance(field_type, type) and field_type is str:
+            if len(value) < min_value:
+                return False, f"{field.replace('_', ' ').capitalize()} must be at least {min_value} characters."
+        elif isinstance(value, str) and isinstance(field_type, tuple) and str in field_type:
+            if len(value) < min_value:
+                return False, f"{field.replace('_', ' ').capitalize()} must be at least {min_value} characters."
+        elif isinstance(value, (int, float)):
+            if value < min_value:
+                return False, f"{field.replace('_', ' ').capitalize()} must be >= {min_value}."
+        cleaned[field] = value
+    for field, field_type, min_value in optional_fields:
+        value = data.get(field)
+        if value is not None:
+            if not isinstance(value, field_type):
+                type_names = (
+                    ', '.join([t.__name__ for t in field_type])
+                    if isinstance(field_type, tuple)
+                    else field_type.__name__
+                )
+                return False, f"{field.replace('_', ' ').capitalize()} must be a {type_names}."
+            if isinstance(value, str) and isinstance(field_type, type) and field_type is str:
+                if len(value) < min_value:
+                    return False, f"{field.replace('_', ' ').capitalize()} must be at least {min_value} characters."
+            elif isinstance(value, str) and isinstance(field_type, tuple) and str in field_type:
+                if len(value) < min_value:
+                    return False, f"{field.replace('_', ' ').capitalize()} must be at least {min_value} characters."
+            elif isinstance(value, (int, float)):
+                if value < min_value:
+                    return False, f"{field.replace('_', ' ').capitalize()} must be >= {min_value}."
+            cleaned[field] = value
+    return True, cleaned
 
-def validate_optional_field(data, field_name, field_type=(int, float), min_value=0):
-    """Validate an optional field in request data."""
-    value = data.get(field_name)
-    if value is not None and (not isinstance(value, field_type) or value < min_value):
-        return False, f"{field_name.replace('_', ' ').capitalize()} cannot be negative."
-    return True, value
+def populate_model_from_data(model, data, fields):
+    """Set attributes on a model from a data dictionary for the given fields."""
+    for field in fields:
+        if field in data and hasattr(model, field):
+            setattr(model, field, data[field])
+    return model
 
 def validate_property_address(address, existing_property=None):
     """Validate property address with uniqueness check."""
@@ -45,96 +81,6 @@ def validate_property_address(address, existing_property=None):
         return False, "Property with this address already exists"
     
     return True, address
-
-def create_valuation_from_data(data, property_id=None, valuation_id=None):
-    """Create or update a valuation object from request data."""
-    now = datetime.now(timezone.utc).isoformat()
-    
-    if valuation_id:
-        # Update existing valuation
-        valuation = db.session.get(Valuation, valuation_id)
-        if not valuation:
-            return None, "Valuation not found"
-        
-        for key, value in data.items():
-            if hasattr(valuation, key):
-                setattr(valuation, key, value)
-        valuation.created_at = now
-        return valuation, None
-    else:
-        # Create new valuation
-        val_id = str(uuid.uuid4())
-        valuation = Valuation(
-            id=val_id,
-            property_id=property_id,
-            created_at=now,
-            initial_investment=data.get("initial_investment", 0),
-            annual_rental_income=data.get("annual_rental_income", 0),
-            vacancy_rate=data.get("vacancy_rate", 0),
-            service_charge=data.get("service_charge", 0),
-            ground_rent=data.get("ground_rent", 0),
-            maintenance=data.get("maintenance", 0),
-            property_tax=data.get("property_tax", 0),
-            insurance=data.get("insurance", 0),
-            management_fees=data.get("management_fees", 0),
-            transaction_costs=data.get("transaction_costs", 0),
-            annual_rent_growth=data.get("annual_rent_growth", 0),
-            discount_rate=data.get("discount_rate", 0),
-            holding_period=data.get("holding_period", 0),
-            ltv=data.get("ltv", 0),
-            interest_rate=data.get("interest_rate", 0),
-            capex=data.get("capex", 0),
-            exit_cap_rate=data.get("exit_cap_rate", 0),
-            selling_costs=data.get("selling_costs", 0),
-        )
-        return valuation, None
-
-def validate_valuation_data(data):
-    """Validate valuation data with required and optional fields."""
-    required_fields = [
-        "initial_investment", "annual_rental_income", "maintenance", "property_tax",
-        "management_fees", "transaction_costs", "annual_rent_growth", "discount_rate", "holding_period"
-    ]
-    optional_fields = ["service_charge", "ground_rent", "insurance", "ltv", "interest_rate"]
-    
-    # Validate required fields
-    for field in required_fields:
-        is_valid, result = validate_required_field(data, field)
-        if not is_valid:
-            return False, result
-    
-    # Validate optional fields
-    for field in optional_fields:
-        is_valid, result = validate_optional_field(data, field)
-        if not is_valid:
-            return False, result
-    
-    return True, None
-
-def validate_fields(data, required_fields, optional_fields=None):
-    """Validate required and optional fields in data. Returns (True, cleaned_data) or (False, error_message)."""
-    if optional_fields is None:
-        optional_fields = []
-    cleaned = {}
-    for field, field_type, min_value in required_fields:
-        value = data.get(field)
-        if value is None or not isinstance(value, field_type) or value < min_value:
-            return False, f"{field.replace('_', ' ').capitalize()} is required and must be a positive {field_type.__name__}."
-        cleaned[field] = value
-    for field, field_type, min_value in optional_fields:
-        value = data.get(field)
-        if value is not None:
-            if not isinstance(value, field_type) or value < min_value:
-                return False, f"{field.replace('_', ' ').capitalize()} must be a {field_type.__name__} >= {min_value}."
-            cleaned[field] = value
-    return True, cleaned
-
-def populate_model_from_data(model, data, fields):
-    """Set attributes on model from data for the given fields."""
-    for field in fields:
-        if field in data:
-            setattr(model, field, data[field])
-    return model
 
 # --- Models ---
 class Portfolio(db.Model):
@@ -162,7 +108,7 @@ class Property(db.Model):
 class Valuation(db.Model):
     id = db.Column(db.String, primary_key=True)
     property_id = db.Column(
-        db.String, db.ForeignKey("property.id"), unique=True, nullable=False
+        db.String, db.ForeignKey("property.id"), unique=True, nullable=True
     )
     created_at = db.Column(db.String)
     initial_investment = db.Column(db.Float)
@@ -730,25 +676,51 @@ def create_app(test_config=None):
         elif request.method in ["POST", "PUT"]:
             data = request.json
             
-            # Validate valuation data
-            is_valid, error_msg = validate_valuation_data(data)
+            # Validate valuation data using new utilities
+            required_fields = [
+                ("initial_investment", (int, float), 0),
+                ("annual_rental_income", (int, float), 0),
+                ("maintenance", (int, float), 0),
+                ("property_tax", (int, float), 0),
+                ("management_fees", (int, float), 0),
+                ("transaction_costs", (int, float), 0),
+                ("annual_rent_growth", (int, float), 0),
+                ("discount_rate", (int, float), 0),
+                ("holding_period", (int, float), 0),
+            ]
+            optional_fields = [
+                ("service_charge", (int, float), 0),
+                ("ground_rent", (int, float), 0),
+                ("insurance", (int, float), 0),
+                ("ltv", (int, float), 0),
+                ("interest_rate", (int, float), 0),
+                ("capex", (int, float), 0),
+                ("vacancy_rate", (int, float), 0),
+                ("exit_cap_rate", (int, float), 0),
+                ("selling_costs", (int, float), 0),
+            ]
+            is_valid, cleaned = validate_fields(data, required_fields, optional_fields)
             if not is_valid:
-                return jsonify({"error": error_msg}), 400
+                return jsonify({"error": cleaned}), 400
             
             # Get existing valuation or create new one
             existing_val = db.session.query(Valuation).filter_by(property_id=prop_id).first()
-            val_id = existing_val.id if existing_val else None
             
-            # Create or update valuation
-            valuation, error_msg = create_valuation_from_data(data, prop_id, val_id)
-            if not valuation:
-                return jsonify({"error": error_msg}), 400
-            
-            if not existing_val:
+            if existing_val:
+                # Update existing valuation
+                existing_val = populate_model_from_data(existing_val, cleaned, cleaned.keys())
+                existing_val.created_at = datetime.now(timezone.utc).isoformat()
+                db.session.commit()
+                return jsonify(clean_for_json(existing_val.to_dict())), 200
+            else:
+                # Create new valuation
+                val_id = str(uuid.uuid4())
+                now = datetime.now(timezone.utc).isoformat()
+                valuation = Valuation(id=val_id, property_id=prop_id, created_at=now)
+                valuation = populate_model_from_data(valuation, cleaned, cleaned.keys())
                 db.session.add(valuation)
-            
-            db.session.commit()
-            return jsonify(clean_for_json(valuation.to_dict())), 201
+                db.session.commit()
+                return jsonify(clean_for_json(valuation.to_dict())), 201
 
     @app.route("/api/valuations/monte-carlo", methods=["POST"])
     def monte_carlo_valuation():
