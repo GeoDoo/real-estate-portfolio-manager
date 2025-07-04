@@ -21,10 +21,26 @@ function renderCell(value: number, colorFn: (n: number) => string) {
   );
 }
 
+interface PropertyWithValuation extends Property {
+  valuation?: {
+    initial_investment: number;
+    annual_rental_income: number;
+    noi?: number;
+    irr?: number | null;
+  };
+}
+
+// Helper for consistent coloring
+function getSummaryColor(value: number) {
+  if (value > 0) return '#10b981'; // green
+  if (value < 0) return '#ef4444'; // red
+  return '#111827'; // neutral/dark
+}
+
 export default function PortfolioDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params) as { id: string };
   const [portfolioName, setPortfolioName] = useState("");
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<PropertyWithValuation[]>([]);
   const [aggregateRows, setAggregateRows] = useState<CashFlowRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [portfolioIRR, setPortfolioIRR] = useState<number | null>(null);
@@ -79,7 +95,33 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
         const portfolio = await portfoliosAPI.getById(id);
         setPortfolioName(portfolio.name);
         const props: Property[] = (await portfoliosAPI.getProperties(id)) as Property[];
-        setProperties(Array.isArray(props) ? props : []);
+        
+        // Fetch valuations for all properties
+        const propertiesWithValuations: PropertyWithValuation[] = await Promise.all(
+          props.map(async (prop: Property) => {
+            const valuation = await valuationsAPI.getByPropertyId(prop.id);
+            if (valuation) {
+              // Calculate NOI from valuation data
+              const noi = valuation.annual_rental_income - 
+                (valuation.service_charge + valuation.ground_rent + valuation.maintenance + 
+                 valuation.property_tax + valuation.insurance + 
+                 (valuation.annual_rental_income * valuation.management_fees / 100));
+              
+              return {
+                ...prop,
+                valuation: {
+                  initial_investment: valuation.initial_investment,
+                  annual_rental_income: valuation.annual_rental_income,
+                  noi: noi,
+                  irr: null // Will be calculated later if needed
+                }
+              };
+            }
+            return prop;
+          })
+        );
+        
+        setProperties(propertiesWithValuations);
         
         // Fetch all cash flows for properties
         const allCashFlows: CashFlowRow[][] = await Promise.all(
@@ -171,6 +213,15 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
   const projectedNetWorth = projectedRow ? projectedRow.cumulative_pv : 0;
   const gap = targetNetWorth - projectedNetWorth;
 
+  // Calculate portfolio totals
+  const totalInvestment = properties.reduce((sum, prop) => 
+    sum + (prop.valuation?.initial_investment || 0), 0
+  );
+  const totalNOI = properties.reduce((sum, prop) => 
+    sum + (prop.valuation?.noi || 0), 0
+  );
+  const totalNPV = aggregateRows.length > 0 ? aggregateRows[aggregateRows.length - 1].cumulative_pv : 0;
+
   return (
     <PageContainer>
       <Breadcrumbs last={portfolioName} />
@@ -180,6 +231,60 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
       >
         {portfolioName}
       </h1>
+
+      {/* Properties Overview Section */}
+      {!loading && properties.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4">
+            Properties in Portfolio <span className="text-base font-semibold text-gray-500">({properties.length})</span>
+          </h2>
+          <div className="mb-6 flex flex-col gap-2">
+            {properties.map((property) => (
+              <a
+                key={property.id}
+                href={`/properties/${property.id}`}
+                className="text-blue-600 hover:underline font-medium"
+              >
+                {property.address}
+              </a>
+            ))}
+          </div>
+          {/* Portfolio Summary */}
+          <div className="border-t border-gray-200 pt-4">
+            <h3 className="font-semibold text-gray-900 mb-3">Portfolio Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(totalInvestment) }}>
+                  £{formatCurrency(totalInvestment, "")}
+                </div>
+                <div className="text-sm text-gray-600">Total Investment</div>
+              </div>
+              <div className="text-center">
+                <div 
+                  className="text-2xl font-extrabold"
+                  style={{ color: getSummaryColor(totalNOI) }}
+                >
+                  £{formatCurrency(totalNOI, "")}
+                </div>
+                <div className="text-sm text-gray-600">Total Annual NOI</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(totalNPV) }}>
+                  £{formatCurrency(totalNPV, "")}
+                </div>
+                <div className="text-sm text-gray-600">Total NPV</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(portfolioIRR ?? 0) }}>
+                  {portfolioIRR !== null ? `${portfolioIRR.toFixed(2)}%` : '-'}
+                </div>
+                <div className="text-sm text-gray-600">IRR</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Target Net Worth Section */}
       <div className="mb-10">
         <div
