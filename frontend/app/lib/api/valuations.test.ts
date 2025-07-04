@@ -2,9 +2,9 @@ import { describe, it, expect, afterEach, jest } from '@jest/globals';
 import { DCFRow } from '@/types/cashflow';
 
 // Place the mock at the very top
-const mockGet = jest.fn();
-const mockPost = jest.fn();
-const mockPut = jest.fn();
+const mockGet: any = jest.fn();
+const mockPost: any = jest.fn();
+const mockPut: any = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   api: {
@@ -28,7 +28,7 @@ describe('valuationsAPI', () => {
   });
 
   it('getByPropertyId returns valuation data', async () => {
-    mockGet.mockResolvedValue({ id: '123', property_id: 'abc' });
+    mockGet.mockResolvedValue({ data: { id: '123', property_id: 'abc' } });
     const { valuationsAPI } = await import('./valuations');
     const result = await valuationsAPI.getByPropertyId('abc');
     expect(mockGet).toHaveBeenCalledWith('/api/properties/abc/valuation');

@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 
-const mockApiRequest = jest.fn();
+const mockApiRequest: any = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   apiRequest: mockApiRequest,
@@ -14,36 +14,36 @@ describe('propertiesAPI', () => {
   });
 
   it('getAll fetches all properties', async () => {
-    mockApiRequest.mockResolvedValue([{ id: '1', address: 'A' }]);
+    mockApiRequest.mockResolvedValue({ items: [{ id: '1', address: 'A', postcode: 'P1' }] });
     const { propertiesAPI } = await import('./properties');
     const result = await propertiesAPI.getAll();
     expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties');
-    expect(result).toEqual([{ id: '1', address: 'A' }]);
+    expect(result).toEqual([{ id: '1', address: 'A', postcode: 'P1' }]);
   });
 
   it('create posts new property', async () => {
-    mockApiRequest.mockResolvedValue({ id: '2', address: 'B' });
+    mockApiRequest.mockResolvedValue({ data: { id: '2', address: 'B', postcode: 'P2' } });
     const { propertiesAPI } = await import('./properties');
-    const data = { address: 'B', listing_link: 'link' };
+    const data = { address: 'B', postcode: 'P2', listing_link: 'link' };
     const result = await propertiesAPI.create(data);
     expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties', expect.objectContaining({ method: 'POST' }));
-    expect(result).toEqual({ id: '2', address: 'B' });
+    expect(result).toEqual({ id: '2', address: 'B', postcode: 'P2' });
   });
 
   it('update puts property', async () => {
-    mockApiRequest.mockResolvedValue({ id: '3', address: 'C' });
+    mockApiRequest.mockResolvedValue({ data: { id: '3', address: 'C', postcode: 'P3' } });
     const { propertiesAPI } = await import('./properties');
-    const result = await propertiesAPI.update('3', { address: 'C' });
+    const result = await propertiesAPI.update('3', { address: 'C', postcode: 'P3' });
     expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/3', expect.objectContaining({ method: 'PUT' }));
-    expect(result).toEqual({ id: '3', address: 'C' });
+    expect(result).toEqual({ id: '3', address: 'C', postcode: 'P3' });
   });
 
   it('getById fetches property by id', async () => {
-    mockApiRequest.mockResolvedValue({ id: '4', address: 'D' });
+    mockApiRequest.mockResolvedValue({ data: { id: '4', address: 'D', postcode: 'P4' } });
     const { propertiesAPI } = await import('./properties');
     const result = await propertiesAPI.getById('4');
     expect(mockApiRequest).toHaveBeenCalledWith('http://localhost:5050/api/properties/4');
-    expect(result).toEqual({ id: '4', address: 'D' });
+    expect(result).toEqual({ id: '4', address: 'D', postcode: 'P4' });
   });
 
   it('delete calls delete endpoint', async () => {

@@ -18,10 +18,11 @@ export const propertiesAPI = {
     postcode: string;
     listing_link?: string;
   }): Promise<Property> => {
-    return apiRequest<Property>(`${BASE}/api/properties`, {
+    const response = await apiRequest<{ data: Property }>(`${BASE}/api/properties`, {
       method: "POST",
       body: JSON.stringify(data),
     });
+    return response.data;
   },
 
   // Update a property
@@ -29,15 +30,17 @@ export const propertiesAPI = {
     id: string,
     data: { address: string; postcode: string; listing_link?: string },
   ): Promise<Property> => {
-    return apiRequest<Property>(`${BASE}/api/properties/${id}`, {
+    const response = await apiRequest<{ data: Property }>(`${BASE}/api/properties/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
+    return response.data;
   },
 
   // Get a specific property by ID
   getById: async (id: string): Promise<Property> => {
-    return apiRequest<Property>(`${BASE}/api/properties/${id}`);
+    const response = await apiRequest<{ data: Property }>(`${BASE}/api/properties/${id}`);
+    return response.data;
   },
 
   // Delete a property
