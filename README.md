@@ -32,6 +32,96 @@
   ```sh
   npm run dev
   ```
+- Run tests:
+  ```sh
+  npm test
+  ```
+- Run linter:
+  ```sh
+  npm run lint
+  ```
+
+## API Design & Architecture
+
+### API Envelope Standardization
+
+The application uses a consistent API response envelope pattern for all endpoints to ensure predictable data structures and robust error handling.
+
+#### Response Envelope Format
+
+**List Endpoints** (return arrays of objects):
+```json
+{
+  "items": [
+    { "id": "1", "name": "Portfolio A" },
+    { "id": "2", "name": "Portfolio B" }
+  ]
+}
+```
+
+**Single Object Endpoints** (return individual objects):
+```json
+{
+  "data": {
+    "id": "1",
+    "name": "Portfolio A",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Error Responses**:
+```json
+{
+  "error": "Portfolio not found"
+}
+```
+
+**Analytics Endpoints** (return named fields):
+```json
+{
+  "cashFlows": [...],
+  "irr": 12.5,
+  "npv": 50000
+}
+```
+
+#### Benefits of Envelope Pattern
+
+1. **Consistency**: All endpoints follow the same response structure
+2. **Type Safety**: Frontend can reliably expect `.items` or `.data` properties
+3. **Error Handling**: Standardized error responses with `.error` property
+4. **Extensibility**: Easy to add metadata (pagination, timestamps, etc.) without breaking existing clients
+5. **Robustness**: Prevents runtime errors from unexpected response formats
+
+#### Implementation Details
+
+**Backend (Flask)**:
+- All route handlers return envelope-wrapped responses
+- Validation utilities ensure consistent data structure
+- Error handling returns `{ error: message }` format
+
+**Frontend (TypeScript/React)**:
+- API functions unwrap `.items` or `.data` from responses
+- State variables initialized as empty arrays/objects
+- Error handling expects `.error` property
+- All list rendering uses `Array.isArray()` checks
+
+### Code Quality Principles
+
+The codebase follows these principles:
+
+- **KISS (Keep It Simple, Stupid)**: Simple, readable code over clever solutions
+- **DRY (Don't Repeat Yourself)**: Shared utilities for common operations
+- **YAGNI (You Aren't Gonna Need It)**: Only implement what's currently needed
+- **Consistency**: Standardized patterns across frontend and backend
+
+### Performance Optimizations
+
+- **SQLite Migration**: Comparable sales data moved from CSV to SQLite for faster queries
+- **Efficient Queries**: Optimized database queries with proper indexing
+- **Frontend Optimization**: Minimal re-renders and efficient state management
+- **Error Boundaries**: Graceful error handling prevents app crashes
 
 ## Formulas & Financial Assumptions
 
