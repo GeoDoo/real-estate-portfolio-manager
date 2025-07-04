@@ -111,6 +111,31 @@ def validate_valuation_data(data):
     
     return True, None
 
+def validate_fields(data, required_fields, optional_fields=None):
+    """Validate required and optional fields in data. Returns (True, cleaned_data) or (False, error_message)."""
+    if optional_fields is None:
+        optional_fields = []
+    cleaned = {}
+    for field, field_type, min_value in required_fields:
+        value = data.get(field)
+        if value is None or not isinstance(value, field_type) or value < min_value:
+            return False, f"{field.replace('_', ' ').capitalize()} is required and must be a positive {field_type.__name__}."
+        cleaned[field] = value
+    for field, field_type, min_value in optional_fields:
+        value = data.get(field)
+        if value is not None:
+            if not isinstance(value, field_type) or value < min_value:
+                return False, f"{field.replace('_', ' ').capitalize()} must be a {field_type.__name__} >= {min_value}."
+            cleaned[field] = value
+    return True, cleaned
+
+def populate_model_from_data(model, data, fields):
+    """Set attributes on model from data for the given fields."""
+    for field in fields:
+        if field in data:
+            setattr(model, field, data[field])
+    return model
+
 # --- Models ---
 class Portfolio(db.Model):
     id = db.Column(db.String, primary_key=True)
@@ -505,28 +530,35 @@ def create_app(test_config=None):
             return jsonify([v.to_dict() for v in vals])
         elif request.method == "POST":
             data = request.json
+            required_fields = [
+                ("initial_investment", (int, float), 0),
+                ("annual_rental_income", (int, float), 0),
+                ("maintenance", (int, float), 0),
+                ("property_tax", (int, float), 0),
+                ("management_fees", (int, float), 0),
+                ("transaction_costs", (int, float), 0),
+                ("annual_rent_growth", (int, float), 0),
+                ("discount_rate", (int, float), 0),
+                ("holding_period", (int, float), 0),
+            ]
+            optional_fields = [
+                ("service_charge", (int, float), 0),
+                ("ground_rent", (int, float), 0),
+                ("insurance", (int, float), 0),
+                ("ltv", (int, float), 0),
+                ("interest_rate", (int, float), 0),
+                ("capex", (int, float), 0),
+                ("vacancy_rate", (int, float), 0),
+                ("exit_cap_rate", (int, float), 0),
+                ("selling_costs", (int, float), 0),
+            ]
+            is_valid, cleaned = validate_fields(data, required_fields, optional_fields)
+            if not is_valid:
+                return jsonify({"error": cleaned}), 400
             val_id = str(uuid.uuid4())
             now = datetime.now(timezone.utc).isoformat()
-            valuation = Valuation(
-                id=val_id,
-                created_at=now,
-                initial_investment=data.get("initial_investment", 0),
-                annual_rental_income=data.get("annual_rental_income", 0),
-                vacancy_rate=data.get("vacancy_rate", 0),
-                service_charge=data.get("service_charge", 0),
-                ground_rent=data.get("ground_rent", 0),
-                maintenance=data.get("maintenance", 0),
-                property_tax=data.get("property_tax", 0),
-                insurance=data.get("insurance", 0),
-                management_fees=data.get("management_fees", 0),
-                transaction_costs=data.get("transaction_costs", 0),
-                annual_rent_growth=data.get("annual_rent_growth", 0),
-                discount_rate=data.get("discount_rate", 0),
-                holding_period=data.get("holding_period", 0),
-                ltv=data.get("ltv", 0),
-                interest_rate=data.get("interest_rate", 0),
-                capex=data.get("capex", 0),
-            )
+            valuation = Valuation(id=val_id, created_at=now)
+            valuation = populate_model_from_data(valuation, cleaned, cleaned.keys())
             db.session.add(valuation)
             db.session.commit()
             return jsonify(clean_for_json(valuation.to_dict())), 201
@@ -541,9 +573,32 @@ def create_app(test_config=None):
             return jsonify(clean_for_json(valuation.to_dict()))
         elif request.method == "PUT":
             data = request.json
-            for key, value in data.items():
-                if hasattr(valuation, key):
-                    setattr(valuation, key, value)
+            required_fields = [
+                ("initial_investment", (int, float), 0),
+                ("annual_rental_income", (int, float), 0),
+                ("maintenance", (int, float), 0),
+                ("property_tax", (int, float), 0),
+                ("management_fees", (int, float), 0),
+                ("transaction_costs", (int, float), 0),
+                ("annual_rent_growth", (int, float), 0),
+                ("discount_rate", (int, float), 0),
+                ("holding_period", (int, float), 0),
+            ]
+            optional_fields = [
+                ("service_charge", (int, float), 0),
+                ("ground_rent", (int, float), 0),
+                ("insurance", (int, float), 0),
+                ("ltv", (int, float), 0),
+                ("interest_rate", (int, float), 0),
+                ("capex", (int, float), 0),
+                ("vacancy_rate", (int, float), 0),
+                ("exit_cap_rate", (int, float), 0),
+                ("selling_costs", (int, float), 0),
+            ]
+            is_valid, cleaned = validate_fields(data, required_fields, optional_fields)
+            if not is_valid:
+                return jsonify({"error": cleaned}), 400
+            valuation = populate_model_from_data(valuation, cleaned, cleaned.keys())
             db.session.commit()
             return jsonify(clean_for_json(valuation.to_dict()))
         elif request.method == "DELETE":
@@ -597,22 +652,25 @@ def create_app(test_config=None):
             return jsonify([p.to_dict() for p in props])
         elif request.method == "POST":
             data = request.json
-            
-            # Validate address
-            is_valid, result = validate_property_address(data.get("address"))
+            required_fields = [
+                ("address", str, 1),
+                ("postcode", str, 1),
+            ]
+            optional_fields = [
+                ("listing_link", str, 0),
+            ]
+            is_valid, cleaned = validate_fields(data, required_fields, optional_fields)
             if not is_valid:
+                return jsonify({"error": cleaned}), 400
+            # Validate address uniqueness
+            is_valid_addr, result = validate_property_address(cleaned["address"])
+            if not is_valid_addr:
                 return jsonify({"error": result}), 400
-            
-            # Create property
             prop_id = str(uuid.uuid4())
             now = datetime.now(timezone.utc).isoformat()
-            prop = Property(
-                id=prop_id,
-                address=result,
-                postcode=data.get("postcode"),
-                created_at=now,
-                listing_link=data.get("listing_link"),
-            )
+            prop = Property(id=prop_id, address=cleaned["address"], postcode=cleaned["postcode"], created_at=now)
+            if "listing_link" in cleaned:
+                prop.listing_link = cleaned["listing_link"]
             db.session.add(prop)
             db.session.commit()
             return jsonify(clean_for_json(prop.to_dict())), 201
@@ -622,43 +680,36 @@ def create_app(test_config=None):
         prop = db.session.get(Property, prop_id)
         if not prop:
             abort(404)
-
         if request.method == "GET":
             return jsonify(clean_for_json(prop.to_dict()))
         elif request.method == "PUT":
             data = request.json
-            
-            # Validate address
-            is_valid, result = validate_property_address(data.get("address"), prop)
+            required_fields = [
+                ("address", str, 1),
+                ("postcode", str, 1),
+            ]
+            optional_fields = [
+                ("listing_link", str, 0),
+            ]
+            is_valid, cleaned = validate_fields(data, required_fields, optional_fields)
             if not is_valid:
+                return jsonify({"error": cleaned}), 400
+            is_valid_addr, result = validate_property_address(cleaned["address"], prop)
+            if not is_valid_addr:
                 return jsonify({"error": result}), 400
-
-            prop.address = result
-            prop.postcode = data.get("postcode")
-            prop.listing_link = data.get("listing_link")
+            prop = populate_model_from_data(prop, cleaned, cleaned.keys())
             db.session.commit()
             return jsonify(clean_for_json(prop.to_dict()))
         elif request.method == "PATCH":
             data = request.json
-            
-            # Handle address updates
-            if "address" in data:
-                is_valid, result = validate_property_address(data["address"], prop)
-                if not is_valid:
+            # Only update provided fields
+            updatable_fields = ["address", "postcode", "listing_link", "portfolio_id"]
+            cleaned = {k: v for k, v in data.items() if k in updatable_fields}
+            if "address" in cleaned:
+                is_valid_addr, result = validate_property_address(cleaned["address"], prop)
+                if not is_valid_addr:
                     return jsonify({"error": result}), 400
-                prop.address = result
-            
-            # Handle other field updates
-            if "postcode" in data:
-                prop.postcode = data["postcode"]
-            
-            if "listing_link" in data:
-                prop.listing_link = data["listing_link"]
-            
-            if "portfolio_id" in data:
-                # Allow removing from portfolio by setting to None
-                prop.portfolio_id = data["portfolio_id"] if data["portfolio_id"] is not None else None
-            
+            prop = populate_model_from_data(prop, cleaned, cleaned.keys())
             db.session.commit()
             return jsonify(clean_for_json(prop.to_dict()))
 

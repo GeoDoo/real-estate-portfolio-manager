@@ -2,7 +2,7 @@ import pytest
 import math
 import uuid
 from datetime import datetime, timezone
-from app import Portfolio, Property, Valuation, db
+from app import Portfolio, Property, Valuation, db, validate_fields, populate_model_from_data
 import os
 import json
 
@@ -462,3 +462,259 @@ def test_monte_carlo_gaussian_and_pareto_regression(client):
         assert summary["npv_mean"] is not None, f"No NPV mean for {dist_label}"
         assert summary["irr_mean"] is not None, f"No IRR mean for {dist_label}"
         assert summary["probability_npv_positive"] is not None, f"No probability for {dist_label}" 
+
+def test_validate_fields_success():
+    """Test validate_fields utility with valid data."""
+    data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 24000,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+        "service_charge": 3000,  # optional
+        "ground_rent": 500,      # optional
+    }
+    required_fields = [
+        ("initial_investment", (int, float), 0),
+        ("annual_rental_income", (int, float), 0),
+        ("maintenance", (int, float), 0),
+        ("property_tax", (int, float), 0),
+        ("management_fees", (int, float), 0),
+        ("transaction_costs", (int, float), 0),
+        ("annual_rent_growth", (int, float), 0),
+        ("discount_rate", (int, float), 0),
+        ("holding_period", (int, float), 0),
+    ]
+    optional_fields = [
+        ("service_charge", (int, float), 0),
+        ("ground_rent", (int, float), 0),
+    ]
+    is_valid, cleaned = validate_fields(data, required_fields, optional_fields)
+    assert is_valid is True
+    assert cleaned["initial_investment"] == 200000
+    assert cleaned["annual_rental_income"] == 24000
+    assert cleaned["service_charge"] == 3000
+    assert cleaned["ground_rent"] == 500
+
+def test_validate_fields_missing_required():
+    """Test validate_fields utility with missing required field."""
+    data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 24000,
+        # missing maintenance
+        "property_tax": 6000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+    }
+    required_fields = [
+        ("initial_investment", (int, float), 0),
+        ("annual_rental_income", (int, float), 0),
+        ("maintenance", (int, float), 0),
+        ("property_tax", (int, float), 0),
+        ("management_fees", (int, float), 0),
+        ("transaction_costs", (int, float), 0),
+        ("annual_rent_growth", (int, float), 0),
+        ("discount_rate", (int, float), 0),
+        ("holding_period", (int, float), 0),
+    ]
+    is_valid, error = validate_fields(data, required_fields)
+    assert is_valid is False
+    assert "Maintenance is required" in error
+
+def test_validate_fields_wrong_type():
+    """Test validate_fields utility with wrong data type."""
+    data = {
+        "initial_investment": "not a number",
+        "annual_rental_income": 24000,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+    }
+    required_fields = [
+        ("initial_investment", (int, float), 0),
+        ("annual_rental_income", (int, float), 0),
+        ("maintenance", (int, float), 0),
+        ("property_tax", (int, float), 0),
+        ("management_fees", (int, float), 0),
+        ("transaction_costs", (int, float), 0),
+        ("annual_rent_growth", (int, float), 0),
+        ("discount_rate", (int, float), 0),
+        ("holding_period", (int, float), 0),
+    ]
+    is_valid, error = validate_fields(data, required_fields)
+    assert is_valid is False
+    assert "Initial investment is required and must be a positive" in error
+
+def test_validate_fields_negative_value():
+    """Test validate_fields utility with negative value."""
+    data = {
+        "initial_investment": -1000,  # negative value
+        "annual_rental_income": 24000,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+    }
+    required_fields = [
+        ("initial_investment", (int, float), 0),
+        ("annual_rental_income", (int, float), 0),
+        ("maintenance", (int, float), 0),
+        ("property_tax", (int, float), 0),
+        ("management_fees", (int, float), 0),
+        ("transaction_costs", (int, float), 0),
+        ("annual_rent_growth", (int, float), 0),
+        ("discount_rate", (int, float), 0),
+        ("holding_period", (int, float), 0),
+    ]
+    is_valid, error = validate_fields(data, required_fields)
+    assert is_valid is False
+    assert "Initial investment is required and must be a positive" in error
+
+def test_validate_fields_string_min_length():
+    """Test validate_fields utility with string minimum length validation."""
+    data = {
+        "address": "123",  # too short
+        "postcode": "AB1 2CD",
+    }
+    required_fields = [
+        ("address", str, 5),  # minimum 5 characters
+        ("postcode", str, 1),
+    ]
+    is_valid, error = validate_fields(data, required_fields)
+    assert is_valid is False
+    assert "Address is required and must be a positive" in error
+
+def test_populate_model_from_data():
+    """Test populate_model_from_data utility."""
+    with app.app_context():
+        valuation = Valuation(id=str(uuid.uuid4()), created_at=datetime.now(timezone.utc).isoformat())
+        data = {
+            "initial_investment": 200000,
+            "annual_rental_income": 24000,
+            "maintenance": 1000,
+            "service_charge": 3000,
+        }
+        fields = ["initial_investment", "annual_rental_income", "maintenance", "service_charge"]
+        result = populate_model_from_data(valuation, data, fields)
+        assert result.initial_investment == 200000
+        assert result.annual_rental_income == 24000
+        assert result.maintenance == 1000
+        assert result.service_charge == 3000
+        # Fields not in the fields list should not be set
+        assert result.property_tax == 0  # default value
+
+def test_valuation_creation_with_new_utilities(client):
+    """Test valuation creation endpoint with new utilities."""
+    data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 24000,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+        "service_charge": 3000,  # optional
+        "ground_rent": 500,      # optional
+    }
+    response = client.post("/api/valuations", json=data)
+    assert response.status_code == 201
+    result = response.get_json()
+    assert result["initial_investment"] == 200000
+    assert result["annual_rental_income"] == 24000
+    assert result["service_charge"] == 3000
+    assert result["ground_rent"] == 500
+
+def test_valuation_creation_missing_required(client):
+    """Test valuation creation with missing required field."""
+    data = {
+        "initial_investment": 200000,
+        "annual_rental_income": 24000,
+        # missing maintenance
+        "property_tax": 6000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+    }
+    response = client.post("/api/valuations", json=data)
+    assert response.status_code == 400
+    result = response.get_json()
+    assert "error" in result
+    assert "Maintenance is required" in result["error"]
+
+def test_property_creation_with_new_utilities(client):
+    """Test property creation endpoint with new utilities."""
+    data = {
+        "address": "123 Test Street",
+        "postcode": "TEST1 1AA",
+        "listing_link": "https://example.com/listing",  # optional
+    }
+    response = client.post("/api/properties", json=data)
+    assert response.status_code == 201
+    result = response.get_json()
+    assert result["address"] == "123 Test Street"
+    assert result["postcode"] == "TEST1 1AA"
+    assert result["listing_link"] == "https://example.com/listing"
+
+def test_property_creation_missing_required(client):
+    """Test property creation with missing required field."""
+    data = {
+        "address": "123 Test Street",
+        # missing postcode
+    }
+    response = client.post("/api/properties", json=data)
+    assert response.status_code == 400
+    result = response.get_json()
+    assert "error" in result
+    assert "Postcode is required" in result["error"]
+
+def test_valuation_update_with_new_utilities(client, sample_valuation):
+    """Test valuation update endpoint with new utilities."""
+    data = {
+        "initial_investment": 250000,  # updated value
+        "annual_rental_income": 24000,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "management_fees": 12,
+        "transaction_costs": 3000,
+        "annual_rent_growth": 2,
+        "discount_rate": 15,
+        "holding_period": 25,
+        "service_charge": 3500,  # updated optional field
+    }
+    response = client.put(f"/api/valuations/{sample_valuation.id}", json=data)
+    assert response.status_code == 200
+    result = response.get_json()
+    assert result["initial_investment"] == 250000
+    assert result["service_charge"] == 3500
+
+def test_property_update_with_new_utilities(client, sample_property):
+    """Test property update endpoint with new utilities."""
+    data = {
+        "address": "456 Updated Street",
+        "postcode": "TEST2 2BB",
+        "listing_link": "https://example.com/updated-listing",
+    }
+    response = client.put(f"/api/properties/{sample_property.id}", json=data)
+    assert response.status_code == 200
+    result = response.get_json()
+    assert result["address"] == "456 Updated Street"
+    assert result["postcode"] == "TEST2 2BB"
+    assert result["listing_link"] == "https://example.com/updated-listing" 
