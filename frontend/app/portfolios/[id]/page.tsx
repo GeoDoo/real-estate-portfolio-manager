@@ -208,7 +208,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
                 >
                   £{formatCurrency(totalNOI, "")}
                 </div>
-                <div className="text-sm text-gray-600">Total Annual NOI</div>
+                <div className="text-sm text-gray-600">Total Year 1 NOI</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(totalNPV) }}>
