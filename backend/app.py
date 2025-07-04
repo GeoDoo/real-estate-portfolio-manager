@@ -812,7 +812,7 @@ def create_app(test_config=None):
     @app.route("/api/portfolios/<portfolio_id>/properties", methods=["GET"])
     def get_portfolio_properties(portfolio_id):
         properties = db.session.query(Property).filter_by(portfolio_id=portfolio_id).all()
-        return jsonify([p.to_dict() for p in properties])
+        return jsonify({"items": [p.to_dict() for p in properties]})
 
     @app.route("/api/portfolios/<portfolio_id>/irr", methods=["GET"])
     def portfolio_irr(portfolio_id):
