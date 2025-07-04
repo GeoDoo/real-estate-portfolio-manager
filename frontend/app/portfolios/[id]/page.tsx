@@ -159,9 +159,8 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
   const totalInvestment = properties.reduce((sum, prop) => 
     sum + (prop.valuation?.initial_investment || 0), 0
   );
-  const totalNOI = properties.reduce((sum, prop) => 
-    sum + (prop.valuation?.noi || 0), 0
-  );
+  // Use DCF cash flows for Year 1 NOI (row with year === 1)
+  const totalNOI = aggregateRows.length > 1 ? aggregateRows[1].noi : 0;
   const totalNPV = aggregateRows.length > 0 ? aggregateRows[aggregateRows.length - 1].cumulative_pv : 0;
 
   return (
