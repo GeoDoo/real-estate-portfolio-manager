@@ -40,6 +40,7 @@ def sample_property(app, sample_portfolio):
         property_obj = Property(
             id=str(uuid.uuid4()),
             address=f"123 Test St {uuid.uuid4().hex[:8]}",
+            postcode="TEST_FIXTURE 1AA",
             created_at=datetime.now(timezone.utc).isoformat(),
             portfolio_id=sample_portfolio
         )
@@ -554,7 +555,7 @@ def test_validate_fields_wrong_type():
     ]
     is_valid, error = validate_fields(data, required_fields)
     assert is_valid is False
-    assert "Initial investment is required and must be a positive" in error
+    assert "Initial investment is required and must be a int, float." in error
 
 def test_validate_fields_negative_value():
     """Test validate_fields utility with negative value."""
@@ -582,7 +583,7 @@ def test_validate_fields_negative_value():
     ]
     is_valid, error = validate_fields(data, required_fields)
     assert is_valid is False
-    assert "Initial investment is required and must be a positive" in error
+    assert "Initial investment must be >= 0." in error
 
 def test_validate_fields_string_min_length():
     """Test validate_fields utility with string minimum length validation."""
@@ -596,11 +597,12 @@ def test_validate_fields_string_min_length():
     ]
     is_valid, error = validate_fields(data, required_fields)
     assert is_valid is False
-    assert "Address is required and must be a positive" in error
+    assert "Address must be at least 5 characters." in error
 
-def test_populate_model_from_data():
+def test_populate_model_from_data(client, app):
     """Test populate_model_from_data utility."""
     with app.app_context():
+        from app import Valuation
         valuation = Valuation(id=str(uuid.uuid4()), created_at=datetime.now(timezone.utc).isoformat())
         data = {
             "initial_investment": 200000,
@@ -614,8 +616,8 @@ def test_populate_model_from_data():
         assert result.annual_rental_income == 24000
         assert result.maintenance == 1000
         assert result.service_charge == 3000
-        # Fields not in the fields list should not be set
-        assert result.property_tax == 0  # default value
+        # Fields not in the fields list should not be set (SQLAlchemy defaults to None)
+        assert getattr(result, "property_tax", None) is None
 
 def test_valuation_creation_with_new_utilities(client):
     """Test valuation creation endpoint with new utilities."""
