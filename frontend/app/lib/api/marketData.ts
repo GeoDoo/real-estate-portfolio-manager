@@ -27,6 +27,7 @@ export interface MarketDataResponse {
   summary: MarketDataSummary;
   postcode: string;
   source: string;
+  message?: string;
 }
 
 export const marketDataAPI = {

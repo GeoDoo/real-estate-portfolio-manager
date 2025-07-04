@@ -141,6 +141,8 @@ export default function ValuationDetailPage() {
   const [comparableSales, setComparableSales] = useState<ComparableSale[]>([]);
   const [comparableLoading, setComparableLoading] = useState(false);
   const [comparableError, setComparableError] = useState<string | null>(null);
+  const [comparableMessage, setComparableMessage] = useState<string | null>(null);
+  const [comparableQueried, setComparableQueried] = useState(false); // State to track if user has clicked the button
 
   useEffect(() => {
     async function fetchValuation() {
@@ -455,11 +457,11 @@ export default function ValuationDetailPage() {
 
   const fetchComparableSales = async () => {
     if (!valuation) return;
-    
     setComparableLoading(true);
     setComparableError(null);
+    setComparableMessage(null);
     setComparableSales([]);
-    
+    setComparableQueried(true); // Mark that user has clicked
     try {
       // Use postcode field directly
       const postcode = valuation.postcode || '';
@@ -469,13 +471,12 @@ export default function ValuationDetailPage() {
       }
       const response = await marketDataAPI.getComparableSales(postcode, 20);
       setComparableSales(response.sales);
-      
+      setComparableMessage(response.message || null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch comparable sales";
       setComparableError(errorMessage);
       console.error("Comparable sales error:", err);
     }
-    
     setComparableLoading(false);
   };
 
@@ -2523,7 +2524,7 @@ export default function ValuationDetailPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {comparableSales.slice(0, 10).map((sale) => (
+                        {comparableSales.map((sale) => (
                           <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
                             <td className="py-2 px-4 text-sm text-left">
                               <span className="font-bold text-gray-900">{sale.address}</span>
@@ -2546,54 +2547,80 @@ export default function ValuationDetailPage() {
                       </tbody>
                     </table>
                   </div>
-                  {comparableSales.length > 10 && (
-                    <div className="text-sm text-gray-500 mt-2 text-center">
-                      Showing 10 of {comparableSales.length} sales
-                    </div>
-                  )}
-                  {/* Average Price by Year (years with >1 sale) */}
-                  {(() => {
-                    // Group sales by year
-                    const yearGroups = comparableSales.reduce((acc, sale) => {
-                      const year = new Date(sale.sale_date).getFullYear();
-                      if (!acc[year]) acc[year] = [];
-                      acc[year].push(sale);
-                      return acc;
-                    }, {} as Record<number, typeof comparableSales>);
-                    // Filter to years with >1 sale
-                    const yearsWithMultiple = Object.entries(yearGroups)
-                      .filter(([, sales]) => sales.length > 1)
-                      .sort((a, b) => Number(b[0]) - Number(a[0]));
-                    if (yearsWithMultiple.length === 0) return null;
-                    return (
-                      <div className="mt-6">
-                        <h4 className="font-bold mb-2 text-md">Average Price by Year (years with &gt;1 sale)</h4>
-                        <table className="min-w-max w-auto text-base border-separate border-spacing-y-2">
-                          <thead>
-                            <tr>
-                              <th className="text-left pr-4">Year</th>
-                              <th className="text-right">Average Price (£)</th>
-                              <th className="text-right">Number of Sales</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {yearsWithMultiple.map(([year, sales]) => {
-                              const avg = sales.reduce((sum, s) => sum + s.sale_price, 0) / sales.length;
-                              return (
-                                <tr key={year}>
-                                  <td className="pr-4 font-bold">{year}</td>
-                                  <td className="text-right font-bold">{formatCurrency(avg, "")}</td>
-                                  <td className="text-right text-gray-600">{sales.length}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  })()}
                 </div>
               )}
+              {/* Empty state when no sales found */}
+              {!comparableLoading && comparableSales.length === 0 && !comparableError && comparableQueried && (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Comparable Sales Found</h3>
+                  {comparableMessage ? (
+                    <p className="text-gray-600 max-w-md mx-auto mb-4">
+                      {comparableMessage}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-gray-600 max-w-md mx-auto">
+                        No recent property sales were found for this postcode. This could be because:
+                      </p>
+                      <ul className="text-gray-600 max-w-md mx-auto mt-2 text-sm">
+                        <li>• The postcode is very new or rural</li>
+                        <li>• No properties have sold recently in this area</li>
+                        <li>• The postcode format might need adjustment</li>
+                      </ul>
+                    </>
+                  )}
+                  <p className="text-gray-600 max-w-md mx-auto mt-3 text-sm">
+                    You can still proceed with your valuation using other methods like DCF analysis, Monte Carlo simulation, or rental analysis above.
+                  </p>
+                </div>
+              )}
+
+              {/* Average Price by Year (years with >1 sale) */}
+              {(() => {
+                const yearGroups = comparableSales.reduce((acc, sale) => {
+                  const year = new Date(sale.sale_date).getFullYear();
+                  if (!acc[year]) acc[year] = [];
+                  acc[year].push(sale);
+                  return acc;
+                }, {} as Record<number, typeof comparableSales>);
+                const yearsWithMultiple = Object.entries(yearGroups)
+                  .filter(([, sales]) => sales.length > 1)
+                  .sort((a, b) => Number(b[0]) - Number(a[0]));
+                if (yearsWithMultiple.length === 0) return null;
+                return (
+                  <div className="mt-8">
+                    <h4 className="font-bold mb-3 text-lg text-gray-900">Average Price by Year <span className='text-gray-500'>(years with &gt;1 sale)</span></h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full table-auto border-separate border-spacing-y-2 bg-white rounded-lg shadow-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left pr-4 py-2 text-gray-700 font-semibold">Year</th>
+                            <th className="text-right py-2 text-gray-700 font-semibold">Average Price (£)</th>
+                            <th className="text-right py-2 text-gray-700 font-semibold">Number of Sales</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {yearsWithMultiple.map(([year, sales]) => {
+                            const avg = sales.reduce((sum, s) => sum + s.sale_price, 0) / sales.length;
+                            return (
+                              <tr key={year} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="pr-4 font-bold text-gray-900 py-2">{year}</td>
+                                <td className="text-right font-bold py-2" style={{ color: getNumberColor(avg) }}>{formatCurrency(avg, "")}</td>
+                                <td className="text-right text-gray-600 py-2">{sales.length}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </>

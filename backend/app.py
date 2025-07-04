@@ -13,6 +13,7 @@ import json
 import requests
 import csv
 from io import StringIO
+import sqlite3
 
 db = SQLAlchemy()
 PORT = int(os.environ.get("BACKEND_PORT", 5050))
@@ -383,193 +384,33 @@ def safe_irr_stats(irrs):
         float(np.nanpercentile(irrs, 95)),
     )
 
-class LandRegistryAPI:
-    CSV_URL = 'http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-complete.csv'
-    CSV_PATH = 'pp-complete.csv'
-    CSV_MAX_AGE = timedelta(days=1)
-
-    def __init__(self):
-        self.use_mock = os.environ.get("USE_MOCK_DATA", "false").lower() == "true"
-
-    def ensure_csv(self):
-        """Download the CSV if not present or too old."""
-        if not os.path.exists(self.CSV_PATH) or \
-           datetime.now() - datetime.fromtimestamp(os.path.getmtime(self.CSV_PATH)) > self.CSV_MAX_AGE:
-            print("Downloading latest Land Registry Price Paid Data CSV...")
-            r = requests.get(self.CSV_URL, stream=True)
-            r.raise_for_status()
-            with open(self.CSV_PATH, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            print("Download complete.")
-
-    def get_comparable_sales(self, postcode, limit=8):
-        print(f"[DEBUG] Searching for postcode: {postcode}")
-        if self.use_mock:
-            # ... mock data logic unchanged ...
-            import random
-            from datetime import datetime, timedelta
-            addresses = [
-                "8 Queen Street", "33 Queen Street", "19 Victoria Street", "8 Park Avenue",
-                "42 Victoria Street", "12 Church Lane", "8 School Lane", "19 School Lane",
-                "15 Market Place", "8 High Street", "7 School Lane", "25 Station Road",
-                "33 Park Avenue", "12 Station Road", "7 Park Avenue", "19 Park Avenue"
-            ]
-            property_types = ["Flat", "Detached", "Semi-detached", "Terraced"]
-            sales = []
-            for i in range(limit):
-                sale = {
-                    "id": f"sale_{i}",
-                    "address": random.choice(addresses),
-                    "postcode": postcode,
-                    "sale_price": random.randint(250000, 350000),
-                    "sale_date": (datetime.now() - timedelta(days=random.randint(0, 1000))).strftime("%d %b %Y"),
-                    "property_type": random.choice(property_types),
-                    "new_build": random.choice([True, False]),
-                    "estate_type": "Freehold",
-                    "source": "mock"
-                }
-                sales.append(sale)
-            return sales
-        # Use local CSV for real data
-        self.ensure_csv()
-        sales = []
-        matches = 0
-        area = postcode.replace(" ", "").upper()[:2]
-        area_matches = 0
-        sector = postcode.replace(" ", "").upper()[:5]
-        property_type_map = {
-            'F': 'flat maisonette',
-            'T': 'terraced',
-            'S': 'semi-detached',
-            'D': 'detached',
-            'O': 'other',
-            'M': 'maisonette',
-        }
-        # First, try exact matches: return all rows with this postcode, no grouping
-        with open(self.CSV_PATH, newline='', encoding='utf-8') as csvfile:
-            reader = csv.reader(csvfile)
-            header = next(reader, None)
-            if header and header[3].lower() != 'postcode':
-                # Not a header, rewind
-                csvfile.seek(0)
-                reader = csv.reader(csvfile)
-            for row in reader:
-                if len(row) > 9:
-                    row_postcode = row[3].replace(" ", "").upper()
-                    if row_postcode == postcode.replace(" ", "").upper():
-                        flat = row[8].strip() if row[8] else ''
-                        building = row[7].strip() if row[7] else ''
-                        street = row[9].strip() if row[9] else ''
-                        town = row[11].strip() if row[11] else ''
-                        postcode_disp = row[3].strip() if row[3] else ''
-                        # Compose full address for display
-                        address_parts = []
-                        if flat:
-                            address_parts.append(flat)
-                        if building:
-                            address_parts.append(building)
-                        if street:
-                            address_parts.append(street)
-                        if town:
-                            address_parts.append(town)
-                        if postcode_disp:
-                            address_parts.append(postcode_disp)
-                        full_address = ', '.join(address_parts)
-                        # Map property type code to full Land Registry name
-                        prop_type_code = row[4].strip().upper() if row[4] else ''
-                        property_type = property_type_map.get(prop_type_code, prop_type_code)
-                        # Map estate type code to lowercase
-                        estate_type_code = row[6].strip().upper() if row[6] else ''
-                        estate_type = 'freehold' if estate_type_code == 'F' else 'leasehold' if estate_type_code == 'L' else estate_type_code.lower()
-                        # New build as boolean (revert to previous logic)
-                        new_build = row[10].strip().upper() == 'Y' if row[10] else False
-                        # Sale date
-                        sale_date = row[2].strip() if row[2] else ''
-                        sales.append({
-                            "id": row[0],
-                            "address": full_address,
-                            "postcode": row[3],
-                            "sale_price": int(float(row[1])),
-                            "sale_date": sale_date,
-                            "property_type": property_type,
-                            "new_build": new_build,
-                            "estate_type": estate_type,
-                            "source": "land_registry"
-                        })
-            # Sort by sale_date (parse to date if possible), limit
-            from datetime import datetime
-            def parse_date(d):
-                for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d", "%d %b %Y"):
-                    try:
-                        return datetime.strptime(d.split()[0], fmt)
-                    except Exception:
-                        continue
-                return d  # fallback: string
-            sales.sort(key=lambda x: parse_date(x["sale_date"]), reverse=True)
-            sales = sales[:limit]
-        # If no exact matches, try sector match and group by (building, street, postcode)
-        if not sales:
-            print(f"[DEBUG] No exact matches, trying sector: {sector}")
-            all_sector_sales = []
-            with open(self.CSV_PATH, newline='', encoding='utf-8') as csvfile:
-                reader = csv.reader(csvfile)
-                header = next(reader, None)
-                if header and header[3].lower() != 'postcode':
-                    csvfile.seek(0)
-                    reader = csv.reader(csvfile)
-                from collections import defaultdict
-                grouped = defaultdict(list)
-                for row in reader:
-                    if len(row) > 13:
-                        row_postcode = row[3].replace(" ", "").upper()
-                        if row_postcode.startswith(sector):
-                            building = row[7].strip() if row[7] else ''
-                            street = row[9].strip() if row[9] else ''
-                            postcode_disp = row[3].strip() if row[3] else ''
-                            group_key = f"{building}|{street}|{postcode_disp}".upper()
-                            flat = row[8].strip() if row[8] else ''
-                            town = row[11].strip() if row[11] else ''
-                            # Compose full address for display
-                            address_parts = []
-                            if flat:
-                                address_parts.append(flat)
-                            if building:
-                                address_parts.append(building)
-                            if street:
-                                address_parts.append(street)
-                            if town:
-                                address_parts.append(town)
-                            if postcode_disp:
-                                address_parts.append(postcode_disp)
-                            full_address = ', '.join(address_parts)
-                            # Map property type code to full name
-                            prop_type_code = row[4].strip().upper() if row[4] else ''
-                            property_type = property_type_map.get(prop_type_code, prop_type_code)
-                            # Map estate type code
-                            estate_type_code = row[6].strip().upper() if row[6] else ''
-                            estate_type = 'Freehold' if estate_type_code == 'F' else 'Leasehold' if estate_type_code == 'L' else estate_type_code
-                            # New build
-                            new_build = row[10].strip().upper() == 'Y' if row[10] else False
-                            # Sale date
-                            sale_date = row[2].strip() if row[2] else ''
-                            grouped[group_key].append({
-                                "id": row[0],
-                                "address": full_address,
-                                "postcode": row[3],
-                                "sale_price": int(float(row[1])),
-                                "sale_date": sale_date,
-                                "property_type": property_type,
-                                "new_build": new_build,
-                                "estate_type": estate_type,
-                                "source": "land_registry"
-                            })
-            # Flatten all transactions, sort by date desc, limit
-            all_transactions = [sale for group in grouped.values() for sale in group]
-            all_transactions.sort(key=lambda x: x["sale_date"], reverse=True)
-            sales = all_transactions[:limit]
-        print(f"[DEBUG] Total matches found: {len(sales)}")
-        return sales
+def get_comparable_sales_from_db(postcode, limit=50):
+    db_path = os.path.join(os.path.dirname(__file__), 'land_registry.db')
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, sale_price, sale_date, postcode, property_type, new_build, estate_type, building, flat, street, town FROM sales WHERE postcode = ? ORDER BY sale_date DESC LIMIT ?",
+        (postcode, limit)
+    )
+    rows = cur.fetchall()
+    conn.close()
+    sales = []
+    for row in rows:
+        sales.append({
+            "id": row[0],
+            "sale_price": row[1],
+            "sale_date": row[2],
+            "postcode": row[3],
+            "property_type": row[4],
+            "new_build": row[5] == "Y",
+            "estate_type": row[6],
+            "building": row[7],
+            "flat": row[8],
+            "street": row[9],
+            "town": row[10],
+            "source": "land_registry"
+        })
+    return sales
 
 def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate, 
                            property_tax, insurance, maintenance, management_fees, 
@@ -1080,20 +921,12 @@ def create_app(test_config=None):
             }
         })
 
-    # Initialize Land Registry API
-    land_registry_api = LandRegistryAPI()
-
     # Market Data endpoints
     @app.route("/api/market-data/comparables/<postcode>", methods=["GET"])
     def get_comparable_sales(postcode):
-        """Get comparable sales for a postcode from Land Registry."""
         try:
-            limit = request.args.get('limit', 8, type=int)
-            limit = min(limit, 50)  # Cap at 50 for performance
-            
-            sales = land_registry_api.get_comparable_sales(postcode, limit)
-            
-            # Calculate summary statistics
+            limit = request.args.get('limit', 50, type=int)
+            sales = get_comparable_sales_from_db(postcode, limit)
             if sales:
                 prices = [sale['sale_price'] for sale in sales if sale['sale_price'] > 0]
                 summary = {
@@ -1103,6 +936,7 @@ def create_app(test_config=None):
                     "max_price": max(prices) if prices else 0,
                     "price_range": max(prices) - min(prices) if prices else 0
                 }
+                message = None
             else:
                 summary = {
                     "total_sales": 0,
@@ -1111,14 +945,14 @@ def create_app(test_config=None):
                     "max_price": 0,
                     "price_range": 0
                 }
-            
+                message = f"No comparable sales found for postcode {postcode}."
             return jsonify({
                 "sales": sales,
                 "summary": summary,
                 "postcode": postcode,
-                "source": "land_registry"
+                "source": "land_registry",
+                "message": message
             })
-            
         except Exception as e:
             return jsonify({"error": f"Failed to fetch comparable sales: {str(e)}"}), 500
 
