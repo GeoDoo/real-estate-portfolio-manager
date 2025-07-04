@@ -11,6 +11,7 @@ import math
 import numpy_financial as npf
 import json
 import sqlite3
+from land_registry_db import get_comparable_sales
 
 db = SQLAlchemy()
 PORT = int(os.environ.get("BACKEND_PORT", 5050))
@@ -354,34 +355,6 @@ def safe_irr_stats(irrs):
         float(np.nanpercentile(irrs, 5)),
         float(np.nanpercentile(irrs, 95)),
     )
-
-def get_comparable_sales_from_db(postcode, limit=50):
-    db_path = os.path.join(os.path.dirname(__file__), 'land_registry.db')
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT id, sale_price, sale_date, postcode, property_type, new_build, estate_type, building, flat, street, town FROM sales WHERE postcode = ? ORDER BY sale_date DESC LIMIT ?",
-        (postcode, limit)
-    )
-    rows = cur.fetchall()
-    conn.close()
-    sales = []
-    for row in rows:
-        sales.append({
-            "id": row[0],
-            "sale_price": row[1],
-            "sale_date": row[2],
-            "postcode": row[3],
-            "property_type": row[4],
-            "new_build": row[5] == "Y",
-            "estate_type": row[6],
-            "building": row[7],
-            "flat": row[8],
-            "street": row[9],
-            "town": row[10],
-            "source": "land_registry"
-        })
-    return sales
 
 def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate, 
                            property_tax, insurance, maintenance, management_fees, 
@@ -946,10 +919,10 @@ def create_app(test_config=None):
 
     # Market Data endpoints
     @app.route("/api/market-data/comparables/<postcode>", methods=["GET"])
-    def get_comparable_sales(postcode):
+    def get_comparable_sales_endpoint(postcode):
         try:
             limit = request.args.get('limit', 50, type=int)
-            sales = get_comparable_sales_from_db(postcode, limit)
+            sales = get_comparable_sales(postcode, limit)
             if sales:
                 prices = [sale['sale_price'] for sale in sales if sale['sale_price'] > 0]
                 summary = {
