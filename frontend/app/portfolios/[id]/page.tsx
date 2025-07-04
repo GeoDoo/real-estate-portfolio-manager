@@ -5,21 +5,9 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { portfoliosAPI } from "@/lib/api/portfolios";
 import { valuationsAPI } from "@/lib/api/valuations";
 import { CashFlowRow } from "@/types/cashflow";
-import { getNumberColor, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { Property } from "@/types/property";
-
-// Helper function to render table cells with proper formatting
-function renderCell(value: number, colorFn: (n: number) => string) {
-  return (
-    <span className="font-bold" style={{ color: colorFn(value) }}>
-      {value > 0
-        ? value.toLocaleString(undefined, { maximumFractionDigits: 2 })
-        : value < 0
-        ? `-${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-        : "0"}
-    </span>
-  );
-}
+import DcfTable from "@/components/DcfTable";
 
 interface PropertyWithValuation extends Property {
   valuation?: {
@@ -248,84 +236,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
           You have not added any properties yet.
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">Portfolio DCF Analysis</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-2 px-4 text-left">Year</th>
-                  <th className="py-2 px-4 text-right">Gross Rent (£)</th>
-                  <th className="py-2 px-4 text-right">Vacancy Loss (£)</th>
-                  <th className="py-2 px-4 text-right">Effective Rent (£)</th>
-                  <th className="py-2 px-4 text-right">Operating Expenses (£)</th>
-                  <th className="py-2 px-4 text-right">NOI (£)</th>
-                  <th className="py-2 px-4 text-right">CapEx (£)</th>
-                  <th className="py-2 px-4 text-right">Net Cash Flow (£)</th>
-                  <th className="py-2 px-4 text-right">Discount Factor</th>
-                  <th className="py-2 px-4 text-right">Present Value (£)</th>
-                  <th className="py-2 px-4 text-right">Cumulative PV (£)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {aggregateRows.map((row, index) => (
-                  <tr
-                    key={row.year}
-                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
-                    <td className="py-2 px-4">{row.year}</td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(row.gross_rent, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(-row.vacancy_loss, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(row.effective_rent, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(-row.operating_expenses, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(row.noi, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(-row.capex, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(row.net_cash_flow, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      <span
-                        className="font-bold"
-                        style={{
-                          color:
-                            Number(row.discount_factor) === 0 ||
-                            Object.is(row.discount_factor, -0)
-                              ? "#6B7280"
-                              : undefined,
-                        }}
-                      >
-                        {Number(row.discount_factor) === 0 ||
-                        Object.is(row.discount_factor, -0)
-                          ? "0"
-                          : row.discount_factor.toLocaleString(undefined, {
-                              maximumFractionDigits: 6,
-                            })}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(row.present_value, getNumberColor)}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {renderCell(row.cumulative_pv, getNumberColor)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DcfTable rows={aggregateRows} title="Portfolio DCF Analysis" />
       )}
     </PageContainer>
   );

@@ -17,6 +17,7 @@ import {
   hasValidValuation,
 } from "../properties/validation";
 import InfoTooltip from "@/components/InfoTooltip";
+import DcfTable from "@/components/DcfTable";
 
 interface MonteCarloSummary {
   npv_mean: number;
@@ -68,19 +69,6 @@ function getChanceLabel(prob: number) {
   return "Highly Likely";
 }
 
-// Helper for zero formatting and color
-function renderCell(value: number, colorFn: (n: number) => string) {
-  const isZero = Number(value) === 0 || Object.is(value, -0);
-  return (
-    <span
-      className="font-bold"
-      style={{ color: isZero ? "#6B7280" : colorFn(value) }} // Tailwind gray-500
-    >
-      {isZero ? "0" : value.toLocaleString()}
-    </span>
-  );
-}
-
 export default function ValuationDetailPage() {
   const { id } = useParams();
   const propertyId = Array.isArray(id) ? id[0] : id;
@@ -88,7 +76,6 @@ export default function ValuationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cashFlows, setCashFlows] = useState<CashFlowRow[]>([]);
-  const [irr, setIrr] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
     initial_investment: "",
@@ -185,7 +172,6 @@ export default function ValuationDetailPage() {
         setError(errorMessage);
         setValuation(null);
         setCashFlows([]);
-        setIrr(null);
       }
       setLoading(false);
     }
@@ -197,18 +183,8 @@ export default function ValuationDetailPage() {
       const cashFlowsData =
         await valuationsAPI.calculateCashFlows(valuationData);
       setCashFlows(cashFlowsData);
-
-      // Fetch IRR if cash flows are available
-      if (cashFlowsData && cashFlowsData.length > 1) {
-        const netCashFlows = cashFlowsData.map((row) => row.net_cash_flow);
-        const irrValue = await valuationsAPI.calculateIRR(netCashFlows);
-        setIrr(irrValue);
-      } else {
-        setIrr(null);
-      }
     } catch {
       setCashFlows([]);
-      setIrr(null);
     }
   }
 
@@ -606,196 +582,7 @@ export default function ValuationDetailPage() {
 
           {/* Results */}
           {cashFlows.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8 relative">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Valuation Results
-              </h2>
-              {/* Summary */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="text-center">
-                  <span
-                    className={`text-2xl font-bold ${
-                      cashFlows[cashFlows.length - 1].cumulative_pv > 0
-                        ? "text-green-700"
-                        : cashFlows[cashFlows.length - 1].cumulative_pv < 0
-                          ? "text-red-600"
-                          : "text-gray-900"
-                    }`}
-                  >
-                    £
-                    {cashFlows[
-                      cashFlows.length - 1
-                    ].cumulative_pv.toLocaleString(undefined, {
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                  <div className="text-base font-semibold text-gray-600 flex items-center justify-center gap-1">
-                    Net Present Value
-                    <span className="relative group ml-1 cursor-pointer">
-                      <svg
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="inline-block align-baseline text-gray-400 group-hover:text-gray-700"
-                      >
-                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                        <text
-                          x="12"
-                          y="16"
-                          textAnchor="middle"
-                          fontSize="12"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                      <span
-                        className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-gray-900 text-white text-sm rounded-lg px-5 py-3 shadow-xl max-w-2xl min-w-[300px]"
-                        style={{ top: "100%" }}
-                      >
-                        NPV is the total value of all future cash flows (income
-                        minus expenses), discounted to today's value. A positive
-                        NPV means the investment is expected to be profitable.
-                      </span>
-                    </span>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <span
-                    className={`text-2xl font-bold ${
-                      irr && irr > 0
-                        ? "text-green-700"
-                        : irr && irr < 0
-                          ? "text-red-600"
-                          : "text-gray-900"
-                    }`}
-                  >
-                    {irr ? `${irr.toFixed(2)}%` : "N/A"}
-                  </span>
-                  <div className="text-base font-semibold text-gray-600 flex items-center justify-center gap-1">
-                    Internal Rate of Return
-                    <span className="relative group ml-1 cursor-pointer">
-                      <svg
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="inline-block align-baseline text-gray-400 group-hover:text-gray-700"
-                      >
-                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                        <text
-                          x="12"
-                          y="16"
-                          textAnchor="middle"
-                          fontSize="12"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                      <span
-                        className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-gray-900 text-white text-sm rounded-lg px-5 py-3 shadow-xl max-w-2xl min-w-[300px]"
-                        style={{ top: "100%" }}
-                      >
-                        IRR is the annualized rate of return that makes the net
-                        present value of all cash flows equal to zero. A higher
-                        IRR means a better return on investment.
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cash Flow Table */}
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="py-2 px-4 text-left">Year</th>
-                      <th className="py-2 px-4 text-right">Gross Rent (£)</th>
-                      <th className="py-2 px-4 text-right">Vacancy Loss (£)</th>
-                      <th className="py-2 px-4 text-right">
-                        Effective Rent (£)
-                      </th>
-                      <th className="py-2 px-4 text-right">
-                        Operating Expenses (£)
-                      </th>
-                      <th className="py-2 px-4 text-right">NOI (£)</th>
-                      <th className="py-2 px-4 text-right">CapEx (£)</th>
-                      <th className="py-2 px-4 text-right">
-                        Net Cash Flow (£)
-                      </th>
-                      <th className="py-2 px-4 text-right">Discount Factor</th>
-                      <th className="py-2 px-4 text-right">
-                        Present Value (£)
-                      </th>
-                      <th className="py-2 px-4 text-right">
-                        Cumulative PV (£)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cashFlows.map((row, index) => (
-                      <tr
-                        key={index}
-                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                      >
-                        <td className="py-2 px-4">{row.year}</td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(row.gross_rent, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(-row.vacancy_loss, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(row.effective_rent, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(-row.operating_expenses, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(row.noi, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(-row.capex, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(row.net_cash_flow, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          <span
-                            className="font-bold"
-                            style={{
-                              color:
-                                Number(row.discount_factor) === 0 ||
-                                Object.is(row.discount_factor, -0)
-                                  ? "#6B7280"
-                                  : undefined,
-                            }}
-                          >
-                            {Number(row.discount_factor) === 0 ||
-                            Object.is(row.discount_factor, -0)
-                              ? "0"
-                              : row.discount_factor.toLocaleString(undefined, {
-                                  maximumFractionDigits: 6,
-                                })}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(row.present_value, getNumberColor)}
-                        </td>
-                        <td className="py-2 px-4 text-right">
-                          {renderCell(row.cumulative_pv, getNumberColor)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <DcfTable rows={cashFlows} title="Valuation Results" />
           )}
 
           {/* Monte Carlo Simulation */}
