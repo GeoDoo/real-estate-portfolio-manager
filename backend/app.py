@@ -788,7 +788,7 @@ def create_app(test_config=None):
             portfolio = Portfolio(id=str(uuid.uuid4()), name=data["name"])
             db.session.add(portfolio)
             db.session.commit()
-            return jsonify({"id": portfolio.id, "name": portfolio.name}), 201
+            return jsonify({"data": {"id": portfolio.id, "name": portfolio.name}}), 201
 
     @app.route("/api/portfolios/<portfolio_id>", methods=["DELETE"])
     def delete_portfolio(portfolio_id):
@@ -807,7 +807,7 @@ def create_app(test_config=None):
         portfolio = db.session.get(Portfolio, portfolio_id)
         if not portfolio:
             abort(404)
-        return jsonify({"id": portfolio.id, "name": portfolio.name})
+        return jsonify({"data": {"id": portfolio.id, "name": portfolio.name}})
 
     @app.route("/api/portfolios/<portfolio_id>/properties", methods=["GET"])
     def get_portfolio_properties(portfolio_id):

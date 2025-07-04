@@ -14,12 +14,14 @@ export const portfoliosAPI = {
 
   // Create a new portfolio
   create: async (name: string): Promise<Portfolio> => {
-    return await api.post<Portfolio>("/api/portfolios", { name });
+    const response = await api.post<{ data: Portfolio }>("/api/portfolios", { name });
+    return response.data;
   },
 
   // Get a portfolio by id
   getById: async (id: string): Promise<Portfolio> => {
-    return await api.get<Portfolio>(`/api/portfolios/${id}`);
+    const response = await api.get<{ data: Portfolio }>(`/api/portfolios/${id}`);
+    return response.data;
   },
 
   // Get all properties in a portfolio
