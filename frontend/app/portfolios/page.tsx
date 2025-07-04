@@ -79,7 +79,7 @@ export default function PortfoliosPage() {
         <div style={{ color: "var(--text-muted)" }}>No portfolios found.</div>
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {portfolios.map((p) => (
+          {Array.isArray(portfolios) && portfolios.map((p) => (
             <li key={p.id}>
               <Link
                 href={`/portfolios/${p.id}`}

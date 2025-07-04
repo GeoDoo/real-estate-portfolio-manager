@@ -8,7 +8,8 @@ const BASE = config.apiBaseUrl;
 export const propertiesAPI = {
   // Get all properties
   getAll: async (): Promise<Property[]> => {
-    return apiRequest<Property[]>(`${BASE}/api/properties`);
+    const response = await apiRequest<{ items: Property[] }>(`${BASE}/api/properties`);
+    return response.items;
   },
 
   // Create a new property

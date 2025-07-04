@@ -282,17 +282,14 @@ def test_monte_carlo_irr_valid(client):
         "ltv": 0,
         "interest_rate": 0,
     }
-    property_response = client.post("/api/properties", json={"address": "999 IRR Test St", "postcode": "TEST4 4DD"})
-    property_id = property_response.json["id"]
-    client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
-    monte_carlo_data = {
-        "num_simulations": 100,
-        "annual_rent_growth": {"distribution": "normal", "mean": 0, "stddev": 0},
-        "discount_rate": {"distribution": "normal", "mean": 10, "stddev": 0},
-        "interest_rate": {"distribution": "normal", "mean": 0, "stddev": 0},
+    mc_data = {
+        "num_simulations": 1000,
+        "annual_rent_growth": {"distribution": "normal", "mean": 0, "stddev": 1},
+        "discount_rate": {"distribution": "normal", "mean": 10, "stddev": 2},
+        "interest_rate": {"distribution": "normal", "mean": 0, "stddev": 1},
         **{k: v for k, v in valuation_data.items() if k not in ["annual_rent_growth", "discount_rate", "interest_rate"]}
     }
-    response = client.post("/api/valuations/monte-carlo", json=monte_carlo_data)
+    response = client.post("/api/valuations/monte-carlo", json=mc_data)
     assert response.status_code == 200
     payload = _get_last_sse_event(response)
     assert payload is not None
@@ -304,7 +301,7 @@ def test_valuation_with_vacancy_rate(client):
     """Test that valuation API correctly handles vacancy rate."""
     # Create property
     property_response = client.post("/api/properties", json={"address": "123 Vacancy Test St", "postcode": "TEST5 5EE"})
-    property_id = property_response.json["id"]
+    property_id = property_response.json["data"]["id"]
     
     # Create valuation with vacancy rate
     valuation_data = {
@@ -329,7 +326,7 @@ def test_valuation_with_vacancy_rate(client):
     assert valuation_response.status_code == 201
     
     # Get cash flows and verify vacancy rate is applied
-    cash_flows_response = client.get(f"/api/valuations/{valuation_response.json['id']}/cashflows")
+    cash_flows_response = client.get(f"/api/valuations/{valuation_response.json['data']['id']}/cashflows")
     assert cash_flows_response.status_code == 200
     
     cash_flows = cash_flows_response.json["cashFlows"]  # Access the cashFlows field
@@ -386,7 +383,7 @@ def test_rental_analysis_with_vacancy_rate(client):
 def test_monte_carlo_with_vacancy_rate(client):
     """Test that Monte Carlo API correctly handles vacancy rate."""
     property_response = client.post("/api/properties", json={"address": "456 MC Vacancy Test St", "postcode": "TEST6 6FF"})
-    property_id = property_response.json["id"]
+    property_id = property_response.json["data"]["id"]
     valuation_data = {
         "initial_investment": 200000,
         "annual_rental_income": 24000,
@@ -406,7 +403,7 @@ def test_monte_carlo_with_vacancy_rate(client):
     }
     valuation_response = client.post(f"/api/properties/{property_id}/valuation", json=valuation_data)
     mc_data = {
-        "valuation_id": valuation_response.json["id"],
+        "valuation_id": valuation_response.json["data"]["id"],
         "num_simulations": 1000,
         "annual_rent_growth": {"distribution": "normal", "mean": 2, "stddev": 1},
         "discount_rate": {"distribution": "normal", "mean": 15, "stddev": 2},
@@ -636,7 +633,7 @@ def test_valuation_creation_with_new_utilities(client):
     }
     response = client.post("/api/valuations", json=data)
     assert response.status_code == 201
-    result = response.get_json()
+    result = response.get_json()["data"]
     assert result["initial_investment"] == 200000
     assert result["annual_rental_income"] == 24000
     assert result["service_charge"] == 3000
@@ -670,7 +667,7 @@ def test_property_creation_with_new_utilities(client):
     }
     response = client.post("/api/properties", json=data)
     assert response.status_code == 201
-    result = response.get_json()
+    result = response.get_json()["data"]
     assert result["address"] == "123 Test Street"
     assert result["postcode"] == "TEST1 1AA"
     assert result["listing_link"] == "https://example.com/listing"
@@ -703,7 +700,7 @@ def test_valuation_update_with_new_utilities(client, sample_valuation):
     }
     response = client.put(f"/api/valuations/{sample_valuation}", json=data)
     assert response.status_code == 200
-    result = response.get_json()
+    result = response.get_json()["data"]
     assert result["initial_investment"] == 250000
     assert result["service_charge"] == 3500
 
@@ -716,7 +713,7 @@ def test_property_update_with_new_utilities(client, sample_property):
     }
     response = client.put(f"/api/properties/{sample_property}", json=data)
     assert response.status_code == 200
-    result = response.get_json()
+    result = response.get_json()["data"]
     assert result["address"] == "456 Updated Street"
     assert result["postcode"] == "TEST2 2BB"
     assert result["listing_link"] == "https://example.com/updated-listing" 

@@ -446,7 +446,7 @@ def create_app(test_config=None):
     def valuations_collection():
         if request.method == "GET":
             vals = Valuation.query.all()
-            return jsonify([v.to_dict() for v in vals])
+            return jsonify({"items": [v.to_dict() for v in vals]}), 200
         elif request.method == "POST":
             data = request.json
             required_fields = [
@@ -480,16 +480,16 @@ def create_app(test_config=None):
             valuation = populate_model_from_data(valuation, cleaned, cleaned.keys())
             db.session.add(valuation)
             db.session.commit()
-            return jsonify(clean_for_json(valuation.to_dict())), 201
+            return jsonify({"data": clean_for_json(valuation.to_dict())}), 201
 
     # GET/PUT/DELETE /api/valuations/<id>
     @app.route("/api/valuations/<val_id>", methods=["GET", "PUT", "DELETE"])
     def valuation_item(val_id):
         valuation = db.session.get(Valuation, val_id)
         if not valuation:
-            abort(404)
+            return jsonify({"error": "Valuation not found"}), 404
         if request.method == "GET":
-            return jsonify(clean_for_json(valuation.to_dict()))
+            return jsonify({"data": clean_for_json(valuation.to_dict())}), 200
         elif request.method == "PUT":
             data = request.json
             required_fields = [
@@ -519,7 +519,7 @@ def create_app(test_config=None):
                 return jsonify({"error": cleaned}), 400
             valuation = populate_model_from_data(valuation, cleaned, cleaned.keys())
             db.session.commit()
-            return jsonify(clean_for_json(valuation.to_dict()))
+            return jsonify({"data": clean_for_json(valuation.to_dict())}), 200
         elif request.method == "DELETE":
             db.session.delete(valuation)
             db.session.commit()
@@ -568,7 +568,7 @@ def create_app(test_config=None):
     def properties_collection():
         if request.method == "GET":
             props = Property.query.all()
-            return jsonify([p.to_dict() for p in props])
+            return jsonify({"items": [p.to_dict() for p in props]}), 200
         elif request.method == "POST":
             data = request.json
             required_fields = [
@@ -592,15 +592,15 @@ def create_app(test_config=None):
                 prop.listing_link = cleaned["listing_link"]
             db.session.add(prop)
             db.session.commit()
-            return jsonify(clean_for_json(prop.to_dict())), 201
+            return jsonify({"data": clean_for_json(prop.to_dict())}), 201
 
     @app.route("/api/properties/<prop_id>", methods=["GET", "PUT", "PATCH"])
     def property_item(prop_id):
         prop = db.session.get(Property, prop_id)
         if not prop:
-            abort(404)
+            return jsonify({"error": "Property not found"}), 404
         if request.method == "GET":
-            return jsonify(clean_for_json(prop.to_dict()))
+            return jsonify({"data": clean_for_json(prop.to_dict())}), 200
         elif request.method == "PUT":
             data = request.json
             required_fields = [
@@ -618,7 +618,7 @@ def create_app(test_config=None):
                 return jsonify({"error": result}), 400
             prop = populate_model_from_data(prop, cleaned, cleaned.keys())
             db.session.commit()
-            return jsonify(clean_for_json(prop.to_dict()))
+            return jsonify({"data": clean_for_json(prop.to_dict())}), 200
         elif request.method == "PATCH":
             data = request.json
             # Only update provided fields
@@ -630,22 +630,22 @@ def create_app(test_config=None):
                     return jsonify({"error": result}), 400
             prop = populate_model_from_data(prop, cleaned, cleaned.keys())
             db.session.commit()
-            return jsonify(clean_for_json(prop.to_dict()))
+            return jsonify({"data": clean_for_json(prop.to_dict())}), 200
 
     # --- Property Valuation Endpoints ---
     @app.route("/api/properties/<prop_id>/valuation", methods=["GET", "POST", "PUT"])
     def property_valuation(prop_id):
         prop = db.session.get(Property, prop_id)
         if not prop:
-            abort(404)
+            return jsonify({"error": "Property not found"}), 404
             
         if request.method == "GET":
             val = db.session.query(Valuation).filter_by(property_id=prop_id).first()
             if not val:
-                return jsonify({}), 200
+                return jsonify({"data": None}), 200
             val_dict = val.to_dict()
             val_dict["postcode"] = prop.postcode
-            return jsonify(clean_for_json(val_dict))
+            return jsonify({"data": clean_for_json(val_dict)})
         elif request.method in ["POST", "PUT"]:
             data = request.json
             
@@ -684,7 +684,7 @@ def create_app(test_config=None):
                 existing_val = populate_model_from_data(existing_val, cleaned, cleaned.keys())
                 existing_val.created_at = datetime.now(timezone.utc).isoformat()
                 db.session.commit()
-                return jsonify(clean_for_json(existing_val.to_dict())), 200
+                return jsonify({"data": clean_for_json(existing_val.to_dict())}), 200
             else:
                 # Create new valuation
                 val_id = str(uuid.uuid4())
@@ -693,7 +693,7 @@ def create_app(test_config=None):
                 valuation = populate_model_from_data(valuation, cleaned, cleaned.keys())
                 db.session.add(valuation)
                 db.session.commit()
-                return jsonify(clean_for_json(valuation.to_dict())), 201
+                return jsonify({"data": clean_for_json(valuation.to_dict())}), 201
 
     @app.route("/api/valuations/monte-carlo", methods=["POST"])
     def monte_carlo_valuation():

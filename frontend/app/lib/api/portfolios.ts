@@ -8,7 +8,8 @@ export interface Portfolio {
 export const portfoliosAPI = {
   // List all portfolios
   getAll: async (): Promise<Portfolio[]> => {
-    return await api.get<Portfolio[]>("/api/portfolios");
+    const response = await api.get<{ items: Portfolio[] }>("/api/portfolios");
+    return response.items;
   },
 
   // Create a new portfolio
@@ -23,7 +24,8 @@ export const portfoliosAPI = {
 
   // Get all properties in a portfolio
   getProperties: async (id: string) => {
-    return await api.get(`/api/portfolios/${id}/properties`);
+    const response = await api.get<{ items: any[] }>(`/api/portfolios/${id}/properties`);
+    return response.items;
   },
 
   // Get IRR for a portfolio (use shared api.get for consistency)

@@ -66,7 +66,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
         const portfolio = await portfoliosAPI.getById(id);
         setPortfolioName(portfolio.name);
         const props: Property[] = (await portfoliosAPI.getProperties(id)) as Property[];
-        setProperties(props);
+        setProperties(Array.isArray(props) ? props : []);
         // Fetch all cash flows for properties
         const allCashFlows: CashFlowRow[][] = await Promise.all(
           props.map(async (prop: Property) => {

@@ -7,7 +7,8 @@ export const valuationsAPI = {
   // Get valuation for a property
   getByPropertyId: async (propertyId: string): Promise<DCFRow | null> => {
     try {
-      return await api.get<DCFRow>(`/api/properties/${propertyId}/valuation`);
+      const response = await api.get<{ data: DCFRow | null }>(`/api/properties/${propertyId}/valuation`);
+      return response.data;
     } catch (error) {
       if (error instanceof APIError && error.status === 404) {
         return null; // No valuation exists yet

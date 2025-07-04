@@ -144,7 +144,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-            {properties.map((property) => {
+            {Array.isArray(properties) && properties.map((property) => {
               // Format the date
               const date = property.created_at
                 ? new Date(property.created_at)
@@ -303,7 +303,7 @@ export default function HomePage() {
                         }}
                       >
                         <option value="">No Portfolio</option>
-                        {portfolios.map((portfolio) => (
+                        {Array.isArray(portfolios) && portfolios.map((portfolio) => (
                           <option key={portfolio.id} value={portfolio.id}>
                             {portfolio.name}
                           </option>
