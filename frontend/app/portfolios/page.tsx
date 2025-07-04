@@ -73,9 +73,9 @@ export default function PortfoliosPage() {
             : error}
         </div>
       )}
-      {loading && portfolios.length === 0 ? (
+      {loading && Array.isArray(portfolios) && portfolios.length === 0 ? (
         <div style={{ color: "var(--text-muted)" }}>Loading...</div>
-      ) : portfolios.length === 0 ? (
+      ) : Array.isArray(portfolios) && portfolios.length === 0 ? (
         <div style={{ color: "var(--text-muted)" }}>No portfolios found.</div>
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

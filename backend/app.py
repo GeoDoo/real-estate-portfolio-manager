@@ -782,7 +782,7 @@ def create_app(test_config=None):
     def portfolios_collection():
         if request.method == "GET":
             portfolios = Portfolio.query.all()
-            return jsonify([{"id": p.id, "name": p.name} for p in portfolios])
+            return jsonify({"items": [{"id": p.id, "name": p.name} for p in portfolios]})
         elif request.method == "POST":
             data = request.json
             portfolio = Portfolio(id=str(uuid.uuid4()), name=data["name"])
