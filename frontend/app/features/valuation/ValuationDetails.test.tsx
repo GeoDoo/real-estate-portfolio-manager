@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import ValuationDetailPage from './ValuationDetails';
 import { TextEncoder } from 'util';
 
@@ -18,6 +18,7 @@ jest.mock('@/lib/api/valuations', () => ({
     getByPropertyId: jest.fn(),
     calculateCashFlows: jest.fn(),
     calculateIRR: jest.fn(),
+    save: jest.fn(),
   },
 }));
 
@@ -44,6 +45,7 @@ describe('ValuationDetails API Integration', () => {
     ltv: 75,
     interest_rate: 5,
     capex: 500,
+    postcode: 'SW1A 1AA',
     created_at: new Date().toISOString(),
   };
 
@@ -81,6 +83,7 @@ describe('ValuationDetails API Integration', () => {
     (valuationsAPI.getByPropertyId as jest.Mock).mockResolvedValue(mockValuation);
     (valuationsAPI.calculateCashFlows as jest.Mock).mockResolvedValue(mockCashFlows);
     (valuationsAPI.calculateIRR as jest.Mock).mockResolvedValue(12.5);
+    (valuationsAPI.save as jest.Mock).mockResolvedValue(mockValuation);
   });
 
   it('should call API with correct parameters', async () => {
@@ -176,6 +179,7 @@ describe('ValuationDetails API Integration', () => {
     expect(result).toHaveProperty('annual_rental_income');
     expect(result).toHaveProperty('vacancy_rate');
     expect(result).toHaveProperty('capex');
+    expect(result).toHaveProperty('postcode');
     expect(result).toHaveProperty('created_at');
   });
 });
@@ -258,6 +262,7 @@ beforeEach(() => {
             capex: 1000,
             exit_cap_rate: 5,
             selling_costs: 2,
+            postcode: 'SW1A 1AA',
           };
           return mockValuation;
         },
@@ -274,8 +279,10 @@ afterEach(() => {
 });
 
 describe('ValuationDetailPage minimal render', () => {
-  it('renders without crashing', () => {
-    render(<ValuationDetailPage />);
+  it('renders without crashing', async () => {
+    await act(async () => {
+      render(React.createElement(ValuationDetailPage));
+    });
     expect(true).toBe(true);
   });
 });

@@ -28,7 +28,7 @@ describe('portfoliosAPI', () => {
   });
 
   it('create posts new portfolio', async () => {
-    mockPost.mockResolvedValue({ id: '2', name: 'B' });
+    mockPost.mockResolvedValue({ data: { id: '2', name: 'B' } });
     const { portfoliosAPI } = await import('./portfolios');
     const result = await portfoliosAPI.create('B');
     expect(mockPost).toHaveBeenCalledWith('/api/portfolios', { name: 'B' });
@@ -36,7 +36,7 @@ describe('portfoliosAPI', () => {
   });
 
   it('getById fetches portfolio by id', async () => {
-    mockGet.mockResolvedValue({ id: '3', name: 'C' });
+    mockGet.mockResolvedValue({ data: { id: '3', name: 'C' } });
     const { portfoliosAPI } = await import('./portfolios');
     const result = await portfoliosAPI.getById('3');
     expect(mockGet).toHaveBeenCalledWith('/api/portfolios/3');
