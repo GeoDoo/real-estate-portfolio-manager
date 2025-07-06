@@ -69,6 +69,43 @@ function getChanceLabel(prob: number) {
   return "Highly Likely";
 }
 
+function calculateIRR(cashFlows: CashFlowRow[], initialInvestment: number): number {
+  if (cashFlows.length === 0) return 0;
+  
+  // Create cash flow array for IRR calculation
+  const cf = [-initialInvestment, ...cashFlows.map(row => row.net_cash_flow)];
+  
+  // Simple IRR calculation using Newton-Raphson method
+  let guess = 0.1; // Start with 10%
+  const maxIterations = 100;
+  const tolerance = 0.0001;
+  
+  for (let i = 0; i < maxIterations; i++) {
+    let npv = 0;
+    let derivative = 0;
+    
+    for (let j = 0; j < cf.length; j++) {
+      const factor = Math.pow(1 + guess, j);
+      npv += cf[j] / factor;
+      if (j > 0) {
+        derivative -= j * cf[j] / Math.pow(1 + guess, j + 1);
+      }
+    }
+    
+    if (Math.abs(npv) < tolerance) {
+      break;
+    }
+    
+    const newGuess = guess - npv / derivative;
+    if (Math.abs(newGuess - guess) < tolerance) {
+      break;
+    }
+    guess = newGuess;
+  }
+  
+  return guess * 100; // Convert to percentage
+}
+
 export default function ValuationDetailPage() {
   const { id } = useParams();
   const propertyId = Array.isArray(id) ? id[0] : id;
@@ -604,7 +641,34 @@ export default function ValuationDetailPage() {
 
           {/* Results */}
           {cashFlows.length > 0 && (
-            <DcfTable rows={cashFlows} title="Valuation Results" />
+            <>
+              {/* NPV and IRR Summary */}
+              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Valuation Summary</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">Net Present Value (NPV)</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Present value of all future cash flows minus initial investment
+                    </p>
+                    <div className="text-3xl font-bold" style={{ color: getNumberColor(cashFlows[cashFlows.length - 1]?.cumulative_pv || 0) }}>
+                      £{formatCurrency(cashFlows[cashFlows.length - 1]?.cumulative_pv || 0, "")}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">Internal Rate of Return (IRR)</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Annualized return rate that makes NPV equal to zero
+                    </p>
+                    <div className="text-3xl font-bold" style={{ color: getNumberColor(calculateIRR(cashFlows, valuation?.initial_investment || 0)) }}>
+                      {calculateIRR(cashFlows, valuation?.initial_investment || 0).toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <DcfTable rows={cashFlows} title="Valuation Results" />
+            </>
           )}
 
           {/* Monte Carlo Simulation */}

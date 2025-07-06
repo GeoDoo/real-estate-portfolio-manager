@@ -70,7 +70,10 @@ export default function HomePage() {
             let irr: number | null = null;
             if (netCashFlows.length > 1) {
               try {
-                irr = await valuationsAPI.calculateIRR(netCashFlows);
+                irr = await valuationsAPI.calculateIRR([
+                  -valuation.initial_investment,
+                  ...netCashFlows,
+                ]);
               } catch {
                 irr = null;
               }

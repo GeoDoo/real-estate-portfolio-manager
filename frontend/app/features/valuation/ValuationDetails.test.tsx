@@ -237,9 +237,26 @@ describe('ValuationDetails API Integration', () => {
     });
 
     // Fill in required fields to pass validation
-    const purchasePriceInput = component.getByDisplayValue('') as HTMLInputElement;
+    const purchasePriceInput = component.container.querySelector('input[name="initial_investment"]') as HTMLInputElement;
+    const annualRentalIncomeInput = component.container.querySelector('input[name="annual_rental_income"]') as HTMLInputElement;
+    const maintenanceInput = component.container.querySelector('input[name="maintenance"]') as HTMLInputElement;
+    const propertyTaxInput = component.container.querySelector('input[name="property_tax"]') as HTMLInputElement;
+    const managementFeesInput = component.container.querySelector('input[name="management_fees"]') as HTMLInputElement;
+    const transactionCostsInput = component.container.querySelector('input[name="transaction_costs"]') as HTMLInputElement;
+    const annualRentGrowthInput = component.container.querySelector('input[name="annual_rent_growth"]') as HTMLInputElement;
+    const discountRateInput = component.container.querySelector('input[name="discount_rate"]') as HTMLInputElement;
+    const holdingPeriodInput = component.container.querySelector('input[name="holding_period"]') as HTMLInputElement;
+
     await act(async () => {
       fireEvent.change(purchasePriceInput, { target: { value: '100000' } });
+      fireEvent.change(annualRentalIncomeInput, { target: { value: '12000' } });
+      fireEvent.change(maintenanceInput, { target: { value: '1000' } });
+      fireEvent.change(propertyTaxInput, { target: { value: '600' } });
+      fireEvent.change(managementFeesInput, { target: { value: '10' } });
+      fireEvent.change(transactionCostsInput, { target: { value: '2000' } });
+      fireEvent.change(annualRentGrowthInput, { target: { value: '2' } });
+      fireEvent.change(discountRateInput, { target: { value: '8' } });
+      fireEvent.change(holdingPeriodInput, { target: { value: '10' } });
     });
 
     // Click save button (now visible after clicking edit)
