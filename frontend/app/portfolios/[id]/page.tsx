@@ -35,6 +35,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
   const [aggregateRows, setAggregateRows] = useState<CashFlowRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [portfolioIRR, setPortfolioIRR] = useState<number | null>(null);
+  const [portfolioPayback, setPortfolioPayback] = useState<{ simple_payback: number | null; discounted_payback: number | null } | null>(null);
 
   // Load from localStorage on mount (client only)
   useEffect(() => {
@@ -149,6 +150,10 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
         } else {
           setPortfolioIRR(null);
         }
+
+        // Calculate portfolio payback period
+        const paybackData = await portfoliosAPI.getPortfolioPayback(id);
+        setPortfolioPayback(paybackData);
       } catch {
         setPortfolioName("Portfolio Not Found");
         setProperties([]);
@@ -199,7 +204,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
           {/* Portfolio Summary */}
           <div className="border-t border-gray-200 pt-4">
             <h3 className="font-semibold text-gray-900 mb-3">Portfolio Summary</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(-Math.abs(totalInvestment)) }}>
                   £{formatCurrency(-Math.abs(totalInvestment), "")}
@@ -226,6 +231,18 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
                   {portfolioIRR !== null ? `${portfolioIRR.toFixed(2)}%` : '-'}
                 </div>
                 <div className="text-sm text-gray-600">IRR</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(portfolioPayback?.simple_payback ? -portfolioPayback.simple_payback : 0) }}>
+                  {portfolioPayback?.simple_payback ? `${portfolioPayback.simple_payback.toFixed(1)}y` : '-'}
+                </div>
+                <div className="text-sm text-gray-600">Simple Payback</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(portfolioPayback?.discounted_payback ? -portfolioPayback.discounted_payback : 0) }}>
+                  {portfolioPayback?.discounted_payback ? `${portfolioPayback.discounted_payback.toFixed(1)}y` : '-'}
+                </div>
+                <div className="text-sm text-gray-600">Discounted Payback</div>
               </div>
             </div>
           </div>

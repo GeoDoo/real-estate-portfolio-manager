@@ -72,4 +72,20 @@ describe('portfoliosAPI', () => {
     const result = await portfoliosAPI.getPortfolioIRR('7');
     expect(result).toBeNull();
   });
+
+  it('getPortfolioPayback fetches payback data successfully', async () => {
+    const paybackData = { simple_payback: 3.5, discounted_payback: 4.2 };
+    mockGet.mockResolvedValue(paybackData);
+    const { portfoliosAPI } = await import('./portfolios');
+    const result = await portfoliosAPI.getPortfolioPayback('8');
+    expect(mockGet).toHaveBeenCalledWith('/api/portfolios/8/payback');
+    expect(result).toEqual(paybackData);
+  });
+
+  it('getPortfolioPayback returns null on error', async () => {
+    mockGet.mockRejectedValue(new Error('fail'));
+    const { portfoliosAPI } = await import('./portfolios');
+    const result = await portfoliosAPI.getPortfolioPayback('9');
+    expect(result).toBeNull();
+  });
 }); 

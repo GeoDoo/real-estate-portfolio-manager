@@ -83,4 +83,30 @@ describe('valuationsAPI', () => {
     expect(mockGet).toHaveBeenCalledWith('/api/properties/pid/valuation/cashflows/vid');
     expect(result).toEqual([{ year: 1, revenue: 200 }]);
   });
+
+  it('getPaybackPeriod returns payback data successfully', async () => {
+    const paybackData = { simple_payback: 4.2, discounted_payback: 5.1 };
+    mockGet.mockResolvedValue(paybackData);
+    const { valuationsAPI } = await import('./valuations');
+    const result = await valuationsAPI.getPaybackPeriod('vid');
+    expect(mockGet).toHaveBeenCalledWith('/api/valuations/vid/payback');
+    expect(result).toEqual(paybackData);
+  });
+
+  it('getPaybackPeriod returns null for 404', async () => {
+    const { APIError } = await import('@/lib/api');
+    const error = new APIError('Not found', 404);
+    mockGet.mockRejectedValue(error);
+    const { valuationsAPI } = await import('./valuations');
+    const result = await valuationsAPI.getPaybackPeriod('vid');
+    expect(result).toBeNull();
+  });
+
+  it('getPaybackPeriod throws other API errors', async () => {
+    const { APIError } = await import('@/lib/api');
+    const error = new APIError('Server error', 500);
+    mockGet.mockRejectedValue(error);
+    const { valuationsAPI } = await import('./valuations');
+    await expect(valuationsAPI.getPaybackPeriod('vid')).rejects.toThrow('Server error');
+  });
 }); 

@@ -66,6 +66,22 @@ export const valuationsAPI = {
     }
   },
 
+  // Get payback period for a valuation
+  getPaybackPeriod: async (valuationId: string): Promise<{ simple_payback: number | null; discounted_payback: number | null } | null> => {
+    try {
+      const response = await api.get<{ simple_payback: number | null; discounted_payback: number | null }>(`/api/valuations/${valuationId}/payback`);
+      return response;
+    } catch (error) {
+      if (error instanceof APIError && error.status === 404) {
+        return null;
+      }
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new APIError("Failed to calculate payback period");
+    }
+  },
+
   // Get cash flows for a specific valuation
   getCashFlows: async (
     propertyId: string,

@@ -130,6 +130,10 @@ export default function ValuationDetailPage() {
   const [comparableError, setComparableError] = useState<string | null>(null);
   const [comparableMessage, setComparableMessage] = useState<string | null>(null);
   const [comparableQueried, setComparableQueried] = useState(false); // State to track if user has clicked the button
+  
+  // Payback period state
+  const [paybackPeriod, setPaybackPeriod] = useState<{ simple_payback: number | null; discounted_payback: number | null } | null>(null);
+  const [paybackLoading, setPaybackLoading] = useState(false);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -454,6 +458,21 @@ export default function ValuationDetailPage() {
       console.error("Comparable sales error:", err);
     }
     setComparableLoading(false);
+  };
+
+  const fetchPaybackPeriod = async () => {
+    if (!valuation) return;
+    
+    setPaybackLoading(true);
+    try {
+      const paybackData = await valuationsAPI.getPaybackPeriod(valuation.id);
+      setPaybackPeriod(paybackData);
+    } catch (err) {
+      console.error("Payback period error:", err);
+      setPaybackPeriod(null);
+    } finally {
+      setPaybackLoading(false);
+    }
   };
 
   function getHistogram(data: number[], bins: number) {
@@ -2408,6 +2427,62 @@ export default function ValuationDetailPage() {
                   </div>
                 );
               })()}
+            </div>
+          )}
+
+          {/* Payback Period Analysis */}
+          {!isEditing && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Payback Period Analysis</h2>
+              <p className="text-gray-600 mb-6">
+                Calculate how long it will take to recover your initial investment through cash flows.
+              </p>
+              <div className="mb-4">
+                <Button
+                  onClick={fetchPaybackPeriod}
+                  className="px-4 py-3"
+                  variant="primary"
+                  size="md"
+                  disabled={paybackLoading || !valuation}
+                >
+                  {paybackLoading ? "Calculating..." : "Calculate Payback Period"}
+                </Button>
+              </div>
+              {paybackPeriod && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">Simple Payback Period</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Time to recover initial investment (ignores time value of money)
+                    </p>
+                    <div className="text-3xl font-bold" style={{ color: getNumberColor(paybackPeriod.simple_payback ? -paybackPeriod.simple_payback : 0) }}>
+                      {paybackPeriod.simple_payback ? `${paybackPeriod.simple_payback.toFixed(1)} years` : 'N/A'}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">Discounted Payback Period</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Time to recover initial investment (accounts for 8% discount rate)
+                    </p>
+                    <div className="text-3xl font-bold" style={{ color: getNumberColor(paybackPeriod.discounted_payback ? -paybackPeriod.discounted_payback : 0) }}>
+                      {paybackPeriod.discounted_payback ? `${paybackPeriod.discounted_payback.toFixed(1)} years` : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {paybackPeriod && paybackPeriod.simple_payback === null && paybackPeriod.discounted_payback === null && (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Payback Period Exceeds Holding Period</h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    The payback period is longer than your holding period. This means you won't recover your initial investment through cash flows alone within the investment timeframe.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </>

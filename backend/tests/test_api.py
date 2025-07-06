@@ -56,7 +56,7 @@ def sample_valuation(app, sample_property):
             property_id=sample_property,
             created_at=datetime.now(timezone.utc).isoformat(),
             initial_investment=200000,
-            annual_rental_income=24000,
+            annual_rental_income=50000,  # Increased for faster payback
             service_charge=3000,
             ground_rent=500,
             maintenance=1000,
@@ -171,6 +171,108 @@ def test_portfolio_irr_no_valuations(client):
     assert resp.status_code == 404
     data = resp.get_json()
     assert "error" in data
+
+# Payback Period Tests
+def test_portfolio_payback_positive(client):
+    """Test portfolio payback period with positive cash flows."""
+    app = client.application
+    portfolio_id = str(uuid.uuid4())
+    v = {
+        "initial_investment": 100000,
+        "annual_rental_income": 50000,  # Very high cash flow for quick payback
+        "service_charge": 1000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "insurance": 300,
+        "management_fees": 10,
+        "transaction_costs": 2000,
+        "annual_rent_growth": 0,
+        "discount_rate": 8,
+        "holding_period": 5,
+    }
+    create_portfolio_with_properties_and_valuations(
+        app,
+        portfolio_id,
+        [(f"789 High St {uuid.uuid4().hex[:8]}", v)]
+    )
+    resp = client.get(f"/api/portfolios/{portfolio_id}/payback")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "simple_payback" in data
+    assert "discounted_payback" in data
+    assert data["simple_payback"] is not None
+    assert data["simple_payback"] > 0
+    assert data["simple_payback"] < 5  # Should be less than holding period
+
+def test_portfolio_payback_exceeds_holding_period(client):
+    """Test portfolio payback period when it exceeds holding period."""
+    app = client.application
+    portfolio_id = str(uuid.uuid4())
+    v = {
+        "initial_investment": 100000,
+        "annual_rental_income": 5000,  # Low cash flow for long payback
+        "service_charge": 1000,
+        "ground_rent": 500,
+        "maintenance": 1000,
+        "property_tax": 6000,
+        "insurance": 300,
+        "management_fees": 10,
+        "transaction_costs": 2000,
+        "annual_rent_growth": 0,
+        "discount_rate": 8,
+        "holding_period": 3,
+    }
+    create_portfolio_with_properties_and_valuations(
+        app,
+        portfolio_id,
+        [(f"789 Low St {uuid.uuid4().hex[:8]}", v)]
+    )
+    resp = client.get(f"/api/portfolios/{portfolio_id}/payback")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "simple_payback" in data
+    assert "discounted_payback" in data
+    # Both should be None when payback exceeds holding period
+    assert data["simple_payback"] is None
+    assert data["discounted_payback"] is None
+
+def test_portfolio_payback_no_properties(client):
+    """Test portfolio payback when no properties exist."""
+    portfolio_id = str(uuid.uuid4())
+    resp = client.get(f"/api/portfolios/{portfolio_id}/payback")
+    assert resp.status_code == 404
+    data = resp.get_json()
+    assert "error" in data
+
+def test_portfolio_payback_no_valuations(client):
+    """Test portfolio payback when properties exist but no valuations."""
+    app = client.application
+    portfolio_id = str(uuid.uuid4())
+    with app.app_context():
+        prop = Property(id=str(uuid.uuid4()), address=f"789 Empty St {uuid.uuid4().hex[:8]}", postcode="TEST2 2BB", portfolio_id=portfolio_id)
+        db.session.add(prop)
+        db.session.commit()
+    resp = client.get(f"/api/portfolios/{portfolio_id}/payback")
+    assert resp.status_code == 404
+    data = resp.get_json()
+    assert "error" in data
+
+def test_valuation_payback_positive(client, sample_valuation):
+    """Test individual valuation payback period."""
+    resp = client.get(f"/api/valuations/{sample_valuation}/payback")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "simple_payback" in data
+    assert "discounted_payback" in data
+    # Should have some value since sample_valuation has reasonable cash flows
+    assert data["simple_payback"] is not None or data["discounted_payback"] is not None
+
+def test_valuation_payback_not_found(client):
+    """Test valuation payback when valuation doesn't exist."""
+    fake_id = str(uuid.uuid4())
+    resp = client.get(f"/api/valuations/{fake_id}/payback")
+    assert resp.status_code == 404
 
 def _get_last_sse_event(response):
     data = response.get_data(as_text=True)

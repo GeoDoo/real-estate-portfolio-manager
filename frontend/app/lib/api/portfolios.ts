@@ -39,4 +39,14 @@ export const portfoliosAPI = {
       return null;
     }
   },
+
+  // Get payback period for a portfolio
+  getPortfolioPayback: async (id: string): Promise<{ simple_payback: number | null; discounted_payback: number | null } | null> => {
+    try {
+      const data = await api.get<{ simple_payback: number | null; discounted_payback: number | null }>(`/api/portfolios/${id}/payback`);
+      return data;
+    } catch {
+      return null;
+    }
+  },
 };

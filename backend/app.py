@@ -356,6 +356,64 @@ def safe_irr_stats(irrs):
         float(np.nanpercentile(irrs, 95)),
     )
 
+def calculate_payback_period(cash_flows, discount_rate=0.08):
+    """
+    Calculate simple and discounted payback period.
+    
+    Args:
+        cash_flows: List of cash flows (Year 0 should be negative investment)
+        discount_rate: Annual discount rate (default 8%)
+    
+    Returns:
+        Dictionary with simple_payback and discounted_payback periods
+    """
+    if not cash_flows or len(cash_flows) < 2:
+        return {"simple_payback": None, "discounted_payback": None}
+    
+    try:
+        # Extract initial investment (Year 0, should be negative)
+        initial_investment = abs(cash_flows[0]) if cash_flows[0] < 0 else 0
+        
+        if initial_investment == 0:
+            return {"simple_payback": None, "discounted_payback": None}
+        
+        # Calculate simple payback period
+        cumulative_cash_flow = 0
+        simple_payback = None
+        
+        for year, cash_flow in enumerate(cash_flows[1:], 1):  # Skip Year 0
+            if cash_flow > 0:  # Only count positive cash flows
+                cumulative_cash_flow += cash_flow
+                if cumulative_cash_flow >= initial_investment:
+                    # Interpolate to get exact year
+                    remaining = initial_investment - (cumulative_cash_flow - cash_flow)
+                    fraction = remaining / cash_flow
+                    simple_payback = year - 1 + fraction
+                    break
+        
+        # Calculate discounted payback period
+        cumulative_discounted_cf = 0
+        discounted_payback = None
+        
+        for year, cash_flow in enumerate(cash_flows[1:], 1):  # Skip Year 0
+            if cash_flow > 0:  # Only count positive cash flows
+                discounted_cf = cash_flow / ((1 + discount_rate) ** year)
+                cumulative_discounted_cf += discounted_cf
+                if cumulative_discounted_cf >= initial_investment:
+                    # Interpolate to get exact year
+                    remaining = initial_investment - (cumulative_discounted_cf - discounted_cf)
+                    fraction = remaining / discounted_cf
+                    discounted_payback = year - 1 + fraction
+                    break
+        
+        return {
+            "simple_payback": float(simple_payback) if simple_payback is not None else None,
+            "discounted_payback": float(discounted_payback) if discounted_payback is not None else None
+        }
+        
+    except Exception:
+        return {"simple_payback": None, "discounted_payback": None}
+
 def calculate_rental_metrics(purchase_price, monthly_rent, ltv, interest_rate, 
                            property_tax, insurance, maintenance, management_fees, 
                            transaction_costs, holding_period_years, capex=0):
@@ -533,6 +591,16 @@ def create_app(test_config=None):
             abort(404)
         cash_flows = calculate_cash_flows(valuation.to_dict())
         return jsonify({"cashFlows": cash_flows})
+
+    @app.route("/api/valuations/<val_id>/payback", methods=["GET"])
+    def valuation_payback(val_id):
+        valuation = db.session.get(Valuation, val_id)
+        if not valuation:
+            abort(404)
+        cash_flows = calculate_cash_flows(valuation.to_dict())
+        net_cash_flows = [row["net_cash_flow"] for row in cash_flows]
+        payback_data = calculate_payback_period(net_cash_flows)
+        return jsonify(payback_data)
 
     # POST /api/cashflows/calculate (ad-hoc DCF calculation)
     @app.route("/api/cashflows/calculate", methods=["POST"])
@@ -851,6 +919,42 @@ def create_app(test_config=None):
             return jsonify({"error": "IRR could not be calculated"}), 400
 
         return jsonify({"irr": irr * 100})
+
+    @app.route("/api/portfolios/<portfolio_id>/payback", methods=["GET"])
+    def portfolio_payback(portfolio_id):
+        # Get all properties in the portfolio
+        properties = db.session.query(Property).filter_by(portfolio_id=portfolio_id).all()
+        if not properties:
+            return jsonify({"error": "No properties found for this portfolio"}), 404
+
+        # For each property, get valuation and cash flows
+        all_cash_flows = []
+        max_years = 0
+        for prop in properties:
+            valuation = db.session.query(Valuation).filter_by(property_id=prop.id).first()
+            if not valuation:
+                continue  # skip properties without valuation
+            cash_flows = calculate_cash_flows(valuation.to_dict())
+            net_cash_flows = [row["net_cash_flow"] for row in cash_flows]
+            all_cash_flows.append(net_cash_flows)
+            max_years = max(max_years, len(net_cash_flows))
+
+        if not all_cash_flows:
+            return jsonify({"error": "No valuations found for properties"}), 404
+
+        # Aggregate by year
+        portfolio_cash_flows = []
+        for year in range(max_years):
+            year_sum = 0
+            for cf in all_cash_flows:
+                if year < len(cf):
+                    year_sum += cf[year]
+            portfolio_cash_flows.append(year_sum)
+
+        # Calculate payback period
+        payback_data = calculate_payback_period(portfolio_cash_flows)
+        
+        return jsonify(payback_data)
 
     # Add rental analysis endpoint after the Monte Carlo endpoints
     @app.route("/api/valuations/rental-analysis", methods=["POST"])

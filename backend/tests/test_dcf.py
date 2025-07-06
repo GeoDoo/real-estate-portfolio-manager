@@ -301,4 +301,74 @@ def test_cash_flows_without_terminal_sale():
     # Net cash flow should be much lower than with terminal sale
     assert final_year["net_cash_flow"] < 50000  # Should be lower without terminal sale
 
+# Payback Period Function Tests
+def test_calculate_payback_period_quick_payback():
+    """Test payback period calculation with quick payback."""
+    from app import calculate_payback_period
+    
+    # High cash flows for quick payback
+    cash_flows = [-100000, 30000, 31500, 33000, 34500, 36000]
+    result = calculate_payback_period(cash_flows)
+    
+    assert result["simple_payback"] is not None
+    assert result["simple_payback"] > 0
+    assert result["simple_payback"] < 5
+    assert result["discounted_payback"] is not None
+    assert result["discounted_payback"] > result["simple_payback"]  # Discounted should be longer
+
+def test_calculate_payback_period_exceeds_holding():
+    """Test payback period when it exceeds holding period."""
+    from app import calculate_payback_period
+    
+    # Low cash flows for long payback
+    cash_flows = [-100000, 5000, 5250, 5500, 5750, 6000]
+    result = calculate_payback_period(cash_flows)
+    
+    assert result["simple_payback"] is None
+    assert result["discounted_payback"] is None
+
+def test_calculate_payback_period_empty_input():
+    """Test payback period with empty or invalid input."""
+    from app import calculate_payback_period
+    
+    # Empty cash flows
+    result = calculate_payback_period([])
+    assert result["simple_payback"] is None
+    assert result["discounted_payback"] is None
+    
+    # Single cash flow
+    result = calculate_payback_period([-100000])
+    assert result["simple_payback"] is None
+    assert result["discounted_payback"] is None
+    
+    # No initial investment
+    result = calculate_payback_period([0, 10000, 11000])
+    assert result["simple_payback"] is None
+    assert result["discounted_payback"] is None
+
+def test_calculate_payback_period_interpolation():
+    """Test that payback period interpolation works correctly."""
+    from app import calculate_payback_period
+    
+    # Cash flows that should payback exactly in the middle of a year
+    cash_flows = [-100000, 40000, 40000, 40000]
+    result = calculate_payback_period(cash_flows)
+    
+    assert result["simple_payback"] is not None
+    assert result["simple_payback"] == 2.5  # Should be exactly 2.5 years
+
+def test_calculate_payback_period_custom_discount_rate():
+    """Test payback period with custom discount rate."""
+    from app import calculate_payback_period
+    
+    cash_flows = [-100000, 30000, 31500, 33000, 34500, 36000]
+    
+    # Test with different discount rates
+    result_8 = calculate_payback_period(cash_flows, 0.08)
+    result_12 = calculate_payback_period(cash_flows, 0.12)
+    
+    # Higher discount rate should result in longer discounted payback
+    if result_8["discounted_payback"] is not None and result_12["discounted_payback"] is not None:
+        assert result_12["discounted_payback"] > result_8["discounted_payback"]
+
 # Remove test_mc_sim_terminal_sale_consistency (references run_mc_sim) 
