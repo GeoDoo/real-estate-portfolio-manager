@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 
-const mockApiRequest: any = jest.fn();
+type MockFunction = jest.MockedFunction<(...args: unknown[]) => Promise<unknown>>;
+const mockApiRequest: MockFunction = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   apiRequest: mockApiRequest,
@@ -64,8 +65,8 @@ describe('propertiesAPI', () => {
     mockApiRequest.mockRejectedValue(new Error('fail'));
     const { propertiesAPI } = await import('./properties');
     await expect(propertiesAPI.getAll()).rejects.toThrow('fail');
-    await expect(propertiesAPI.create({ address: 'X' })).rejects.toThrow('fail');
-    await expect(propertiesAPI.update('id', { address: 'Y' })).rejects.toThrow('fail');
+    await expect(propertiesAPI.create({ address: 'X', postcode: 'P1' })).rejects.toThrow('fail');
+    await expect(propertiesAPI.update('id', { address: 'Y', postcode: 'P2' })).rejects.toThrow('fail');
     await expect(propertiesAPI.getById('id')).rejects.toThrow('fail');
     await expect(propertiesAPI.delete('id')).rejects.toThrow('fail');
     await expect(propertiesAPI.assignToPortfolio('id', null)).rejects.toThrow('fail');

@@ -1,10 +1,10 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 
 // Define types for test data
-// (Types removed, not used)
+type MockFunction = jest.MockedFunction<(...args: unknown[]) => Promise<unknown>>;
 
-const mockGet: any = jest.fn();
-const mockPost: any = jest.fn();
+const mockGet: MockFunction = jest.fn();
+const mockPost: MockFunction = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   api: {

@@ -167,7 +167,6 @@ export default function ValuationDetailPage() {
           });
           await fetchCashFlows(json);
         } else {
-          setError("Valuation not found");
           setValuation(null);
         }
       } catch (err) {
@@ -547,10 +546,14 @@ export default function ValuationDetailPage() {
 
       {loading ? (
         <div className="text-center text-gray-500">Loading...</div>
-      ) : error ? (
-        <div className="text-center text-red-600">{error}</div>
-      ) : (
+            ) : (
         <>
+          {/* Error Alert - Non-blocking */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <div className="text-red-600">{error}</div>
+            </div>
+          )}
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
@@ -594,7 +597,7 @@ export default function ValuationDetailPage() {
             <ValuationForm
               form={form}
               onChange={handleFormChange}
-              disabled={!isEditing}
+              disabled={!isEditing && valuation !== null}
               error={formError}
             />
           </div>

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent } from '@testing-library/react';
 import ValuationDetailPage from './ValuationDetails';
 import { TextEncoder } from 'util';
 
@@ -181,6 +181,97 @@ describe('ValuationDetails API Integration', () => {
     expect(result).toHaveProperty('capex');
     expect(result).toHaveProperty('postcode');
     expect(result).toHaveProperty('created_at');
+  });
+
+  it('should show valuation form when no valuation exists', async () => {
+    // Mock the API to return null (no valuation exists)
+    (valuationsAPI.getByPropertyId as jest.Mock).mockResolvedValue(null);
+    
+    let component: any;
+    await act(async () => {
+      component = render(<ValuationDetailPage />);
+    });
+
+    // Wait for the component to finish loading
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    // Should show the valuation form (always visible)
+    expect(component.getAllByDisplayValue('')).toHaveLength(17); // All form inputs are empty
+    expect(component.getByText(/Purchase Price/)).toBeInTheDocument();
+    expect(component.getByText(/Annual Rental Income/)).toBeInTheDocument();
+    expect(component.getByText(/Transaction Costs/)).toBeInTheDocument();
+    expect(component.getByText(/Property Tax/)).toBeInTheDocument();
+    expect(component.getByText(/Maintenance/)).toBeInTheDocument();
+    
+    // Should show edit button (form is disabled by default when no valuation exists)
+    expect(component.getByText('Edit')).toBeInTheDocument();
+    
+    // Should NOT show error message
+    expect(component.queryByText('Valuation not found')).not.toBeInTheDocument();
+  });
+
+  it('should allow creating a new valuation when none exists', async () => {
+    // Mock the API to return null initially, then return a valuation after save
+    (valuationsAPI.getByPropertyId as jest.Mock)
+      .mockResolvedValueOnce(null) // First call returns no valuation
+      .mockResolvedValueOnce(mockValuation); // Second call returns the created valuation
+    (valuationsAPI.save as jest.Mock).mockResolvedValue(mockValuation);
+    (valuationsAPI.calculateCashFlows as jest.Mock).mockResolvedValue(mockCashFlows);
+    
+    let component: any;
+    await act(async () => {
+      component = render(<ValuationDetailPage />);
+    });
+
+    // Wait for the component to finish loading
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    // Click edit button to enable the form
+    const editButton = component.getByText('Edit');
+    await act(async () => {
+      editButton.click();
+    });
+
+    // Fill in required fields to pass validation
+    const purchasePriceInput = component.getByDisplayValue('') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(purchasePriceInput, { target: { value: '100000' } });
+    });
+
+    // Click save button (now visible after clicking edit)
+    const saveButton = component.getByText('Save');
+    await act(async () => {
+      saveButton.click();
+    });
+
+    // Should call the save API
+    expect(valuationsAPI.save).toHaveBeenCalledWith('test-property-id', expect.any(Object));
+  });
+
+  it('should show error message only for actual API errors, not missing valuations', async () => {
+    // Mock the API to throw an actual error
+    (valuationsAPI.getByPropertyId as jest.Mock).mockRejectedValue(new Error('Network error'));
+    
+    let component: any;
+    await act(async () => {
+      component = render(<ValuationDetailPage />);
+    });
+
+    // Wait for the component to finish loading
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    // Should show error message for actual errors (in non-blocking alert)
+    expect(component.getByText('Network error')).toBeInTheDocument();
+    
+    // Should still show the form even with errors (form is always visible)
+    expect(component.getByText(/Purchase Price/)).toBeInTheDocument();
+    expect(component.getByText(/Annual Rental Income/)).toBeInTheDocument();
   });
 });
 

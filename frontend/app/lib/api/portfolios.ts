@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { Property } from "@/types/property";
 
 export interface Portfolio {
   id: string;
@@ -25,8 +26,8 @@ export const portfoliosAPI = {
   },
 
   // Get all properties in a portfolio
-  getProperties: async (id: string) => {
-    const response = await api.get<{ items: any[] }>(`/api/portfolios/${id}/properties`);
+  getProperties: async (id: string): Promise<Property[]> => {
+    const response = await api.get<{ items: Property[] }>(`/api/portfolios/${id}/properties`);
     return response.items;
   },
 
