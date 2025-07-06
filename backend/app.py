@@ -483,7 +483,7 @@ def create_app(test_config=None):
     else:
         FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dcf_calculations.db"
+            os.path.dirname(os.path.abspath(__file__)), "dcf_calculations.db"
         )
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         app.config["CORS_ORIGINS"] = FRONTEND_URL
