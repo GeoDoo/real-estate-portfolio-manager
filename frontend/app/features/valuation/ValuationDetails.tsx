@@ -69,43 +69,6 @@ function getChanceLabel(prob: number) {
   return "Highly Likely";
 }
 
-function calculateIRR(cashFlows: CashFlowRow[], initialInvestment: number): number {
-  if (cashFlows.length === 0) return 0;
-  
-  // Create cash flow array for IRR calculation
-  const cf = [-initialInvestment, ...cashFlows.map(row => row.net_cash_flow)];
-  
-  // Simple IRR calculation using Newton-Raphson method
-  let guess = 0.1; // Start with 10%
-  const maxIterations = 100;
-  const tolerance = 0.0001;
-  
-  for (let i = 0; i < maxIterations; i++) {
-    let npv = 0;
-    let derivative = 0;
-    
-    for (let j = 0; j < cf.length; j++) {
-      const factor = Math.pow(1 + guess, j);
-      npv += cf[j] / factor;
-      if (j > 0) {
-        derivative -= j * cf[j] / Math.pow(1 + guess, j + 1);
-      }
-    }
-    
-    if (Math.abs(npv) < tolerance) {
-      break;
-    }
-    
-    const newGuess = guess - npv / derivative;
-    if (Math.abs(newGuess - guess) < tolerance) {
-      break;
-    }
-    guess = newGuess;
-  }
-  
-  return guess * 100; // Convert to percentage
-}
-
 export default function ValuationDetailPage() {
   const { id } = useParams();
   const propertyId = Array.isArray(id) ? id[0] : id;
@@ -171,6 +134,52 @@ export default function ValuationDetailPage() {
   // Payback period state
   const [paybackPeriod, setPaybackPeriod] = useState<{ simple_payback: number | null; discounted_payback: number | null } | null>(null);
   const [paybackLoading, setPaybackLoading] = useState(false);
+
+  // Add backendIRR state
+  const [backendIRR, setBackendIRR] = useState<number | null>(null);
+  const [backendMonteCarloIRR, setBackendMonteCarloIRR] = useState<number | null>(null);
+
+  // Fetch backend IRR when valuation or cashFlows change
+  useEffect(() => {
+    async function fetchBackendIRR() {
+      if (!valuation || cashFlows.length === 0) {
+        setBackendIRR(null);
+        return;
+      }
+      const netCashFlows = cashFlows.map((row) => row.net_cash_flow);
+      try {
+        const irr = await valuationsAPI.calculateIRR([
+          -valuation.initial_investment,
+          ...netCashFlows,
+        ]);
+        setBackendIRR(irr);
+      } catch {
+        setBackendIRR(null);
+      }
+    }
+    fetchBackendIRR();
+  }, [valuation, cashFlows]);
+
+  // Fetch backend Monte Carlo IRR when monteCarloSummary changes
+  useEffect(() => {
+    async function fetchBackendMonteCarloIRR() {
+      if (!valuation || !mcSummary) {
+        setBackendMonteCarloIRR(null);
+        return;
+      }
+      const netCashFlows = cashFlows.map((row) => row.net_cash_flow);
+      try {
+        const irr = await valuationsAPI.calculateIRR([
+          -valuation.initial_investment,
+          ...netCashFlows,
+        ]);
+        setBackendMonteCarloIRR(irr);
+      } catch {
+        setBackendMonteCarloIRR(null);
+      }
+    }
+    fetchBackendMonteCarloIRR();
+  }, [valuation, cashFlows, mcSummary]);
 
   useEffect(() => {
     async function fetchValuation() {
@@ -660,8 +669,8 @@ export default function ValuationDetailPage() {
                     <p className="text-sm text-gray-600 mb-3">
                       Annualized return rate that makes NPV equal to zero
                     </p>
-                    <div className="text-3xl font-bold" style={{ color: getNumberColor(calculateIRR(cashFlows, valuation?.initial_investment || 0)) }}>
-                      {calculateIRR(cashFlows, valuation?.initial_investment || 0).toFixed(2)}%
+                    <div className="text-3xl font-bold" style={{ color: getNumberColor(backendIRR ?? 0) }}>
+                      {backendIRR !== null ? backendIRR.toFixed(2) + '%' : 'N/A'}
                     </div>
                   </div>
                 </div>
@@ -1313,14 +1322,10 @@ export default function ValuationDetailPage() {
                             <span
                               className="font-bold"
                               style={{
-                                color: getNumberColor(mcSummary.irr_mean),
+                                color: getNumberColor(backendMonteCarloIRR ?? 0),
                               }}
                             >
-                              {Number.isFinite(mcSummary.irr_mean) &&
-                              mcSummary.irr_mean !== null &&
-                              mcSummary.irr_mean !== undefined
-                                ? (mcSummary.irr_mean * 100).toFixed(2)
-                                : "N/A"}
+                              {backendMonteCarloIRR !== null ? backendMonteCarloIRR.toFixed(2) + '%' : 'N/A'}
                             </span>
                           </td>
                         </tr>
@@ -1332,18 +1337,10 @@ export default function ValuationDetailPage() {
                             <span
                               className="font-bold"
                               style={{
-                                color: getNumberColor(
-                                  Number.isFinite(mcSummary.mean_valid_irr)
-                                    ? mcSummary.mean_valid_irr!
-                                    : 0
-                                ),
+                                color: getNumberColor(backendMonteCarloIRR ?? 0),
                               }}
                             >
-                              {Number.isFinite(mcSummary.mean_valid_irr) &&
-                              mcSummary.mean_valid_irr !== null &&
-                              mcSummary.mean_valid_irr !== undefined
-                                ? (mcSummary.mean_valid_irr * 100).toFixed(2)
-                                : "N/A"}
+                              {backendMonteCarloIRR !== null ? backendMonteCarloIRR.toFixed(2) + '%' : 'N/A'}
                             </span>
                           </td>
                         </tr>
@@ -2362,7 +2359,7 @@ export default function ValuationDetailPage() {
           {/* Comparable Sales */}
           {!isEditing && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Comparable Sales</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Comparable Sales (Comparative Market Analysis)</h2>
               <p className="text-gray-600 mb-6">
                 View recent property sales in the area to compare with your valuation.
               </p>

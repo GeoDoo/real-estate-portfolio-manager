@@ -228,7 +228,7 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
               </div>
               <div className="text-center">
                 <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(portfolioIRR ?? 0) }}>
-                  {portfolioIRR !== null ? `${portfolioIRR.toFixed(2)}%` : '-'}
+                  {portfolioIRR !== null ? portfolioIRR.toFixed(2) + '%' : '-'}
                 </div>
                 <div className="text-sm text-gray-600">IRR</div>
               </div>
