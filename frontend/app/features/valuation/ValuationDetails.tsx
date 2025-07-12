@@ -116,28 +116,38 @@ export default function ValuationDetailPage() {
   const [mcTotal, setMcTotal] = useState(0);
   const [mcRunning, setMcRunning] = useState(false);
   const [rentalAnalysis, setRentalAnalysis] = useState<RentalAnalysis | null>(
-    null
+    null,
   );
   const [rentalLoading, setRentalLoading] = useState(false);
   const [marketScenario, setMarketScenario] = useState<
     "custom" | "bullish" | "bearish"
   >("custom");
   const [capRate, setCapRate] = useState(4.5);
-  
+  const [calculatedCapValue, setCalculatedCapValue] = useState<number | null>(
+    null,
+  );
+
   // Comparable sales state
   const [comparableSales, setComparableSales] = useState<ComparableSale[]>([]);
   const [comparableLoading, setComparableLoading] = useState(false);
   const [comparableError, setComparableError] = useState<string | null>(null);
-  const [comparableMessage, setComparableMessage] = useState<string | null>(null);
+  const [comparableMessage, setComparableMessage] = useState<string | null>(
+    null,
+  );
   const [comparableQueried, setComparableQueried] = useState(false); // State to track if user has clicked the button
-  
+
   // Payback period state
-  const [paybackPeriod, setPaybackPeriod] = useState<{ simple_payback: number | null; discounted_payback: number | null } | null>(null);
+  const [paybackPeriod, setPaybackPeriod] = useState<{
+    simple_payback: number | null;
+    discounted_payback: number | null;
+  } | null>(null);
   const [paybackLoading, setPaybackLoading] = useState(false);
 
   // Add backendIRR state
   const [backendIRR, setBackendIRR] = useState<number | null>(null);
-  const [backendMonteCarloIRR, setBackendMonteCarloIRR] = useState<number | null>(null);
+  const [backendMonteCarloIRR, setBackendMonteCarloIRR] = useState<
+    number | null
+  >(null);
 
   // Fetch backend IRR when valuation or cashFlows change
   useEffect(() => {
@@ -307,8 +317,10 @@ export default function ValuationDetailPage() {
       interest_rate:
         form.interest_rate !== "" ? parseFloat(form.interest_rate) : 0,
       capex: form.capex !== "" ? parseFloat(form.capex) : 0,
-      exit_cap_rate: form.exit_cap_rate !== "" ? parseFloat(form.exit_cap_rate) : 0,
-      selling_costs: form.selling_costs !== "" ? parseFloat(form.selling_costs) : 0,
+      exit_cap_rate:
+        form.exit_cap_rate !== "" ? parseFloat(form.exit_cap_rate) : 0,
+      selling_costs:
+        form.selling_costs !== "" ? parseFloat(form.selling_costs) : 0,
     };
 
     try {
@@ -318,7 +330,7 @@ export default function ValuationDetailPage() {
       setForm({
         initial_investment: String(updatedValuation.initial_investment ?? ""),
         annual_rental_income: String(
-          updatedValuation.annual_rental_income ?? ""
+          updatedValuation.annual_rental_income ?? "",
         ),
         vacancy_rate: String(updatedValuation.vacancy_rate ?? ""),
         service_charge: String(updatedValuation.service_charge ?? ""),
@@ -410,7 +422,7 @@ export default function ValuationDetailPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
       if (!response.ok || !response.body) {
         const errorText = await response.text();
@@ -440,7 +452,9 @@ export default function ValuationDetailPage() {
                 setMcSummary(payload.summary || null);
                 setMcProgress(mcNumSim);
               }
-            } catch { /* Ignore parse errors for partial events */ }
+            } catch {
+              /* Ignore parse errors for partial events */
+            }
           }
         }
       }
@@ -464,7 +478,7 @@ export default function ValuationDetailPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(valuation),
-        }
+        },
       );
 
       if (response.ok) {
@@ -489,7 +503,7 @@ export default function ValuationDetailPage() {
     setComparableQueried(true); // Mark that user has clicked
     try {
       // Use postcode field directly
-      const postcode = valuation.postcode || '';
+      const postcode = valuation.postcode || "";
       if (!postcode) {
         setComparableError("Could not extract postcode from property address");
         return;
@@ -498,7 +512,8 @@ export default function ValuationDetailPage() {
       setComparableSales(response.sales);
       setComparableMessage(response.message || null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch comparable sales";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch comparable sales";
       setComparableError(errorMessage);
       console.error("Comparable sales error:", err);
     }
@@ -507,7 +522,7 @@ export default function ValuationDetailPage() {
 
   const fetchPaybackPeriod = async () => {
     if (!valuation) return;
-    
+
     setPaybackLoading(true);
     try {
       const paybackData = await valuationsAPI.getPaybackPeriod(valuation.id);
@@ -583,8 +598,14 @@ export default function ValuationDetailPage() {
   // Compute first-year NOI from cashFlows (if available)
   const firstYearNOI =
     cashFlows && cashFlows.length > 1 ? cashFlows[1].noi : null;
-  const directCapValue =
-    firstYearNOI && capRate > 0 ? firstYearNOI / (capRate / 100) : null;
+
+  function handleCalculateCapValue() {
+    if (!firstYearNOI || !capRate || capRate <= 0) {
+      setCalculatedCapValue(null);
+      return;
+    }
+    setCalculatedCapValue(firstYearNOI / (capRate / 100));
+  }
 
   return (
     <PageContainer>
@@ -592,7 +613,7 @@ export default function ValuationDetailPage() {
 
       {loading ? (
         <div className="text-center text-gray-500">Loading...</div>
-            ) : (
+      ) : (
         <>
           {/* Error Alert - Non-blocking */}
           {error && (
@@ -653,29 +674,52 @@ export default function ValuationDetailPage() {
             <>
               {/* NPV and IRR Summary */}
               <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Valuation Summary</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Valuation Summary
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900">Net Present Value (NPV)</h3>
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">
+                      Net Present Value (NPV)
+                    </h3>
                     <p className="text-sm text-gray-600 mb-3">
-                      Present value of all future cash flows minus initial investment
+                      Present value of all future cash flows minus initial
+                      investment
                     </p>
-                    <div className="text-3xl font-bold" style={{ color: getNumberColor(cashFlows[cashFlows.length - 1]?.cumulative_pv || 0) }}>
-                      £{formatCurrency(cashFlows[cashFlows.length - 1]?.cumulative_pv || 0, "")}
+                    <div
+                      className="text-3xl font-bold"
+                      style={{
+                        color: getNumberColor(
+                          cashFlows[cashFlows.length - 1]?.cumulative_pv || 0,
+                        ),
+                      }}
+                    >
+                      £
+                      {formatCurrency(
+                        cashFlows[cashFlows.length - 1]?.cumulative_pv || 0,
+                        "",
+                      )}
                     </div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900">Internal Rate of Return (IRR)</h3>
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">
+                      Internal Rate of Return (IRR)
+                    </h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Annualized return rate that makes NPV equal to zero
                     </p>
-                    <div className="text-3xl font-bold" style={{ color: getNumberColor(backendIRR ?? 0) }}>
-                      {backendIRR !== null ? backendIRR.toFixed(2) + '%' : 'N/A'}
+                    <div
+                      className="text-3xl font-bold"
+                      style={{ color: getNumberColor(backendIRR ?? 0) }}
+                    >
+                      {backendIRR !== null
+                        ? backendIRR.toFixed(2) + "%"
+                        : "N/A"}
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <DcfTable rows={cashFlows} title="Valuation Results" />
             </>
           )}
@@ -1253,7 +1297,7 @@ export default function ValuationDetailPage() {
                               className="font-bold"
                               style={{
                                 color: getNumberColor(
-                                  mcSummary.npv_95th_percentile
+                                  mcSummary.npv_95th_percentile,
                                 ),
                               }}
                             >
@@ -1303,7 +1347,7 @@ export default function ValuationDetailPage() {
                               className="font-bold"
                               style={{
                                 color: getNumberColor(
-                                  mcSummary.npv_5th_percentile
+                                  mcSummary.npv_5th_percentile,
                                 ),
                               }}
                             >
@@ -1322,10 +1366,14 @@ export default function ValuationDetailPage() {
                             <span
                               className="font-bold"
                               style={{
-                                color: getNumberColor(backendMonteCarloIRR ?? 0),
+                                color: getNumberColor(
+                                  backendMonteCarloIRR ?? 0,
+                                ),
                               }}
                             >
-                              {backendMonteCarloIRR !== null ? backendMonteCarloIRR.toFixed(2) + '%' : 'N/A'}
+                              {backendMonteCarloIRR !== null
+                                ? backendMonteCarloIRR.toFixed(2) + "%"
+                                : "N/A"}
                             </span>
                           </td>
                         </tr>
@@ -1337,10 +1385,14 @@ export default function ValuationDetailPage() {
                             <span
                               className="font-bold"
                               style={{
-                                color: getNumberColor(backendMonteCarloIRR ?? 0),
+                                color: getNumberColor(
+                                  backendMonteCarloIRR ?? 0,
+                                ),
                               }}
                             >
-                              {backendMonteCarloIRR !== null ? backendMonteCarloIRR.toFixed(2) + '%' : 'N/A'}
+                              {backendMonteCarloIRR !== null
+                                ? backendMonteCarloIRR.toFixed(2) + "%"
+                                : "N/A"}
                             </span>
                           </td>
                         </tr>
@@ -1367,7 +1419,7 @@ export default function ValuationDetailPage() {
                           <td>
                             <span className="text-gray-500 font-bold">
                               {getChanceLabel(
-                                mcSummary.probability_npv_positive
+                                mcSummary.probability_npv_positive,
                               )}{" "}
                             </span>
                             <span className="text-gray-500 font-normal">
@@ -1637,7 +1689,7 @@ export default function ValuationDetailPage() {
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.monthly_cash_flow)}`}
                         >
                           {Number.isFinite(
-                            rentalAnalysis.metrics.monthly_cash_flow
+                            rentalAnalysis.metrics.monthly_cash_flow,
                           )
                             ? rentalAnalysis.metrics.monthly_cash_flow.toLocaleString()
                             : "-"}
@@ -1680,7 +1732,7 @@ export default function ValuationDetailPage() {
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.annual_cash_flow)}`}
                         >
                           {Number.isFinite(
-                            rentalAnalysis.metrics.annual_cash_flow
+                            rentalAnalysis.metrics.annual_cash_flow,
                           )
                             ? rentalAnalysis.metrics.annual_cash_flow.toLocaleString()
                             : "-"}
@@ -1726,7 +1778,7 @@ export default function ValuationDetailPage() {
                             ? rentalAnalysis.metrics.roi_percent.toFixed(2)
                             : "-"}
                         </div>
-                      </div>                      
+                      </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
                           Cash-on-Cash Return (%){" "}
@@ -1764,10 +1816,10 @@ export default function ValuationDetailPage() {
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.cash_on_cash_percent)}`}
                         >
                           {Number.isFinite(
-                            rentalAnalysis.metrics.cash_on_cash_percent
+                            rentalAnalysis.metrics.cash_on_cash_percent,
                           )
                             ? rentalAnalysis.metrics.cash_on_cash_percent.toFixed(
-                                2
+                                2,
                               )
                             : "-"}
                         </div>
@@ -1807,7 +1859,7 @@ export default function ValuationDetailPage() {
                         </div>
                         <div className="text-xl font-bold text-gray-800">
                           {Number.isFinite(
-                            rentalAnalysis.metrics.break_even_rent
+                            rentalAnalysis.metrics.break_even_rent,
                           )
                             ? rentalAnalysis.metrics.break_even_rent.toLocaleString()
                             : "-"}
@@ -1850,10 +1902,10 @@ export default function ValuationDetailPage() {
                           className={`text-xl font-bold ${getNumberColor(rentalAnalysis.metrics.rent_coverage_ratio > 1 ? 1 : -1)}`}
                         >
                           {Number.isFinite(
-                            rentalAnalysis.metrics.rent_coverage_ratio
+                            rentalAnalysis.metrics.rent_coverage_ratio,
                           )
                             ? rentalAnalysis.metrics.rent_coverage_ratio.toFixed(
-                                2
+                                2,
                               )
                             : "-"}
                         </div>
@@ -1888,7 +1940,7 @@ export default function ValuationDetailPage() {
                               style={{
                                 color: getNumberColor(
                                   rentalAnalysis.monthly_breakdown
-                                    .gross_rental_income
+                                    .gross_rental_income,
                                 ),
                               }}
                             >
@@ -1907,7 +1959,7 @@ export default function ValuationDetailPage() {
                               style={{
                                 color: getNumberColor(
                                   rentalAnalysis.monthly_breakdown
-                                    .effective_rental_income
+                                    .effective_rental_income,
                                 ),
                               }}
                             >
@@ -1927,8 +1979,8 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(
                                   -Math.abs(
                                     rentalAnalysis.monthly_breakdown
-                                      .mortgage_payment
-                                  )
+                                      .mortgage_payment,
+                                  ),
                                 ),
                               }}
                             >
@@ -1948,8 +2000,8 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(
                                   -Math.abs(
                                     rentalAnalysis.monthly_breakdown
-                                      .property_tax
-                                  )
+                                      .property_tax,
+                                  ),
                                 ),
                               }}
                             >
@@ -1968,8 +2020,8 @@ export default function ValuationDetailPage() {
                               style={{
                                 color: getNumberColor(
                                   -Math.abs(
-                                    rentalAnalysis.monthly_breakdown.insurance
-                                  )
+                                    rentalAnalysis.monthly_breakdown.insurance,
+                                  ),
                                 ),
                               }}
                             >
@@ -1987,8 +2039,9 @@ export default function ValuationDetailPage() {
                               style={{
                                 color: getNumberColor(
                                   -Math.abs(
-                                    rentalAnalysis.monthly_breakdown.maintenance
-                                  )
+                                    rentalAnalysis.monthly_breakdown
+                                      .maintenance,
+                                  ),
                                 ),
                               }}
                             >
@@ -2008,8 +2061,8 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(
                                   -Math.abs(
                                     rentalAnalysis.monthly_breakdown
-                                      .property_management
-                                  )
+                                      .property_management,
+                                  ),
                                 ),
                               }}
                             >
@@ -2028,8 +2081,8 @@ export default function ValuationDetailPage() {
                               style={{
                                 color: getNumberColor(
                                   -Math.abs(
-                                    rentalAnalysis.monthly_breakdown.capex
-                                  )
+                                    rentalAnalysis.monthly_breakdown.capex,
+                                  ),
                                 ),
                               }}
                             >
@@ -2048,8 +2101,8 @@ export default function ValuationDetailPage() {
                                 color: getNumberColor(
                                   -Math.abs(
                                     rentalAnalysis.monthly_breakdown
-                                      .total_expenses
-                                  )
+                                      .total_expenses,
+                                  ),
                                 ),
                               }}
                             >
@@ -2067,7 +2120,7 @@ export default function ValuationDetailPage() {
                               className="px-4 py-2 text-right text-sm font-bold"
                               style={{
                                 color: getNumberColor(
-                                  rentalAnalysis.monthly_breakdown.cash_flow
+                                  rentalAnalysis.monthly_breakdown.cash_flow,
                                 ),
                               }}
                             >
@@ -2122,7 +2175,7 @@ export default function ValuationDetailPage() {
                         </div>
                         <div className="text-lg font-bold text-gray-800">
                           {Number.isFinite(
-                            rentalAnalysis.loan_details.down_payment
+                            rentalAnalysis.loan_details.down_payment,
                           )
                             ? rentalAnalysis.loan_details.down_payment.toLocaleString()
                             : "-"}
@@ -2163,7 +2216,7 @@ export default function ValuationDetailPage() {
                         </div>
                         <div className="text-lg font-bold text-gray-800">
                           {Number.isFinite(
-                            rentalAnalysis.loan_details.loan_amount
+                            rentalAnalysis.loan_details.loan_amount,
                           )
                             ? rentalAnalysis.loan_details.loan_amount.toLocaleString()
                             : "-"}
@@ -2204,7 +2257,7 @@ export default function ValuationDetailPage() {
                         </div>
                         <div className="text-lg font-bold text-gray-800">
                           {Number.isFinite(
-                            rentalAnalysis.loan_details.monthly_mortgage
+                            rentalAnalysis.loan_details.monthly_mortgage,
                           )
                             ? rentalAnalysis.loan_details.monthly_mortgage.toLocaleString()
                             : "-"}
@@ -2245,7 +2298,7 @@ export default function ValuationDetailPage() {
                         </div>
                         <div className="text-lg font-bold text-gray-800">
                           {Number.isFinite(
-                            rentalAnalysis.loan_details.total_investment
+                            rentalAnalysis.loan_details.total_investment,
                           )
                             ? rentalAnalysis.loan_details.total_investment.toLocaleString()
                             : "-"}
@@ -2260,108 +2313,79 @@ export default function ValuationDetailPage() {
 
           {/* Direct Capitalization Value */}
           <div className="mt-8 mb-8 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="flex items-center mb-2">
+            <div className="mb-2">
               <span className="font-bold text-lg mr-2">
                 Direct Capitalization Value
-              </span>              
+              </span>
             </div>
-            <div className="flex flex-wrap items-center gap-1 mb-2">
-              <label className="font-medium">Cap Rate (%):</label>
-              <InfoTooltip
-                className="mr-4"
-                label={
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
+            <div className="text-gray-600 mb-4">
+              The Direct Capitalization Method estimates value as NOI divided by
+              Cap Rate. Common for quick market value checks.
+            </div>
+            <div className="flex flex-col items-start gap-2 mb-4">
+              <div className="flex flex-row items-center gap-2">
+                <label className="font-medium">Cap Rate (%):</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={15}
+                  step={0.01}
+                  value={capRate}
+                  onChange={(e) => setCapRate(Number(e.target.value))}
+                  className="p-1 border rounded text-left"
+                />
+              </div>
+              <Button onClick={handleCalculateCapValue}>
+                Calculate Direct Cap Value
+              </Button>
+            </div>
+            {calculatedCapValue !== null && (
+              <div className="flex flex-row gap-6 mt-4">
+                <div className="bg-gray-50 p-4 rounded-lg flex-1 flex flex-col items-center justify-center shadow-md">
+                  <div className="text-sm text-gray-600 mb-1">
+                    Year 1 NOI (£)
+                  </div>
+                  <div
+                    className="text-3xl font-bold"
+                    style={{ color: getNumberColor(firstYearNOI ?? 0) }}
                   >
-                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                    <text
-                      x="12"
-                      y="16"
-                      textAnchor="middle"
-                      fontSize="12"
-                      fill="currentColor"
-                    >
-                      i
-                    </text>
-                  </svg>
-                }
-                tooltip="Cap rate is the expected yield for this property type. Typical values: London flats 3.5–4.5%, regional offices 5–6%."
-              />
-              <input
-                type="number"
-                min={1}
-                max={15}
-                step={0.01}
-                value={capRate}
-                onChange={(e) => setCapRate(Number(e.target.value))}
-                className="p-1 border rounded text-left"
-              />
-            </div>
-            <div className="mb-2">
-              <span className="font-medium text-gray-700">Year 1 NOI (£):</span>
-              <span
-                className="ml-1 font-bold"
-                style={{ color: getNumberColor(firstYearNOI ?? 0) }}
-              >
-                {firstYearNOI !== null ? (
-                  firstYearNOI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                ) : (
-                  <span className="text-gray-400">N/A</span>
-                )}
-              </span>
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">
-                Direct Cap Value (£):
-              </span>
-              <InfoTooltip
-                label={
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="inline-block align-baseline text-gray-400 hover:text-gray-700 ml-1"
+                    {firstYearNOI !== null ? (
+                      firstYearNOI.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    ) : (
+                      <span className="text-gray-400">N/A</span>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg flex-1 flex flex-col items-center justify-center shadow-md">
+                  <div className="text-sm text-gray-600 mb-1">
+                    Direct Cap Value (£)
+                  </div>
+                  <div
+                    className="text-3xl font-bold"
+                    style={{ color: getNumberColor(calculatedCapValue ?? 0) }}
                   >
-                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                    <text
-                      x="12"
-                      y="16"
-                      textAnchor="middle"
-                      fontSize="12"
-                      fill="currentColor"
-                    >
-                      i
-                    </text>
-                  </svg>
-                }
-                tooltip="The Direct Capitalization Method estimates value as NOI divided by Cap Rate. Common for quick market value checks."
-              />
-              <span
-                className="ml-1 font-bold text-lg"
-                style={{ color: getNumberColor(directCapValue ?? 0) }}
-              >
-                {directCapValue !== null ? (
-                  directCapValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                ) : (
-                  <span className="text-gray-400">N/A</span>
-                )}
-              </span>
-            </div>
+                    {calculatedCapValue.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Comparable Sales */}
           {!isEditing && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Comparable Sales (Comparative Market Analysis)</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Comparable Sales (Comparative Market Analysis)
+              </h2>
               <p className="text-gray-600 mb-6">
-                View recent property sales in the area to compare with your valuation.
+                View recent property sales in the area to compare with your
+                valuation.
               </p>
               <div className="mb-4">
                 <Button
@@ -2387,20 +2411,34 @@ export default function ValuationDetailPage() {
                       <thead>
                         <tr className="border-b border-gray-200">
                           <th className="text-left py-2 px-4">Address</th>
-                          <th className="text-right py-2 px-4">Sale Price (£)</th>
+                          <th className="text-right py-2 px-4">
+                            Sale Price (£)
+                          </th>
                           <th className="text-center py-2 px-4">Sale Date</th>
-                          <th className="text-center py-2 px-4">Property Type</th>
+                          <th className="text-center py-2 px-4">
+                            Property Type
+                          </th>
                           <th className="text-center py-2 px-4">New Build</th>
                         </tr>
                       </thead>
                       <tbody>
                         {comparableSales.map((sale) => (
-                          <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <tr
+                            key={sale.id}
+                            className="border-b border-gray-100 hover:bg-gray-50"
+                          >
                             <td className="py-2 px-4 text-sm text-left">
-                              <span className="font-bold text-gray-900">{sale.address}</span>
-                              <div className="text-xs text-gray-500">{sale.postcode}</div>
+                              <span className="font-bold text-gray-900">
+                                {sale.address}
+                              </span>
+                              <div className="text-xs text-gray-500">
+                                {sale.postcode}
+                              </div>
                             </td>
-                            <td className="py-2 px-4 text-right font-bold" style={{ color: getNumberColor(sale.sale_price) }}>
+                            <td
+                              className="py-2 px-4 text-right font-bold"
+                              style={{ color: getNumberColor(sale.sale_price) }}
+                            >
                               {formatCurrency(sale.sale_price, "")}
                             </td>
                             <td className="py-2 px-4 text-center text-sm">
@@ -2410,7 +2448,13 @@ export default function ValuationDetailPage() {
                               {sale.property_type}
                             </td>
                             <td className="py-2 px-4 text-center text-sm">
-                              {sale.new_build ? <span className="text-gray-900 font-bold">Yes</span> : <span className="text-gray-500">No</span>}
+                              {sale.new_build ? (
+                                <span className="text-gray-900 font-bold">
+                                  Yes
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">No</span>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -2420,68 +2464,116 @@ export default function ValuationDetailPage() {
                 </div>
               )}
               {/* Empty state when no sales found */}
-              {!comparableLoading && comparableSales.length === 0 && !comparableError && comparableQueried && (
-                <div className="text-center py-8">
-                  <div className="text-gray-400 mb-4">
-                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Comparable Sales Found</h3>
-                  {comparableMessage ? (
-                    <p className="text-gray-600 max-w-md mx-auto mb-4">
-                      {comparableMessage}
-                    </p>
-                  ) : (
-                    <>
-                      <p className="text-gray-600 max-w-md mx-auto">
-                        No recent property sales were found for this postcode. This could be because:
+              {!comparableLoading &&
+                comparableSales.length === 0 &&
+                !comparableError &&
+                comparableQueried && (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 mb-4">
+                      <svg
+                        className="mx-auto h-12 w-12"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1}
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No Comparable Sales Found
+                    </h3>
+                    {comparableMessage ? (
+                      <p className="text-gray-600 max-w-md mx-auto mb-4">
+                        {comparableMessage}
                       </p>
-                      <ul className="text-gray-600 max-w-md mx-auto mt-2 text-sm">
-                        <li>• The postcode is very new or rural</li>
-                        <li>• No properties have sold recently in this area</li>
-                        <li>• The postcode format might need adjustment</li>
-                      </ul>
-                    </>
-                  )}
-                  <p className="text-gray-600 max-w-md mx-auto mt-3 text-sm">
-                    You can still proceed with your valuation using other methods like DCF analysis, Monte Carlo simulation, or rental analysis above.
-                  </p>
-                </div>
-              )}
+                    ) : (
+                      <>
+                        <p className="text-gray-600 max-w-md mx-auto">
+                          No recent property sales were found for this postcode.
+                          This could be because:
+                        </p>
+                        <ul className="text-gray-600 max-w-md mx-auto mt-2 text-sm">
+                          <li>• The postcode is very new or rural</li>
+                          <li>
+                            • No properties have sold recently in this area
+                          </li>
+                          <li>• The postcode format might need adjustment</li>
+                        </ul>
+                      </>
+                    )}
+                    <p className="text-gray-600 max-w-md mx-auto mt-3 text-sm">
+                      You can still proceed with your valuation using other
+                      methods like DCF analysis, Monte Carlo simulation, or
+                      rental analysis above.
+                    </p>
+                  </div>
+                )}
 
               {/* Average Price by Year (years with >1 sale) */}
               {(() => {
-                const yearGroups = comparableSales.reduce((acc, sale) => {
-                  const year = new Date(sale.sale_date).getFullYear();
-                  if (!acc[year]) acc[year] = [];
-                  acc[year].push(sale);
-                  return acc;
-                }, {} as Record<number, typeof comparableSales>);
+                const yearGroups = comparableSales.reduce(
+                  (acc, sale) => {
+                    const year = new Date(sale.sale_date).getFullYear();
+                    if (!acc[year]) acc[year] = [];
+                    acc[year].push(sale);
+                    return acc;
+                  },
+                  {} as Record<number, typeof comparableSales>,
+                );
                 const yearsWithMultiple = Object.entries(yearGroups)
                   .filter(([, sales]) => sales.length > 1)
                   .sort((a, b) => Number(b[0]) - Number(a[0]));
                 if (yearsWithMultiple.length === 0) return null;
                 return (
                   <div className="mt-8">
-                    <h4 className="font-bold mb-3 text-lg text-gray-900">Average Price by Year <span className='text-gray-500'>(years with &gt;1 sale)</span></h4>
+                    <h4 className="font-bold mb-3 text-lg text-gray-900">
+                      Average Price by Year{" "}
+                      <span className="text-gray-500">
+                        (years with &gt;1 sale)
+                      </span>
+                    </h4>
                     <div className="overflow-x-auto">
                       <table className="w-full table-auto border-separate border-spacing-y-2 bg-white rounded-lg shadow-sm">
                         <thead>
                           <tr className="border-b border-gray-200">
-                            <th className="text-left pr-4 py-2 text-gray-700 font-semibold">Year</th>
-                            <th className="text-right py-2 text-gray-700 font-semibold">Average Price (£)</th>
-                            <th className="text-right py-2 text-gray-700 font-semibold">Number of Sales</th>
+                            <th className="text-left pr-4 py-2 text-gray-700 font-semibold">
+                              Year
+                            </th>
+                            <th className="text-right py-2 text-gray-700 font-semibold">
+                              Average Price (£)
+                            </th>
+                            <th className="text-right py-2 text-gray-700 font-semibold">
+                              Number of Sales
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {yearsWithMultiple.map(([year, sales]) => {
-                            const avg = sales.reduce((sum, s) => sum + s.sale_price, 0) / sales.length;
+                            const avg =
+                              sales.reduce((sum, s) => sum + s.sale_price, 0) /
+                              sales.length;
                             return (
-                              <tr key={year} className="border-b border-gray-100 hover:bg-gray-50">
-                                <td className="pr-4 font-bold text-gray-900 py-2">{year}</td>
-                                <td className="text-right font-bold py-2" style={{ color: getNumberColor(avg) }}>{formatCurrency(avg, "")}</td>
-                                <td className="text-right text-gray-600 py-2">{sales.length}</td>
+                              <tr
+                                key={year}
+                                className="border-b border-gray-100 hover:bg-gray-50"
+                              >
+                                <td className="pr-4 font-bold text-gray-900 py-2">
+                                  {year}
+                                </td>
+                                <td
+                                  className="text-right font-bold py-2"
+                                  style={{ color: getNumberColor(avg) }}
+                                >
+                                  {formatCurrency(avg, "")}
+                                </td>
+                                <td className="text-right text-gray-600 py-2">
+                                  {sales.length}
+                                </td>
                               </tr>
                             );
                           })}
@@ -2497,9 +2589,12 @@ export default function ValuationDetailPage() {
           {/* Payback Period Analysis */}
           {!isEditing && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Payback Period Analysis</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Payback Period Analysis
+              </h2>
               <p className="text-gray-600 mb-6">
-                Calculate how long it will take to recover your initial investment through cash flows.
+                Calculate how long it will take to recover your initial
+                investment through cash flows.
               </p>
               <div className="mb-4">
                 <Button
@@ -2509,44 +2604,90 @@ export default function ValuationDetailPage() {
                   size="md"
                   disabled={paybackLoading || !valuation}
                 >
-                  {paybackLoading ? "Calculating..." : "Calculate Payback Period"}
+                  {paybackLoading
+                    ? "Calculating..."
+                    : "Calculate Payback Period"}
                 </Button>
               </div>
               {paybackPeriod && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900">Simple Payback Period</h3>
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">
+                      Simple Payback Period
+                    </h3>
                     <p className="text-sm text-gray-600 mb-3">
-                      Time to recover initial investment (ignores time value of money)
+                      Time to recover initial investment (ignores time value of
+                      money)
                     </p>
-                    <div className="text-3xl font-bold" style={{ color: getNumberColor(paybackPeriod.simple_payback ? -paybackPeriod.simple_payback : 0) }}>
-                      {paybackPeriod.simple_payback ? `${paybackPeriod.simple_payback.toFixed(1)} years` : 'N/A'}
+                    <div
+                      className="text-3xl font-bold"
+                      style={{
+                        color: getNumberColor(
+                          paybackPeriod.simple_payback
+                            ? -paybackPeriod.simple_payback
+                            : 0,
+                        ),
+                      }}
+                    >
+                      {paybackPeriod.simple_payback
+                        ? `${paybackPeriod.simple_payback.toFixed(1)} years`
+                        : "N/A"}
                     </div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900">Discounted Payback Period</h3>
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">
+                      Discounted Payback Period
+                    </h3>
                     <p className="text-sm text-gray-600 mb-3">
-                      Time to recover initial investment (accounts for 8% discount rate)
+                      Time to recover initial investment (accounts for 8%
+                      discount rate)
                     </p>
-                    <div className="text-3xl font-bold" style={{ color: getNumberColor(paybackPeriod.discounted_payback ? -paybackPeriod.discounted_payback : 0) }}>
-                      {paybackPeriod.discounted_payback ? `${paybackPeriod.discounted_payback.toFixed(1)} years` : 'N/A'}
+                    <div
+                      className="text-3xl font-bold"
+                      style={{
+                        color: getNumberColor(
+                          paybackPeriod.discounted_payback
+                            ? -paybackPeriod.discounted_payback
+                            : 0,
+                        ),
+                      }}
+                    >
+                      {paybackPeriod.discounted_payback
+                        ? `${paybackPeriod.discounted_payback.toFixed(1)} years`
+                        : "N/A"}
                     </div>
                   </div>
                 </div>
               )}
-              {paybackPeriod && paybackPeriod.simple_payback === null && paybackPeriod.discounted_payback === null && (
-                <div className="text-center py-8">
-                  <div className="text-gray-400 mb-4">
-                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
+              {paybackPeriod &&
+                paybackPeriod.simple_payback === null &&
+                paybackPeriod.discounted_payback === null && (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 mb-4">
+                      <svg
+                        className="mx-auto h-12 w-12"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1}
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Payback Period Exceeds Holding Period
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      The payback period is longer than your holding period.
+                      This means you won't recover your initial investment
+                      through cash flows alone within the investment timeframe.
+                    </p>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Payback Period Exceeds Holding Period</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    The payback period is longer than your holding period. This means you won't recover your initial investment through cash flows alone within the investment timeframe.
-                  </p>
-                </div>
-              )}
+                )}
             </div>
           )}
         </>

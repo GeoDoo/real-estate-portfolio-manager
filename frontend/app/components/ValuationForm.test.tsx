@@ -1,28 +1,28 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@/lib/test-utils';
-import userEvent from '@testing-library/user-event';
-import ValuationForm from './ValuationForm';
+import React from "react";
+import { render, screen, fireEvent } from "@/lib/test-utils";
+import userEvent from "@testing-library/user-event";
+import ValuationForm from "./ValuationForm";
 
-describe('ValuationForm', () => {
+describe("ValuationForm", () => {
   const defaultForm = {
-    initial_investment: '',
-    transaction_costs: '',
-    property_tax: '',
-    annual_rental_income: '',
-    vacancy_rate: '',
-    service_charge: '',
-    ground_rent: '',
-    maintenance: '',
-    insurance: '',
-    management_fees: '',
-    annual_rent_growth: '',
-    discount_rate: '',
-    holding_period: '',
-    ltv: '',
-    interest_rate: '',
-    capex: '',
-    exit_cap_rate: '',
-    selling_costs: '',
+    initial_investment: "",
+    transaction_costs: "",
+    property_tax: "",
+    annual_rental_income: "",
+    vacancy_rate: "",
+    service_charge: "",
+    ground_rent: "",
+    maintenance: "",
+    insurance: "",
+    management_fees: "",
+    annual_rent_growth: "",
+    discount_rate: "",
+    holding_period: "",
+    ltv: "",
+    interest_rate: "",
+    capex: "",
+    exit_cap_rate: "",
+    selling_costs: "",
   };
 
   const mockOnChange = jest.fn();
@@ -32,31 +32,33 @@ describe('ValuationForm', () => {
     jest.clearAllMocks();
   });
 
-  describe('rendering', () => {
-    it('renders all form sections', () => {
+  describe("rendering", () => {
+    it("renders all form sections", () => {
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Check section headers
-      expect(screen.getByText('Initial Investment & One-off Costs')).toBeInTheDocument();
-      expect(screen.getByText('Annual Income')).toBeInTheDocument();
-      expect(screen.getByText('Annual Expenses')).toBeInTheDocument();
-      expect(screen.getByText('Assumptions')).toBeInTheDocument();
-      expect(screen.getByText('Terminal Sale (Reversion)')).toBeInTheDocument();
+      expect(
+        screen.getByText("Initial Investment & One-off Costs"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Annual Income")).toBeInTheDocument();
+      expect(screen.getByText("Annual Expenses")).toBeInTheDocument();
+      expect(screen.getByText("Assumptions")).toBeInTheDocument();
+      expect(screen.getByText("Terminal Sale (Reversion)")).toBeInTheDocument();
     });
 
-    it('renders all required fields with asterisks', () => {
+    it("renders all required fields with asterisks", () => {
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Check required field labels
@@ -75,14 +77,14 @@ describe('ValuationForm', () => {
       expect(asterisks.length).toBeGreaterThan(0);
     });
 
-    it('renders form fields with correct values', () => {
+    it("renders form fields with correct values", () => {
       const formWithValues = {
         ...defaultForm,
-        initial_investment: '500000',
-        annual_rental_income: '30000',
-        vacancy_rate: '5',
-        exit_cap_rate: '5.5',
-        selling_costs: '3',
+        initial_investment: "500000",
+        annual_rental_income: "30000",
+        vacancy_rate: "5",
+        exit_cap_rate: "5.5",
+        selling_costs: "3",
       };
 
       render(
@@ -90,103 +92,109 @@ describe('ValuationForm', () => {
           form={formWithValues}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      expect(screen.getByDisplayValue('500000')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('30000')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('5')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('5.5')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('3')).toBeInTheDocument();
+      expect(screen.getByDisplayValue("500000")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("30000")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("5")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("5.5")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("3")).toBeInTheDocument();
     });
 
-    it('renders error message when provided', () => {
+    it("renders error message when provided", () => {
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
           error="This is an error message"
-        />
+        />,
       );
 
-      expect(screen.getByText('This is an error message')).toBeInTheDocument();
-      expect(screen.getByText('This is an error message')).toHaveClass('text-red-600');
+      expect(screen.getByText("This is an error message")).toBeInTheDocument();
+      expect(screen.getByText("This is an error message")).toHaveClass(
+        "text-red-600",
+      );
     });
 
-    it('disables all inputs when disabled prop is true', () => {
+    it("disables all inputs when disabled prop is true", () => {
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
           disabled={true}
-        />
+        />,
       );
 
-      const inputs = screen.getAllByRole('textbox');
-      inputs.forEach(input => {
+      const inputs = screen.getAllByRole("textbox");
+      inputs.forEach((input) => {
         expect(input).toBeDisabled();
       });
     });
   });
 
-  describe('user interactions', () => {
-    it('calls onChange when user types in input fields', async () => {
+  describe("user interactions", () => {
+    it("calls onChange when user types in input fields", async () => {
       const user = userEvent.setup();
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      const purchasePriceInput = document.querySelector('input[name="initial_investment"]');
-      await user.type(purchasePriceInput!, '500000');
+      const purchasePriceInput = document.querySelector(
+        'input[name="initial_investment"]',
+      );
+      await user.type(purchasePriceInput!, "500000");
 
       expect(mockOnChange).toHaveBeenCalled();
     });
 
-    it('calls onSubmit when form is submitted', async () => {
+    it("calls onSubmit when form is submitted", async () => {
       const user = userEvent.setup();
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      const form = document.querySelector('form');
+      const form = document.querySelector("form");
       await user.click(form!);
       fireEvent.submit(form!);
 
       expect(mockOnSubmit).toHaveBeenCalledTimes(1);
     });
 
-    it('handles input changes correctly', async () => {
+    it("handles input changes correctly", async () => {
       const user = userEvent.setup();
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      const purchasePriceInput = document.querySelector('input[name="initial_investment"]');
-      await user.type(purchasePriceInput!, '500000');
+      const purchasePriceInput = document.querySelector(
+        'input[name="initial_investment"]',
+      );
+      await user.type(purchasePriceInput!, "500000");
 
       expect(mockOnChange).toHaveBeenCalled();
     });
   });
 
-  describe('conditional rendering', () => {
-    it('shows interest rate field when LTV is greater than 0', () => {
+  describe("conditional rendering", () => {
+    it("shows interest rate field when LTV is greater than 0", () => {
       const formWithLTV = {
         ...defaultForm,
-        ltv: '80',
+        ltv: "80",
       };
 
       render(
@@ -194,19 +202,21 @@ describe('ValuationForm', () => {
           form={formWithLTV}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      expect(screen.getByText('Interest Rate (%)')).toBeInTheDocument();
+      expect(screen.getByText("Interest Rate (%)")).toBeInTheDocument();
       // Find the interest rate input by its name attribute
-      const interestRateInput = document.querySelector('input[name="interest_rate"]');
+      const interestRateInput = document.querySelector(
+        'input[name="interest_rate"]',
+      );
       expect(interestRateInput).toBeInTheDocument();
     });
 
-    it('hides interest rate field when LTV is 0 or empty', () => {
+    it("hides interest rate field when LTV is 0 or empty", () => {
       const formWithoutLTV = {
         ...defaultForm,
-        ltv: '0',
+        ltv: "0",
       };
 
       render(
@@ -214,77 +224,79 @@ describe('ValuationForm', () => {
           form={formWithoutLTV}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      expect(screen.queryByText('Interest Rate (%)')).not.toBeInTheDocument();
+      expect(screen.queryByText("Interest Rate (%)")).not.toBeInTheDocument();
     });
   });
 
-  describe('form validation', () => {
-    it('renders required field indicators', () => {
+  describe("form validation", () => {
+    it("renders required field indicators", () => {
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Check that required fields have asterisks
       const requiredLabels = [
-        'Purchase Price (£)',
-        'Transaction Costs (£)',
-        'Property Tax (£)',
-        'Annual Rental Income (£)',
-        'Maintenance (£)',
-        'Management Fees (%)',
-        'Annual Rent Growth (%)',
-        'Discount Rate (%)',
-        'Holding Period (Years)',
+        "Purchase Price (£)",
+        "Transaction Costs (£)",
+        "Property Tax (£)",
+        "Annual Rental Income (£)",
+        "Maintenance (£)",
+        "Management Fees (%)",
+        "Annual Rent Growth (%)",
+        "Discount Rate (%)",
+        "Holding Period (Years)",
       ];
 
-      requiredLabels.forEach(label => {
+      requiredLabels.forEach((label) => {
         const labelElement = screen.getByText(label);
         expect(labelElement).toBeInTheDocument();
       });
     });
   });
 
-  describe('accessibility', () => {
-    it('has proper form structure', () => {
+  describe("accessibility", () => {
+    it("has proper form structure", () => {
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Check that form element exists
-      const formElement = document.querySelector('form');
+      const formElement = document.querySelector("form");
       expect(formElement).toBeInTheDocument();
     });
 
-    it('has proper labels for all inputs', () => {
+    it("has proper labels for all inputs", () => {
       render(
         <ValuationForm
           form={defaultForm}
           onChange={mockOnChange}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      const inputs = screen.getAllByRole('textbox');
-      inputs.forEach(input => {
-        expect(input).toHaveAttribute('name');
+      const inputs = screen.getAllByRole("textbox");
+      inputs.forEach((input) => {
+        expect(input).toHaveAttribute("name");
         // Each input should have an associated label
-        const name = input.getAttribute('name');
+        const name = input.getAttribute("name");
         if (name) {
-          const label = screen.getByText(new RegExp(name.replace(/_/g, ' '), 'i'));
+          const label = screen.getByText(
+            new RegExp(name.replace(/_/g, " "), "i"),
+          );
           expect(label).toBeInTheDocument();
         }
       });
     });
   });
-}); 
+});

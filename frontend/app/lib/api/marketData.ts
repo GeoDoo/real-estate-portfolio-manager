@@ -32,14 +32,17 @@ export interface MarketDataResponse {
 
 export const marketDataAPI = {
   // Get comparable sales from Land Registry
-  getComparableSales: async (postcode: string, limit: number = 50): Promise<MarketDataResponse> => {
+  getComparableSales: async (
+    postcode: string,
+    limit: number = 50,
+  ): Promise<MarketDataResponse> => {
     try {
       const response = await api.get<MarketDataResponse>(
-        `/api/market-data/comparables/${postcode}?limit=${limit}`
+        `/api/market-data/comparables/${postcode}?limit=${limit}`,
       );
       return response;
     } catch (error) {
-      console.error('Failed to fetch comparable sales:', error);
+      console.error("Failed to fetch comparable sales:", error);
       throw error;
     }
   },
@@ -56,10 +59,10 @@ export const marketDataAPI = {
   formatSaleDate: (dateString: string): string => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
       });
     } catch {
       return dateString;
@@ -67,17 +70,23 @@ export const marketDataAPI = {
   },
 
   // Calculate price per square foot (if square footage available)
-  calculatePricePerSqFt: (salePrice: number, squareFeet?: number): number | null => {
+  calculatePricePerSqFt: (
+    salePrice: number,
+    squareFeet?: number,
+  ): number | null => {
     if (!squareFeet || squareFeet <= 0) return null;
     return salePrice / squareFeet;
   },
 
   // Filter sales by date range
-  filterSalesByDateRange: (sales: ComparableSale[], daysBack: number): ComparableSale[] => {
+  filterSalesByDateRange: (
+    sales: ComparableSale[],
+    daysBack: number,
+  ): ComparableSale[] => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-    
-    return sales.filter(sale => {
+
+    return sales.filter((sale) => {
       try {
         const saleDate = new Date(sale.sale_date);
         return saleDate >= cutoffDate;
@@ -85,5 +94,5 @@ export const marketDataAPI = {
         return false;
       }
     });
-  }
-}; 
+  },
+};

@@ -48,6 +48,13 @@ export default function RootLayout({
               >
                 Portfolios
               </a>
+              <a
+                href="/library"
+                className="text-base font-medium transition-colors hover:underline"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Library
+              </a>
             </div>
           </div>
         </nav>

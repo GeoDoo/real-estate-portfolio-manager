@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from app import Portfolio, Property, Valuation, db, validate_fields, populate_model_from_data
 import os
 import json
+import io
 
 def create_property_with_valuation(app, portfolio_id, address, valuation_data):
     with app.app_context():
@@ -819,3 +820,37 @@ def test_property_update_with_new_utilities(client, sample_property):
     assert result["address"] == "456 Updated Street"
     assert result["postcode"] == "TEST2 2BB"
     assert result["listing_link"] == "https://example.com/updated-listing" 
+
+def test_library_upload_list_view_delete(client, app):
+    # Create a small in-memory PDF file
+    pdf_bytes = b'%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF'
+    data = {
+        'file': (io.BytesIO(pdf_bytes), 'test.pdf'),
+        'title': 'Test PDF'
+    }
+    # Upload PDF
+    resp = client.post('/api/library', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 201
+    item = resp.get_json()
+    assert item['title'] == 'Test PDF'
+    item_id = item['id']
+
+    # List PDFs
+    resp = client.get('/api/library')
+    assert resp.status_code == 200
+    items = resp.get_json()
+    assert any(i['id'] == item_id for i in items)
+
+    # View PDF
+    resp = client.get(f'/api/library/{item_id}/view')
+    assert resp.status_code == 200
+    assert resp.data.startswith(b'%PDF')
+    assert resp.mimetype == 'application/pdf'
+
+    # Delete PDF
+    resp = client.delete(f'/api/library/{item_id}')
+    assert resp.status_code == 200
+    # Confirm deletion
+    resp = client.get('/api/library')
+    items = resp.get_json()
+    assert not any(i['id'] == item_id for i in items) 

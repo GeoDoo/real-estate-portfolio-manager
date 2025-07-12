@@ -35,6 +35,10 @@ export default [
         require: true,
         __dirname: true,
         __filename: true,
+        File: true,
+        FormData: true,
+        alert: true,
+        confirm: true,
       },
     },
     plugins: {

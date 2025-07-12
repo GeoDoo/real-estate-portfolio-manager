@@ -1,13 +1,15 @@
-import { describe, it, expect, afterEach, jest } from '@jest/globals';
-import { DCFRow } from '@/types/cashflow';
+import { describe, it, expect, afterEach, jest } from "@jest/globals";
+import { DCFRow } from "@/types/cashflow";
 
 // Place the mock at the very top
-type MockFunction = jest.MockedFunction<(...args: unknown[]) => Promise<unknown>>;
+type MockFunction = jest.MockedFunction<
+  (...args: unknown[]) => Promise<unknown>
+>;
 const mockGet: MockFunction = jest.fn();
 const mockPost: MockFunction = jest.fn();
 const mockPut: MockFunction = jest.fn();
 
-jest.mock('@/lib/api', () => ({
+jest.mock("@/lib/api", () => ({
   api: {
     get: mockGet,
     post: mockPost,
@@ -22,92 +24,112 @@ jest.mock('@/lib/api', () => ({
   },
 }));
 
-describe('valuationsAPI', () => {
+describe("valuationsAPI", () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
   });
 
-  it('getByPropertyId returns valuation data', async () => {
-    mockGet.mockResolvedValue({ data: { id: '123', property_id: 'abc' } });
-    const { valuationsAPI } = await import('./valuations');
-    const result = await valuationsAPI.getByPropertyId('abc');
-    expect(mockGet).toHaveBeenCalledWith('/api/properties/abc/valuation');
-    expect(result).toEqual({ id: '123', property_id: 'abc' });
+  it("getByPropertyId returns valuation data", async () => {
+    mockGet.mockResolvedValue({ data: { id: "123", property_id: "abc" } });
+    const { valuationsAPI } = await import("./valuations");
+    const result = await valuationsAPI.getByPropertyId("abc");
+    expect(mockGet).toHaveBeenCalledWith("/api/properties/abc/valuation");
+    expect(result).toEqual({ id: "123", property_id: "abc" });
   });
 
-  it('getByPropertyId returns null for 404', async () => {
-    const { APIError } = await import('@/lib/api');
-    const error = new APIError('Not found', 404);
+  it("getByPropertyId returns null for 404", async () => {
+    const { APIError } = await import("@/lib/api");
+    const error = new APIError("Not found", 404);
     mockGet.mockRejectedValue(error);
-    const { valuationsAPI } = await import('./valuations');
-    const result = await valuationsAPI.getByPropertyId('abc');
+    const { valuationsAPI } = await import("./valuations");
+    const result = await valuationsAPI.getByPropertyId("abc");
     expect(result).toBeNull();
   });
 
-  it('getByPropertyId throws other API errors', async () => {
-    const { APIError } = await import('@/lib/api');
-    const error = new APIError('Server error', 500);
+  it("getByPropertyId throws other API errors", async () => {
+    const { APIError } = await import("@/lib/api");
+    const error = new APIError("Server error", 500);
     mockGet.mockRejectedValue(error);
-    const { valuationsAPI } = await import('./valuations');
-    await expect(valuationsAPI.getByPropertyId('abc')).rejects.toThrow('Server error');
+    const { valuationsAPI } = await import("./valuations");
+    await expect(valuationsAPI.getByPropertyId("abc")).rejects.toThrow(
+      "Server error",
+    );
   });
 
-  it('save sends data and returns updated valuation', async () => {
-    mockPut.mockResolvedValue({ id: '123', property_id: 'abc', purchase_price: 100000 });
-    const { valuationsAPI } = await import('./valuations');
-    const result = await valuationsAPI.save('abc', { purchase_price: 100000 } as Partial<DCFRow>);
-    expect(mockPut).toHaveBeenCalledWith('/api/properties/abc/valuation', { purchase_price: 100000 });
-    expect(result).toEqual({ id: '123', property_id: 'abc', purchase_price: 100000 });
+  it("save sends data and returns updated valuation", async () => {
+    mockPut.mockResolvedValue({
+      id: "123",
+      property_id: "abc",
+      purchase_price: 100000,
+    });
+    const { valuationsAPI } = await import("./valuations");
+    const result = await valuationsAPI.save("abc", {
+      purchase_price: 100000,
+    } as Partial<DCFRow>);
+    expect(mockPut).toHaveBeenCalledWith("/api/properties/abc/valuation", {
+      purchase_price: 100000,
+    });
+    expect(result).toEqual({
+      id: "123",
+      property_id: "abc",
+      purchase_price: 100000,
+    });
   });
 
-  it('calculateCashFlows returns cash flow rows', async () => {
+  it("calculateCashFlows returns cash flow rows", async () => {
     mockPost.mockResolvedValue({ cashFlows: [{ year: 0, revenue: 100 }] });
-    const { valuationsAPI } = await import('./valuations');
+    const { valuationsAPI } = await import("./valuations");
     const result = await valuationsAPI.calculateCashFlows({} as DCFRow);
-    expect(mockPost).toHaveBeenCalledWith('/api/cashflows/calculate', {});
+    expect(mockPost).toHaveBeenCalledWith("/api/cashflows/calculate", {});
     expect(result).toEqual([{ year: 0, revenue: 100 }]);
   });
 
-  it('calculateIRR returns IRR value', async () => {
+  it("calculateIRR returns IRR value", async () => {
     mockPost.mockResolvedValue({ irr: 0.123 });
-    const { valuationsAPI } = await import('./valuations');
+    const { valuationsAPI } = await import("./valuations");
     const result = await valuationsAPI.calculateIRR([1, 2, 3]);
-    expect(mockPost).toHaveBeenCalledWith('/api/cashflows/irr', { cash_flows: [1, 2, 3] });
+    expect(mockPost).toHaveBeenCalledWith("/api/cashflows/irr", {
+      cash_flows: [1, 2, 3],
+    });
     expect(result).toBe(0.123);
   });
 
-  it('getCashFlows returns cash flow rows', async () => {
+  it("getCashFlows returns cash flow rows", async () => {
     mockGet.mockResolvedValue({ cashFlows: [{ year: 1, revenue: 200 }] });
-    const { valuationsAPI } = await import('./valuations');
-    const result = await valuationsAPI.getCashFlows('pid', 'vid');
-    expect(mockGet).toHaveBeenCalledWith('/api/properties/pid/valuation/cashflows/vid');
+    const { valuationsAPI } = await import("./valuations");
+    const result = await valuationsAPI.getCashFlows("pid", "vid");
+    expect(mockGet).toHaveBeenCalledWith(
+      "/api/properties/pid/valuation/cashflows/vid",
+    );
     expect(result).toEqual([{ year: 1, revenue: 200 }]);
   });
 
-  it('getPaybackPeriod returns payback data successfully', async () => {
+  it("getPaybackPeriod returns payback data successfully", async () => {
     const paybackData = { simple_payback: 4.2, discounted_payback: 5.1 };
     mockGet.mockResolvedValue(paybackData);
-    const { valuationsAPI } = await import('./valuations');
-    const result = await valuationsAPI.getPaybackPeriod('vid');
-    expect(mockGet).toHaveBeenCalledWith('/api/valuations/vid/payback');
+    const { valuationsAPI } = await import("./valuations");
+    const result = await valuationsAPI.getPaybackPeriod("vid");
+    expect(mockGet).toHaveBeenCalledWith("/api/valuations/vid/payback");
     expect(result).toEqual(paybackData);
   });
 
-  it('getPaybackPeriod returns null for 404', async () => {
-    const { APIError } = await import('@/lib/api');
-    const error = new APIError('Not found', 404);
+  it("getPaybackPeriod returns null for 404", async () => {
+    const { APIError } = await import("@/lib/api");
+    const error = new APIError("Not found", 404);
     mockGet.mockRejectedValue(error);
-    const { valuationsAPI } = await import('./valuations');
-    const result = await valuationsAPI.getPaybackPeriod('vid');
+    const { valuationsAPI } = await import("./valuations");
+    const result = await valuationsAPI.getPaybackPeriod("vid");
     expect(result).toBeNull();
   });
 
-  it('getPaybackPeriod throws other API errors', async () => {
-    const { APIError } = await import('@/lib/api');
-    const error = new APIError('Server error', 500);
+  it("getPaybackPeriod throws other API errors", async () => {
+    const { APIError } = await import("@/lib/api");
+    const error = new APIError("Server error", 500);
     mockGet.mockRejectedValue(error);
-    const { valuationsAPI } = await import('./valuations');
-    await expect(valuationsAPI.getPaybackPeriod('vid')).rejects.toThrow('Server error');
+    const { valuationsAPI } = await import("./valuations");
+    await expect(valuationsAPI.getPaybackPeriod("vid")).rejects.toThrow(
+      "Server error",
+    );
   });
-}); 
+});

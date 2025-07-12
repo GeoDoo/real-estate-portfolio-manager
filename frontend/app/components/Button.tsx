@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import React from "react";
 
-type ButtonProps = React.ButtonHTMLAttributes<React.ElementRef<'button'>> & {
+type ButtonProps = React.ButtonHTMLAttributes<React.ElementRef<"button">> & {
   children: React.ReactNode;
   className?: string;
   variant?: "primary" | "secondary" | "danger";
@@ -22,8 +22,10 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   const variantClasses = {
-    primary: "bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none",
-    secondary: "bg-[var(--card)] hover:bg-[var(--background)] text-[var(--foreground)] border border-[var(--card-border)] hover:border-[var(--primary)]",
+    primary:
+      "bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none",
+    secondary:
+      "bg-[var(--card)] hover:bg-[var(--background)] text-[var(--foreground)] border border-[var(--card-border)] hover:border-[var(--primary)]",
     danger: "bg-red-400 hover:bg-red-500 text-white",
   };
 

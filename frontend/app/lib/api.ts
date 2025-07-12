@@ -99,7 +99,7 @@ export const api = {
 
 export async function apiRequest<T>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const res = await fetch(url, {
     ...options,

@@ -8,7 +8,9 @@ const BASE = config.apiBaseUrl;
 export const propertiesAPI = {
   // Get all properties
   getAll: async (): Promise<Property[]> => {
-    const response = await apiRequest<{ items: Property[] }>(`${BASE}/api/properties`);
+    const response = await apiRequest<{ items: Property[] }>(
+      `${BASE}/api/properties`,
+    );
     return response.items;
   },
 
@@ -18,10 +20,13 @@ export const propertiesAPI = {
     postcode: string;
     listing_link?: string;
   }): Promise<Property> => {
-    const response = await apiRequest<{ data: Property }>(`${BASE}/api/properties`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const response = await apiRequest<{ data: Property }>(
+      `${BASE}/api/properties`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
     return response.data;
   },
 
@@ -30,16 +35,21 @@ export const propertiesAPI = {
     id: string,
     data: { address: string; postcode: string; listing_link?: string },
   ): Promise<Property> => {
-    const response = await apiRequest<{ data: Property }>(`${BASE}/api/properties/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+    const response = await apiRequest<{ data: Property }>(
+      `${BASE}/api/properties/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    );
     return response.data;
   },
 
   // Get a specific property by ID
   getById: async (id: string): Promise<Property> => {
-    const response = await apiRequest<{ data: Property }>(`${BASE}/api/properties/${id}`);
+    const response = await apiRequest<{ data: Property }>(
+      `${BASE}/api/properties/${id}`,
+    );
     return response.data;
   },
 

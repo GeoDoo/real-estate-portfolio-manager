@@ -1,12 +1,19 @@
 // Mock config import for Jest environment
 jest.mock("@/config", () => ({ config: {} }));
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from "@jest/globals";
 import { apiRequest, APIError } from "./api";
 
 // Mock fetch globally for tests
 const mockFetch = jest.fn();
-Object.defineProperty(globalThis, 'fetch', {
+Object.defineProperty(globalThis, "fetch", {
   value: mockFetch,
   writable: true,
 });
@@ -39,7 +46,9 @@ describe("apiRequest", () => {
       text: async () => "Not Found",
     });
     await expect(apiRequest("/api/fail")).rejects.toThrow(APIError);
-    await expect(apiRequest("/api/fail")).rejects.toMatchObject({ status: 404 });
+    await expect(apiRequest("/api/fail")).rejects.toMatchObject({
+      status: 404,
+    });
   });
 
   it("should return null for 204 No Content", async () => {
@@ -51,4 +60,4 @@ describe("apiRequest", () => {
     const result = await apiRequest("/api/nocontent");
     expect(result).toBeNull();
   });
-}); 
+});

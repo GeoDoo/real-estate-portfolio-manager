@@ -68,8 +68,8 @@ export default function PortfoliosPage() {
       </form>
       {error && (
         <div style={{ color: "var(--error)" }} className="mb-4">
-          {error.includes('CORS') || error.includes('Network')
-            ? 'Could not connect to backend. Check CORS or server status.'
+          {error.includes("CORS") || error.includes("Network")
+            ? "Could not connect to backend. Check CORS or server status."
             : error}
         </div>
       )}
@@ -79,22 +79,23 @@ export default function PortfoliosPage() {
         <div style={{ color: "var(--text-muted)" }}>No portfolios found.</div>
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {Array.isArray(portfolios) && portfolios.map((p) => (
-            <li key={p.id}>
-              <Link
-                href={`/portfolios/${p.id}`}
-                className="card flex items-center justify-between px-6 py-5 text-lg font-medium hover:shadow-md transition-all group"
-              >
-                <span style={{ color: "var(--foreground)" }}>{p.name}</span>
-                <span
-                  className="transition-colors"
-                  style={{ color: "var(--text-muted)" }}
+          {Array.isArray(portfolios) &&
+            portfolios.map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={`/portfolios/${p.id}`}
+                  className="card flex items-center justify-between px-6 py-5 text-lg font-medium hover:shadow-md transition-all group"
                 >
-                  →
-                </span>
-              </Link>
-            </li>
-          ))}
+                  <span style={{ color: "var(--foreground)" }}>{p.name}</span>
+                  <span
+                    className="transition-colors"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    →
+                  </span>
+                </Link>
+              </li>
+            ))}
         </ul>
       )}
     </PageContainer>

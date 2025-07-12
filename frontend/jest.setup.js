@@ -1,5 +1,5 @@
-const React = require('react');
-require('@testing-library/jest-dom');
+const React = require("react");
+require("@testing-library/jest-dom");
 
 // Mock fetch globally for all tests
 if (!global.fetch) {
@@ -9,13 +9,13 @@ if (!global.fetch) {
       ok: true,
       status: 200,
       json: async () => ({}),
-      text: async () => '',
+      text: async () => "",
     });
   });
 }
 
 // Mock Next.js router
-jest.mock('next/navigation', () => ({
+jest.mock("next/navigation", () => ({
   useRouter() {
     return {
       push: jest.fn(),
@@ -30,12 +30,12 @@ jest.mock('next/navigation', () => ({
     return new URLSearchParams();
   },
   usePathname() {
-    return '/';
+    return "/";
   },
 }));
 
 // Mock Next.js link as a string to avoid referencing React
-jest.mock('next/link', () => 'a');
+jest.mock("next/link", () => "a");
 
 // Global test utilities
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
@@ -45,4 +45,4 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 }));
 
 // Ensure Jest mocks work properly with ES modules
-jest.autoMockOff(); 
+jest.autoMockOff();

@@ -22,20 +22,27 @@ interface PropertyWithValuation extends Property {
 
 // Helper for consistent coloring
 function getSummaryColor(value: number, type?: string) {
-  if (type === 'investment') return '#111827'; // always neutral for investment
-  if (value > 0) return '#10b981'; // green
-  if (value < 0) return '#ef4444'; // red
-  return '#111827'; // neutral/dark
+  if (type === "investment") return "#111827"; // always neutral for investment
+  if (value > 0) return "#10b981"; // green
+  if (value < 0) return "#ef4444"; // red
+  return "#111827"; // neutral/dark
 }
 
-export default function PortfolioDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PortfolioDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params) as { id: string };
   const [portfolioName, setPortfolioName] = useState("");
   const [properties, setProperties] = useState<PropertyWithValuation[]>([]);
   const [aggregateRows, setAggregateRows] = useState<CashFlowRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [portfolioIRR, setPortfolioIRR] = useState<number | null>(null);
-  const [portfolioPayback, setPortfolioPayback] = useState<{ simple_payback: number | null; discounted_payback: number | null } | null>(null);
+  const [portfolioPayback, setPortfolioPayback] = useState<{
+    simple_payback: number | null;
+    discounted_payback: number | null;
+  } | null>(null);
 
   // Load from localStorage on mount (client only)
   useEffect(() => {
@@ -44,37 +51,46 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
       try {
         const portfolio = await portfoliosAPI.getById(id);
         setPortfolioName(portfolio.name);
-        const props: Property[] = (await portfoliosAPI.getProperties(id)) as Property[];
-        
+        const props: Property[] = (await portfoliosAPI.getProperties(
+          id,
+        )) as Property[];
+
         // Fetch valuations for all properties
-        const propertiesWithValuations: PropertyWithValuation[] = await Promise.all(
-          props.map(async (prop: Property) => {
-            const valuation = await valuationsAPI.getByPropertyId(prop.id);
-            if (valuation) {
-              // Calculate NOI from valuation data
-              const noi = valuation.annual_rental_income - 
-                (valuation.service_charge + valuation.ground_rent + valuation.maintenance + 
-                 valuation.property_tax + valuation.insurance + 
-                 (valuation.annual_rental_income * valuation.management_fees / 100));
-              
-              return {
-                ...prop,
-                valuation: {
-                  initial_investment: valuation.initial_investment,
-                  annual_rental_income: valuation.annual_rental_income,
-                  noi: noi,
-                  irr: null, // Will be calculated later if needed
-                  transaction_costs: valuation.transaction_costs,
-                  property_tax: valuation.property_tax
-                }
-              };
-            }
-            return prop;
-          })
-        );
-        
+        const propertiesWithValuations: PropertyWithValuation[] =
+          await Promise.all(
+            props.map(async (prop: Property) => {
+              const valuation = await valuationsAPI.getByPropertyId(prop.id);
+              if (valuation) {
+                // Calculate NOI from valuation data
+                const noi =
+                  valuation.annual_rental_income -
+                  (valuation.service_charge +
+                    valuation.ground_rent +
+                    valuation.maintenance +
+                    valuation.property_tax +
+                    valuation.insurance +
+                    (valuation.annual_rental_income *
+                      valuation.management_fees) /
+                      100);
+
+                return {
+                  ...prop,
+                  valuation: {
+                    initial_investment: valuation.initial_investment,
+                    annual_rental_income: valuation.annual_rental_income,
+                    noi: noi,
+                    irr: null, // Will be calculated later if needed
+                    transaction_costs: valuation.transaction_costs,
+                    property_tax: valuation.property_tax,
+                  },
+                };
+              }
+              return prop;
+            }),
+          );
+
         setProperties(propertiesWithValuations);
-        
+
         // Fetch all cash flows for properties
         const allCashFlows: CashFlowRow[][] = await Promise.all(
           props.map(async (prop: Property) => {
@@ -86,8 +102,11 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
 
         // Aggregate cash flows by year with proper portfolio-level calculation
         const yearMap: Map<number, CashFlowRow> = new Map();
-        const maxYear = Math.max(...allCashFlows.flat().map(cf => cf.year), 0);
-        
+        const maxYear = Math.max(
+          ...allCashFlows.flat().map((cf) => cf.year),
+          0,
+        );
+
         // Initialize all years from 0 to maxYear
         for (let year = 0; year <= maxYear; year++) {
           yearMap.set(year, {
@@ -126,24 +145,27 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
         // Use a portfolio-level discount rate (could be weighted average or fixed)
         const portfolioDiscountRate = 8; // Default portfolio discount rate
         let cumulativePV = 0;
-        
-        const sortedRows = Array.from(yearMap.values()).sort((a, b) => a.year - b.year);
+
+        const sortedRows = Array.from(yearMap.values()).sort(
+          (a, b) => a.year - b.year,
+        );
         for (const row of sortedRows) {
           // Calculate portfolio-level discount factor
-          row.discount_factor = 1 / Math.pow(1 + portfolioDiscountRate / 100, row.year);
-          
+          row.discount_factor =
+            1 / Math.pow(1 + portfolioDiscountRate / 100, row.year);
+
           // Calculate present value
           row.present_value = row.net_cash_flow * row.discount_factor;
-          
+
           // Calculate cumulative PV
           cumulativePV += row.present_value;
           row.cumulative_pv = cumulativePV;
         }
 
         setAggregateRows(sortedRows);
-        
+
         // Calculate portfolio IRR from aggregated net cash flows
-        const netCashFlows = sortedRows.map(row => row.net_cash_flow);
+        const netCashFlows = sortedRows.map((row) => row.net_cash_flow);
         if (netCashFlows.length > 1) {
           const irr = await valuationsAPI.calculateIRR(netCashFlows);
           setPortfolioIRR(irr);
@@ -168,11 +190,19 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
   // Calculate portfolio totals
   const totalInvestment = properties.reduce((sum, prop) => {
     const v = prop.valuation;
-    return sum + ((v?.initial_investment || 0) + (v?.transaction_costs || 0) + (v?.property_tax || 0));
+    return (
+      sum +
+      ((v?.initial_investment || 0) +
+        (v?.transaction_costs || 0) +
+        (v?.property_tax || 0))
+    );
   }, 0);
   // Use DCF cash flows for Year 1 NOI (row with year === 1)
   const totalNOI = aggregateRows.length > 1 ? aggregateRows[1].noi : 0;
-  const totalNPV = aggregateRows.length > 0 ? aggregateRows[aggregateRows.length - 1].cumulative_pv : 0;
+  const totalNPV =
+    aggregateRows.length > 0
+      ? aggregateRows[aggregateRows.length - 1].cumulative_pv
+      : 0;
 
   return (
     <PageContainer>
@@ -188,7 +218,10 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
       {!loading && properties.length > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">
-            Properties in Portfolio <span className="text-base font-semibold text-gray-500">({properties.length})</span>
+            Properties in Portfolio{" "}
+            <span className="text-base font-semibold text-gray-500">
+              ({properties.length})
+            </span>
           </h2>
           <div className="mb-6 flex flex-col gap-2">
             {properties.map((property) => (
@@ -203,16 +236,21 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
           </div>
           {/* Portfolio Summary */}
           <div className="border-t border-gray-200 pt-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Portfolio Summary</h3>
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Portfolio Summary
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(-Math.abs(totalInvestment)) }}>
+                <div
+                  className="text-2xl font-extrabold"
+                  style={{ color: getSummaryColor(-Math.abs(totalInvestment)) }}
+                >
                   £{formatCurrency(-Math.abs(totalInvestment), "")}
                 </div>
                 <div className="text-sm text-gray-600">Total Investment</div>
               </div>
               <div className="text-center">
-                <div 
+                <div
                   className="text-2xl font-extrabold"
                   style={{ color: getSummaryColor(totalNOI) }}
                 >
@@ -221,26 +259,54 @@ export default function PortfolioDetailsPage({ params }: { params: Promise<{ id:
                 <div className="text-sm text-gray-600">Total Year 1 NOI</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(totalNPV) }}>
+                <div
+                  className="text-2xl font-extrabold"
+                  style={{ color: getSummaryColor(totalNPV) }}
+                >
                   £{formatCurrency(totalNPV, "")}
                 </div>
                 <div className="text-sm text-gray-600">Total NPV</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(portfolioIRR ?? 0) }}>
-                  {portfolioIRR !== null ? portfolioIRR.toFixed(2) + '%' : '-'}
+                <div
+                  className="text-2xl font-extrabold"
+                  style={{ color: getSummaryColor(portfolioIRR ?? 0) }}
+                >
+                  {portfolioIRR !== null ? portfolioIRR.toFixed(2) + "%" : "-"}
                 </div>
                 <div className="text-sm text-gray-600">IRR</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(portfolioPayback?.simple_payback ? -portfolioPayback.simple_payback : 0) }}>
-                  {portfolioPayback?.simple_payback ? `${portfolioPayback.simple_payback.toFixed(1)}y` : '-'}
+                <div
+                  className="text-2xl font-extrabold"
+                  style={{
+                    color: getSummaryColor(
+                      portfolioPayback?.simple_payback
+                        ? -portfolioPayback.simple_payback
+                        : 0,
+                    ),
+                  }}
+                >
+                  {portfolioPayback?.simple_payback
+                    ? `${portfolioPayback.simple_payback.toFixed(1)}y`
+                    : "-"}
                 </div>
                 <div className="text-sm text-gray-600">Simple Payback</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-extrabold" style={{ color: getSummaryColor(portfolioPayback?.discounted_payback ? -portfolioPayback.discounted_payback : 0) }}>
-                  {portfolioPayback?.discounted_payback ? `${portfolioPayback.discounted_payback.toFixed(1)}y` : '-'}
+                <div
+                  className="text-2xl font-extrabold"
+                  style={{
+                    color: getSummaryColor(
+                      portfolioPayback?.discounted_payback
+                        ? -portfolioPayback.discounted_payback
+                        : 0,
+                    ),
+                  }}
+                >
+                  {portfolioPayback?.discounted_payback
+                    ? `${portfolioPayback.discounted_payback.toFixed(1)}y`
+                    : "-"}
                 </div>
                 <div className="text-sm text-gray-600">Discounted Payback</div>
               </div>

@@ -7,7 +7,9 @@ export const valuationsAPI = {
   // Get valuation for a property
   getByPropertyId: async (propertyId: string): Promise<DCFRow | null> => {
     try {
-      const response = await api.get<{ data: DCFRow | null }>(`/api/properties/${propertyId}/valuation`);
+      const response = await api.get<{ data: DCFRow | null }>(
+        `/api/properties/${propertyId}/valuation`,
+      );
       return response.data;
     } catch (error) {
       if (error instanceof APIError && error.status === 404) {
@@ -67,9 +69,17 @@ export const valuationsAPI = {
   },
 
   // Get payback period for a valuation
-  getPaybackPeriod: async (valuationId: string): Promise<{ simple_payback: number | null; discounted_payback: number | null } | null> => {
+  getPaybackPeriod: async (
+    valuationId: string,
+  ): Promise<{
+    simple_payback: number | null;
+    discounted_payback: number | null;
+  } | null> => {
     try {
-      const response = await api.get<{ simple_payback: number | null; discounted_payback: number | null }>(`/api/valuations/${valuationId}/payback`);
+      const response = await api.get<{
+        simple_payback: number | null;
+        discounted_payback: number | null;
+      }>(`/api/valuations/${valuationId}/payback`);
       return response;
     } catch (error) {
       if (error instanceof APIError && error.status === 404) {

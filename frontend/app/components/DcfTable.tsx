@@ -14,17 +14,25 @@ function renderCell(value: number, colorFn: (n: number) => string) {
       {value > 0
         ? value.toLocaleString(undefined, { maximumFractionDigits: 2 })
         : value < 0
-        ? `-${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-        : "0"}
+          ? `-${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+          : "0"}
     </span>
   );
 }
 
-export default function DcfTable({ rows, className = "", title }: DcfTableProps) {
+export default function DcfTable({
+  rows,
+  className = "",
+  title,
+}: DcfTableProps) {
   if (!rows || rows.length === 0) return null;
   return (
-    <div className={`bg-white rounded-lg shadow-md p-6 mb-8 relative ${className}`}>
-      {title && <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>}
+    <div
+      className={`bg-white rounded-lg shadow-md p-6 mb-8 relative ${className}`}
+    >
+      {title && (
+        <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
+      )}
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
@@ -102,4 +110,4 @@ export default function DcfTable({ rows, className = "", title }: DcfTableProps)
       </div>
     </div>
   );
-} 
+}

@@ -156,6 +156,19 @@ class Valuation(db.Model):
             "selling_costs": self.selling_costs,
         }
 
+class LibraryItem(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    file_data = db.Column(db.LargeBinary, nullable=False)
+    uploaded_at = db.Column(db.String, nullable=False)
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "uploaded_at": self.uploaded_at,
+        }
+
 # --- Utility Functions ---
 def safe_number(val):
     if val in (None, '', 'None'):
@@ -1059,6 +1072,66 @@ def create_app(test_config=None):
     @app.route("/api/market-data/comparables/<postcode>", methods=["OPTIONS"])
     def comparable_sales_options(postcode):
         return "", 204
+
+    # Library endpoints
+    @app.route("/api/library", methods=["GET", "POST"])
+    def library_collection():
+        if request.method == "GET":
+            items = LibraryItem.query.order_by(LibraryItem.uploaded_at.desc()).all()
+            return jsonify([item.to_dict() for item in items])
+        
+        elif request.method == "POST":
+            if 'file' not in request.files:
+                return jsonify({"error": "No file provided"}), 400
+            
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({"error": "No file selected"}), 400
+            
+            if not file.filename.lower().endswith('.pdf'):
+                return jsonify({"error": "Only PDF files are allowed"}), 400
+            
+            # Read file data
+            file_data = file.read()
+            
+            # Create database record
+            import uuid
+            data = request.form
+            library_item = LibraryItem(
+                id=str(uuid.uuid4()),
+                title=data.get('title', file.filename),
+                file_data=file_data,
+                uploaded_at=datetime.now(timezone.utc).isoformat()
+            )
+            
+            db.session.add(library_item)
+            db.session.commit()
+            
+            return jsonify(library_item.to_dict()), 201
+
+    @app.route("/api/library/<item_id>", methods=["DELETE"])
+    def library_item(item_id):
+        item = LibraryItem.query.get(item_id)
+        if not item:
+            return jsonify({"error": "Library item not found"}), 404
+        
+        # Delete from database
+        db.session.delete(item)
+        db.session.commit()
+        
+        return jsonify({"message": "Library item deleted successfully"}), 200
+
+    @app.route("/api/library/<item_id>/view", methods=["GET"])
+    def view_library_item(item_id):
+        item = LibraryItem.query.get(item_id)
+        if not item:
+            return jsonify({"error": "Library item not found"}), 404
+        
+        return Response(
+            item.file_data,
+            mimetype='application/pdf',
+            headers={'Content-Disposition': f'inline; filename="{item.title}.pdf"'}
+        )
 
     return app
 

@@ -18,7 +18,11 @@ export default function ValuationForm({
 }: ValuationFormProps) {
   // Add a helper for required field label
   function RequiredLabel({ children }: { children: React.ReactNode }) {
-    return <span>{children} <span style={{color: 'red'}}>*</span></span>;
+    return (
+      <span>
+        {children} <span style={{ color: "red" }}>*</span>
+      </span>
+    );
   }
 
   return (
@@ -227,7 +231,9 @@ export default function ValuationForm({
               value={form.capex ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{ "--tw-ring-color": "var(--primary)" } as React.CSSProperties }
+              style={
+                { "--tw-ring-color": "var(--primary)" } as React.CSSProperties
+              }
               placeholder="0"
               disabled={disabled}
             />
@@ -251,9 +257,11 @@ export default function ValuationForm({
               value={form.annual_rent_growth ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{
-                "--tw-ring-color": "var(--primary)",
-              } as React.CSSProperties}
+              style={
+                {
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties
+              }
               placeholder="0"
               disabled={disabled}
             />
@@ -268,9 +276,11 @@ export default function ValuationForm({
               value={form.discount_rate ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{
-                "--tw-ring-color": "var(--primary)",
-              } as React.CSSProperties}
+              style={
+                {
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties
+              }
               placeholder="0"
               disabled={disabled}
             />
@@ -285,9 +295,11 @@ export default function ValuationForm({
               value={form.holding_period ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{
-                "--tw-ring-color": "var(--primary)",
-              } as React.CSSProperties}
+              style={
+                {
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties
+              }
               placeholder="0"
               disabled={disabled}
             />
@@ -302,9 +314,11 @@ export default function ValuationForm({
               value={form.ltv ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{
-                "--tw-ring-color": "var(--primary)",
-              } as React.CSSProperties}
+              style={
+                {
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties
+              }
               placeholder="e.g. 80"
               disabled={disabled}
             />
@@ -320,9 +334,11 @@ export default function ValuationForm({
                 value={form.interest_rate ?? ""}
                 onChange={onChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-                style={{
-                  "--tw-ring-color": "var(--primary)",
-                } as React.CSSProperties}
+                style={
+                  {
+                    "--tw-ring-color": "var(--primary)",
+                  } as React.CSSProperties
+                }
                 placeholder="e.g. 5"
                 disabled={disabled}
               />
@@ -347,9 +363,11 @@ export default function ValuationForm({
               value={form.exit_cap_rate ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{
-                "--tw-ring-color": "var(--primary)",
-              } as React.CSSProperties}
+              style={
+                {
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties
+              }
               placeholder="e.g. 5.5"
               disabled={disabled}
             />
@@ -364,9 +382,11 @@ export default function ValuationForm({
               value={form.selling_costs ?? ""}
               onChange={onChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-              style={{
-                "--tw-ring-color": "var(--primary)",
-              } as React.CSSProperties}
+              style={
+                {
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties
+              }
               placeholder="e.g. 3"
               disabled={disabled}
             />
