@@ -100,7 +100,7 @@ export default function LibraryPage() {
 
   return (
     <PageContainer>
-      <div className="max-w-2xl mx-auto">
+      <div>
         <Breadcrumbs last="Library" />
         <h1
           className="text-3xl font-bold mb-8"
